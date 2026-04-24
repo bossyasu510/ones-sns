@@ -10,6 +10,87 @@
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='40' fill='%233a9e5f'/><circle cx='90' cy='90' r='68' fill='none' stroke='white' stroke-width='12' opacity='.18'/><ellipse cx='72' cy='75' rx='20' ry='34' fill='white' opacity='.22' transform='rotate(-35 72 75)'/><ellipse cx='108' cy='105' rx='18' ry='30' fill='%23c8f7d4' opacity='.25' transform='rotate(-35 108 105)'/><circle cx='90' cy='30' r='8' fill='%23c8f7d4' opacity='.6'/><circle cx='150' cy='90' r='6' fill='%239dd4b0' opacity='.5'/><circle cx='30' cy='90' r='6' fill='%239dd4b0' opacity='.5'/><text x='90' y='102' font-family='Arial,sans-serif' font-size='52' fill='white' text-anchor='middle' font-weight='900' font-style='italic'>ONEs</text></svg>">
 <meta name="application-name" content="ONEs">
 <meta name="apple-mobile-web-app-title" content="ONEs">
+<!-- Supabase SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://iywkhawhgxkoqehoyhsh.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_OvlYWlHuKnzp5utaqj8EAw_q5H100tl';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ── DB ヘルパー関数 ──────────────────────────────
+
+async function findInviteCode(code) {
+  const { data, error } = await sb.from('invite_codes')
+    .select('*, issuer:members!invite_codes_issued_by_fkey(id,name,emoji)')
+    .eq('code', code.toUpperCase()).maybeSingle();
+  return { data, error };
+}
+
+async function submitJoinRequest(name, emoji, inviteCode, referrerId) {
+  const newCode = 'ONES-' + Math.random().toString(36).slice(2,6).toUpperCase();
+  const { data: member, error } = await sb.from('members')
+    .insert({ name, emoji, status:'pending', role:'member', invited_by: referrerId||null, invite_code: newCode })
+    .select().single();
+  if (!error) {
+    await sb.from('invite_codes').update({ status:'pending', used_by: member.id }).eq('code', inviteCode.toUpperCase());
+  }
+  return { data: member, error };
+}
+
+async function fetchDiariesDB(limit=10) {
+  const { data } = await sb.from('diaries')
+    .select('*, author:members(name,emoji)')
+    .order('created_at',{ascending:false}).limit(limit);
+  return data || [];
+}
+
+async function postDiaryDB(authorId, title, body, visibility='public') {
+  const { data, error } = await sb.from('diaries')
+    .insert({ author_id:authorId, title, body, visibility }).select().single();
+  return { data, error };
+}
+
+async function fetchVoicesDB(limit=20) {
+  const { data } = await sb.from('voices')
+    .select('*, author:members(name,emoji)')
+    .order('created_at',{ascending:false}).limit(limit);
+  return data || [];
+}
+
+async function postVoiceDB(authorId, body) {
+  const { data, error } = await sb.from('voices')
+    .insert({ author_id:authorId, body }).select().single();
+  return { data, error };
+}
+
+async function fetchMembersDB() {
+  const { data } = await sb.from('members')
+    .select('*, inviter:members!members_invited_by_fkey(name)')
+    .order('created_at',{ascending:false});
+  return data || [];
+}
+
+async function updateMemberStatusDB(id, status) {
+  const { data, error } = await sb.from('members').update({status}).eq('id',id).select().single();
+  return { data, error };
+}
+
+async function fetchInviteCodesDB() {
+  const { data } = await sb.from('invite_codes')
+    .select('*, issuer:members!invite_codes_issued_by_fkey(name), user:members!invite_codes_used_by_fkey(name)')
+    .order('created_at',{ascending:false});
+  return data || [];
+}
+
+async function generateInviteCodeDB(issuedById) {
+  const code = 'ONES-' + Math.random().toString(36).slice(2,6).toUpperCase();
+  const { data, error } = await sb.from('invite_codes')
+    .insert({ code, issued_by:issuedById, status:'unused' }).select().single();
+  return { data, error };
+}
+
+console.log('✅ Supabase接続完了');
+</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
 :root{
