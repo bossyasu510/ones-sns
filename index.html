@@ -1,2148 +1,3 @@
-
-アプリ販売
-/
-Claudeが応答を完了しました
-あなたの入力: 昔のmixiと同じシステム組めますか？
-昔のmixiと同じシステム組めますか？
-現行のmixi2ではなく、一昔前のmixiデザインもオレンジで統一して作って下さい。
-
-4月21日
-Claudeが返答しました: 懐かしいmixiですね！オレンジ統一の旧mixi風SNSを作ります。
-
-Reading frontend design skill
-Reading frontend design skill
-懐かしいmixiですね！オレンジ統一の旧mixi風SNSを作ります。
-
-プロフィール、日記、マイミク、足あと、コミュニティなど昔のmixi機能を再現します。
-
-
-ファイルを作成しました, ファイルを読み取りました
-ファイルを作成しました, ファイルを読み取りました
-懐かしい旧mixi風SNSが完成しました！🎉
-
-実装した機能：
-
-ホーム - タイムライン表示、日記投稿フォーム（LocalStorage保存）
-日記 - 一覧表示、コメント閲覧モーダル
-つぶやき - 投稿・一覧表示（140文字制限風）
-マイミク - グリッド表示、オンライン状態表示
-足あと - 訪問者一覧＋時間表示
-コミュニティ - 参加コミュニティ一覧
-メッセージ - 未読バッジ付き受信箱
-プロフィール - 編集ページ
-デザインこだわりポイント：
-
-オレンジ一色（
-#ff6600 系）で全体統一
-2000年代らしいグラデーションヘッダー・ボックスデザイン
-当時のfont感（MS Pゴシック風）
-NEW/INFOバッジ、足あとグリッド、マイミク一覧など当時の「あるある」UI完全再現
-
-Retro mixi
-コード · HTML 
-あなたの入力: 名前を変えてONEs
-名前を変えてONEs
-マイページも再現できてますか？
-
-4月21日
-Claudeが返答しました: まず現状のファイルを確認してから、名前変更＋マイページを強化します！ 全体像を把握しました。名前をONEsに変更し、マイページを旧mixi完全再現で大幅強化します！ ONEs に名前変更＋マイページを大幅強化しました！🎉
-まず現状のファイルを確認してから、名前変更＋マイページを強化します！
-
-
-2個のファイルを表示しました
-2個のファイルを表示しました
-全体像を把握しました。名前をONEsに変更し、マイページを旧mixi完全再現で大幅強化します！
-
-
-ファイルを作成しました, ファイルを読み取りました
-ファイルを作成しました, ファイルを読み取りました
-ONEs に名前変更＋マイページを大幅強化しました！🎉
-
-マイページで再現した機能：
-
-機能	内容
-プロフィールヘッダー	写真・名前・ひとこと・マイミク数・日記数・足あと・閲覧数
-基本情報	ニックネーム/性別/居住地/職業/血液型/登録日（編集可）
-自己紹介	フリーテキスト（編集可・リアルタイム反映）
-最近の日記	投稿一覧（クリックでモーダル）
-興味・関心タグ	ホバーエフェクト付きタグクラウド
-フォトアルバム	サムネイルグリッド表示
-カレンダー	日記のある日にハイライト
-足あと・マイミク	サイドカラムにコンパクト表示
-コミュニティ一覧	参加中コミュニティ
-プロフィール編集もフル動作 — 保存するとリアルタイムでページに反映されます！
-
-
-Ones
-コード · HTML 
-あなたの入力: ユーザーのスマートホン中心ですので、UIをスマホ中心にして、一応パソコンもできる様にはして下さい。
-ユーザーのスマートホン中心ですので、UIをスマホ中心にして、一応パソコンもできる様にはして下さい。
-
-4月21日
-Claudeが返答しました: 了解です！スマホファーストで完全リビルドします。ボトムナビ・タッチ操作・大きなタップ領域を軸に設計します。 スマホファースト版 ONEs 完成です！📱
-
-Reading frontend design skill for mobile-first approach
-Reading frontend design skill for mobile-first approach
-了解です！スマホファーストで完全リビルドします。ボトムナビ・タッチ操作・大きなタップ領域を軸に設計します。
-
-
-2個のファイルを作成しました, コマンドを実行しました, ファイルを読み取りました
-2個のファイルを作成しました, コマンドを実行しました, ファイルを読み取りました
-スマホファースト版 ONEs 完成です！📱
-
-スマホ対応のポイント：
-
-機能	内容
-ボトムナビ	5タブ（ホーム・マイミク・コミュニティ・メッセージ・マイページ）
-ボトムシート	日記・つぶやき投稿、コメント、プロフィール編集がすべて下から出るUI
-FABボタン	右下の「＋」ワンタップで即日記投稿
-ストーリー風足あと	横スクロールで丸いアバター表示（Instagram風）
-マイミク横スクロール	上部に友達リストを横スクロール
-大きいタップ領域	ボタン・リスト項目すべて最低44px
-セーフエリア対応	iPhone X以降のノッチ・ホームバー対応
-タッチフィードバック	アクティブ状態のアニメーション
-PC対応：
-
-768px以上でサイドバーレイアウトに自動切り替え
-ヘッダーにナビゲーションバー表示
-FAB・ボトムナビは非表示
-
-Ones
-コード · HTML 
-あなたの入力: 全て薄いグリーンにして。マイミクという言い回しもワンミクにして
-全て薄いグリーンにして。マイミクという言い回しもワンミクにして
-
-4月21日
-Claudeが返答しました: 全体把握しました。グリーンに完全置換＋「マイミク」→「ワンミク」に変更します。 すべてグリーンに置換完了です。ファイルを確認します。 完了です！✅
-
-2個のファイルを表示しました, コマンドを実行しました
-2個のファイルを表示しました, コマンドを実行しました
-全体把握しました。グリーンに完全置換＋「マイミク」→「ワンミク」に変更します。
-
-
-3個のコマンドを実行しました
-3個のコマンドを実行しました
-すべてグリーンに置換完了です。ファイルを確認します。
-
-
-Presented file
-Presented file
-完了です！✅
-
-変更内容：
-
-🟠 → 🟢 オレンジ系カラー全て（ヘッダー・ボタン・ボーダー・背景・アバター・バッジ・グラデーション）を薄いグリーンに統一
-マイミク → ワンミク に全箇所変更（ナビ・プロフィール・シート内・サイドバー・データ表示すべて）
-ウォームカラーのチェックで残留ゼロ確認済み
-
-Ones
-コード · HTML 
-あなたの入力: 招待制度になっています。いきなり参加はできません。誰から紹介されたのかも管理できるシステムを導入ください。
-招待制度になっています。いきなり参加はできません。誰から紹介されたのかも管理できるシステムを導入ください。
-管理者である私はそれを一覧で見れるような仕組みも必要です。
-
-4月21日
-Claudeが返答しました: 構造を完全に把握しました。招待制度＋管理者ダッシュボードを丸ごと構築します。 招待制システム＋管理者ダッシュボードを実装しました！🎉
-
-2個のファイルを表示しました
-2個のファイルを表示しました
-構造を完全に把握しました。招待制度＋管理者ダッシュボードを丸ごと構築します。
-
-
-2個のコマンドを実行しました, ファイルを作成しました, ファイルを読み取りました
-2個のコマンドを実行しました, ファイルを作成しました, ファイルを読み取りました
-招待制システム＋管理者ダッシュボードを実装しました！🎉
-
-実装した機能
-🔐 招待制システム
-機能	内容
-招待コード認証	コードなしでは参加画面に入れない
-紹介者の記録	誰のコードで来たか自動記録
-承認待ちフロー	申請→管理者承認→参加確定
-マイ招待ページ	自分のコード表示・コピー・招待した人一覧
-🛡️ 管理者ダッシュボード（BOSS YASUのみ）
-タブ	内容
-📊 概要	会員数・承認待ち数・招待ランキング・最近の参加者
-👥 メンバー	全会員一覧・ステータスフィルタ・検索・詳細表示
-🎟️ 招待コード	発行済みコード一覧・新規発行・使用状況
-🌳 系譜ツリー	誰が誰を招待したか視覚的ツリー表示
-⏳ 承認	承認待ち一覧・ワンタップ承認/非承認
-使い方
-右下の「🔧 デモログイン」で即ログイン（開発確認用）
-管理者画面はサイドバーの「🛡️ 管理者画面」ボタン
-招待コード入力画面で「管理者の方はこちら」→パスワード: ones2024admin
-
-Ones
-コード · HTML 
-あなたの入力: タグにかわいいデザインのロゴ作って
-タグにかわいいデザインのロゴ作って
-
-4月21日
-Claudeが返答しました: SVGでかわいいロゴを作ります！まずデザインを作ってからHTMLのタグに埋め込みます。 3パターン作りました！どれをタグに埋め込みますか？
-
-Check current logo area in the file
-Check current logo area in the file
-SVGでかわいいロゴを作ります！まずデザインを作ってからHTMLのタグに埋め込みます。
-
-V
-
-visualizeに接続中...
-3パターン作りました！どれをタグに埋め込みますか？
-
-ライト版（左）— 白背景にグリーンの葉っぱリング＋まる文字。ヘッダーやスプラッシュ画面向き。
-
-ダーク版（中）— 深いグリーン背景にホワイト文字＋「招待制 SNS」バッジ付き。高級感があってONEsのコンセプトにぴったり。
-
-アイコン版（右）— 丸バッジ型とアプリアイコン型。スマホのホーム画面イメージ。
-
-どれが好きか教えてもらえれば、HTMLファイルの <title> タグや favicon・ヘッダーに組み込みます！複数組み合わせることも可能です。
-
-あなたの入力: アイコン版（右）— 丸バッジ型とアプリアイコン型。スマホのホーム画面イメージ。
-アイコン版（右）— 丸バッジ型とアプリアイコン型。スマホのホーム画面イメージ。
-どれが好きか教えてもらえれば、HTMLファイルの <title> タグや favicon・ヘッダーに組み込みます！複数組み合わせでおねがい
-
-4月21日
-Claudeが返答しました: アイコン版を組み込みます！favicon用SVG、ヘッダーロゴ、スプラッシュを全部作ります。 構造を把握しました。favicon・ヘッダー・招待画面・ボトムナビ・管理画面すべてにSVGロゴを埋め込みます！ 全部OK！ファイルを出力します。 全箇所にアイコン版ロゴを組み込みました！✅
-アイコン版を組み込みます！favicon用SVG、ヘッダーロゴ、スプラッシュを全部作ります。
-
-
-5個のファイルを表示しました
-5個のファイルを表示しました
-構造を把握しました。favicon・ヘッダー・招待画面・ボトムナビ・管理画面すべてにSVGロゴを埋め込みます！
-
-
-2個のコマンドを実行しました
-2個のコマンドを実行しました
-全部OK！ファイルを出力します。
-
-
-Presented file
-Presented file
-全箇所にアイコン版ロゴを組み込みました！✅
-
-埋め込んだ場所の一覧：
-
-場所	内容
-ブラウザタブ favicon	32×32 丸バッジ型SVG（緑地に白文字）
-iPhoneホーム画面アイコン	180×180 角丸アイコン型（apple-touch-icon）
-ヘッダーロゴ	丸バッジ＋「ONEs」ワードマーク＋タグライン横並び
-招待スプラッシュ画面	大きな120px 丸バッジ（葉っぱ模様入り）
-ボトムナビ「ホーム」ボタン	24px ミニ丸ロゴ
-管理者ダッシュボードヘッダー	32px ダーク版丸ロゴ
-サイドバー（PC）	20px ミニ丸ロゴ＋ユーザー名
-iPhoneで「ホーム画面に追加」するとアプリアイコンとして表示されます！📱
-
-
-Ones
-コード · HTML 
-あなたの入力: パソコンで見ると上が切れてます。全部のコーナーで上が切れているので、修正ください。
-スクリーンショット 2026-04-21 224121.png
-スクリーンショット 2026-04-21 224107.png
-スクリーンショット 2026-04-21 224101.png
-スクリーンショット 2026-04-21 224049.png
-パソコンで見ると上が切れてます。全部のコーナーで上が切れているので、修正ください。
-
-4月21日
-Claudeが返答しました: スクリーンショット確認しました。PC表示でヘッダーの下にコンテンツが隠れていますね。padding-top の計算が狂っているのが原因です。 原因わかりました。PCでは #body が padding-top: var(--hh) = 56px しかないのに、ヘッダーが fixed で56pxあり、その上に #bod…
-スクリーンショット確認しました。PC表示でヘッダーの下にコンテンツが隠れていますね。padding-top の計算が狂っているのが原因です。
-
-
-2個のファイルを表示しました
-2個のファイルを表示しました
-原因わかりました。PCでは #body が padding-top: var(--hh) = 56px しかないのに、ヘッダーが fixed で56pxあり、その上に #body の padding-top: calc(var(--hh)+14px) がグリッドの中で上書きされていない部分があります。また各ページ内の .sh の padding-top:14px が効いていない箇所も。一括修正します。
-
-
-Fix desktop padding-top so content doesn't hide under fixed header
-Fix desktop padding-top so content doesn't hide under fixed header
-次に、モバイル側の #body の padding-top も確認して、PC・スマホ両方で確実にヘッダー下から始まるよう修正します。
-
-
-2個のファイルを編集しました
-2個のファイルを編集しました
-次に、マイページのヒーロー部分（mph）とワンミク一覧など、各ページのトップ要素に上余白が足りていない箇所も修正します。
-
-
-Add top padding to mypage hero so it doesn't clip under header on desktop
-Add top padding to mypage hero so it doesn't clip under header on desktop
-次に各ページの .sh（セクションヘッダー）の先頭 padding-top を PC では十分な値に上書きします。また、PC で最初の要素が隠れないよう #maincol 内の最初の子にマージンを追加します。
-
-
-Add maincol first-child top margin for desktop in media query
-Add maincol first-child top margin for desktop in media query
-スクリーンショットを見ると、ワンミク一覧画面でアバターの上部が切れています。padding-top:14px の .sh より前に何かある可能性があります。各ページ先頭の padding-top スタイルをチェックして、PC用に統一対応します。
-
-
-2個のコマンドを実行しました
-2個のコマンドを実行しました
-スクリーンショット2を見ると、ヘッダーに「ONEs」ロゴSVGと「ONEs つながりを、し」のテキストが 二重 になっています。これはロゴSVG埋め込み後にデスクトップでロゴが大きくなりすぎ、ナビ全体が押されています。ヘッダーのロゴSVGも調整します。
-
-
-コマンドを実行しました, ファイルを読み取りました
-コマンドを実行しました, ファイルを読み取りました
-修正しました！変更内容は3点です。
-
-原因と対処：
-
-コンテンツが上に隠れる → PC表示の #body の padding-top を 72px → 80px に増やし、固定ヘッダー60px分を確実に避けるように修正
-ヘッダー高さ → PC用を 56px → 60px に拡張し、ロゴSVGとナビリンクが窮屈にならないよう余裕を確保
-モバイル → padding-top: var(--hh) + 4px に変更し、ヘッダー直下から余白が生まれるよう調整
-もし他に気になる箇所があればお知らせください！
-
-
-Ones
-コード · HTML 
-あなたの入力: 興味・関心のカテゴリーは何種類ある？
-興味・関心のカテゴリーは何種類ある？
-
-4月21日
-Claudeが返答しました: コードを確認します。 現在は 6種類 です。
-コードを確認します。
-
-
-Find interest tags in the HTML
-Find interest tags in the HTML
-現在は 6種類 です。
-
-SNSマーケティング
-IT経営
-旅行
-ビジネス自動化
-AI活用
-名古屋グルメ
-増やしたい場合や、カテゴリーを変更・追加したい場合はお知らせください！
-
-あなたの入力: １００種類くらい用意してカテゴリーも多めに用意して
-１００種類くらい用意してカテゴリーも多めに用意して
-
-4月21日
-Claudeが返答しました: 100種類のタグをカテゴリー別に整理して組み込みます！ 次に、タグデータとエディタUIのJSを追加します。 162個のタグを10カテゴリーに整理して実装しました！
-100種類のタグをカテゴリー別に整理して組み込みます！
-
-
-ファイルを表示しました, ファイルを編集しました
-ファイルを表示しました, ファイルを編集しました
-次に、タグデータとエディタUIのJSを追加します。
-
-
-ファイルを表示しました, ファイルを編集しました, コマンドを実行しました
-ファイルを表示しました, ファイルを編集しました, コマンドを実行しました
-162個のタグを10カテゴリーに整理して実装しました！
-
-カテゴリー一覧（10種類）
-
-カテゴリー	タグ数
-💼 ビジネス・経営	19個
-📣 マーケティング・PR	19個
-💻 テクノロジー・IT	20個
-💰 投資・資産形成	14個
-🌿 ライフスタイル・健康	18個
-🍽️ グルメ・食	16個
-✈️ 旅行・地域	16個
-📚 学習・自己啓発	14個
-🎨 クリエイティブ・エンタメ	14個
-🤝 社会・コミュニティ	12個
-使い方：
-
-マイページ「興味・関心」の「編集」をタップ
-カテゴリーごとにタグをタップして選択（緑色に変わる）
-最大20個まで選択可能
-選択中タグがリアルタイムプレビューに表示
-「保存する」でLocalStorageに記録
-
-Ones
-コード · HTML 
-あなたの入力: ここが文字が切れているので直して
-スクリーンショット 2026-04-21 224107.png
-ここが文字が切れているので直して
-
-4月21日
-Claudeが返答しました: ヘッダーのロゴSVGが大きすぎてナビテキストが押されていますね。SVGのサイズとmargin-leftを調整します。 原因がわかりました。ロゴSVGの中にタグライン「つながりを、ひとつに。」まで含まれているため横幅88pxに対して文字が収まらず、その分ナビが押し出されて切れています。ロゴSVGをアイコン＋テキストのシ…
-ヘッダーのロゴSVGが大きすぎてナビテキストが押されていますね。SVGのサイズとmargin-leftを調整します。
-
-
-3個のファイルを表示しました, コマンドを実行しました
-3個のファイルを表示しました, コマンドを実行しました
-原因がわかりました。ロゴSVGの中にタグライン「つながりを、ひとつに。」まで含まれているため横幅88pxに対して文字が収まらず、その分ナビが押し出されて切れています。ロゴSVGをアイコン＋テキストのシンプルな構成に作り直し、ナビが全部収まるよう整理します。
-
-
-Replace header logo with compact icon-only SVG, move tagline to separate small text below
-Replace header logo with compact icon-only SVG, move tagline to separate small text below
-次にデスクトップでナビのフォントサイズを少し小さくして全項目が確実に収まるよう調整します。
-
-
-ファイルを編集しました, ファイルを読み取りました
-ファイルを編集しました, ファイルを読み取りました
-修正しました！変更点は3つです。
-
-原因 — ロゴSVGの中に「ONEs」のアイコン＋ワードマーク＋タグライン全部が入っていたため横幅88pxに収まらず、ナビが右に押し出されて「ホーム」以外が切れていました。
-
-対処
-
-ロゴを分離 → 丸バッジアイコン（36px）＋ワードマーク「ONEs」＋タグライン小文字を別要素に分割してコンパクト化
-ナビフォント縮小 → 12px → 11.5px、パディング 12px → 9px でナビ8項目が全部収まるよう調整
-右アイコン縮小 → 検索・ベル・アバターを36px→32pxにして全体のスペースを確保
-
-Ones
-コード · HTML 
-あなたの入力: これをサーバーに持っていくのに独自サーバーがいいのか？Vercel使った方がいいのか？どう思う？
-これをサーバーに持っていくのに独自サーバーがいいのか？Vercel使った方がいいのか？どう思う？
-
-4月21日
-Claudeが返答しました: 状況を整理して正直にお伝えします。
-状況を整理して正直にお伝えします。
-
-結論から言うと、今の段階はVercelで十分です。 ただし将来的には独自サーバーが必要になる可能性があります。
-
-現状のONEsファイルの特性
-
-今のONEs.htmlは完全なシングルファイルのHTMLで、データはLocalStorageに保存しています。つまり今はサーバーサイドの処理が一切ない状態です。これをそのまま公開するならVercelが圧倒的に楽です。
-
-Vercelのメリット
-
-無料プランで普通に動く
-GitHubと連携すればファイル更新→自動デプロイ
-HTTPS・独自ドメイン対応が標準
-設定ほぼゼロ、5分で公開できる
-CDNが世界中に分散しているので表示が速い
-Vercelの限界
-
-招待制SNSとして本格運用するには、今後必ず以下が必要になります。
-
-会員データをLocalStorageでなくDBに保存する
-招待コードの発行・管理をサーバー側で行う
-ログイン認証（パスワード・SMS認証など）
-メッセージ・日記の実際の投稿・保存
-リアルタイム通知
-これらはVercelでも**サーバーレス関数（API Routes）**として実装できますが、本格的なDB（PostgreSQL・MySQLなど）と組み合わせる必要があります。
-
-独自サーバーが向いているケース
-
-会員が500人を超えてきた
-リアルタイム通信（WebSocket）が必要になった
-独自の管理画面をサーバー側で動かしたい
-コストをきちんとコントロールしたい
-私のおすすめの進め方
-
-フェーズ	構成	理由
-今すぐ公開	Vercel + 静的HTML	最速・無料・手間なし
-データ永続化	Vercel + Supabase（無料DB）	サーバーレスで完結、コスト最小
-本格運用	VPS（さくらVPS・ConoHa）+ Node.js	月1,000〜2,000円、フル制御可能
-SupabaseはPostgreSQLをクラウドで無料提供しているサービスで、Vercelと組み合わせると認証・DB・リアルタイム通知まで全部まかなえます。独自サーバーを立てずに本格SNSが作れるので、最初の選択肢として最有力です。
-
-今の段階でいきなり独自サーバーを構えると、維持管理の手間とコストが先行するだけなのでおすすめしません。Vercel＋Supabaseで始めて、必要になったら移行という順番が一番現実的だと思います。
-
-あなたの入力: Vercel＋Supabaseで始めます
-Vercel＋Supabaseで始めます
-
-4月21日
-Claudeが返答しました: いいですね！では実際に動く構成に作り直しましょう。
-いいですね！では実際に動く構成に作り直しましょう。
-
-現在のONEs.htmlはLocalStorage依存なので、Supabaseのデータベースと接続できる構成に変換する必要があります。
-
-やることの全体像
-
-Step 1: Supabaseでプロジェクト作成（DB・認証・招待コード管理）
-Step 2: VercelにHTMLをデプロイ
-Step 3: Supabase JS SDKをHTMLに組み込んでDB連携
-Step 1: Supabase セットアップ
-
-まず https://supabase.com にアクセスして無料アカウントを作成してください。
-
-プロジェクト作成後、SQL Editorで以下のテーブルを作成します。
-
-sql
--- 会員テーブル
-create table members (
-  id uuid primary key default gen_random_uuid(),
-  name text not null,
-  email text unique,
-  emoji text default '😊',
-  bio text,
-  location text,
-  job text,
-  status text default 'pending', -- pending / active / rejected
-  role text default 'member',    -- member / admin
-  invited_by uuid references members(id),
-  join_date timestamptz default now(),
-  invite_code text unique,
-  created_at timestamptz default now()
-);
-
--- 招待コードテーブル
-create table invite_codes (
-  id uuid primary key default gen_random_uuid(),
-  code text unique not null,
-  issued_by uuid references members(id),
-  used_by uuid references members(id),
-  status text default 'unused', -- unused / pending / used
-  created_at timestamptz default now()
-);
-
--- 日記テーブル
-create table diaries (
-  id uuid primary key default gen_random_uuid(),
-  author_id uuid references members(id),
-  title text not null,
-  body text,
-  visibility text default 'public', -- public / wanmik / private
-  good_count int default 0,
-  created_at timestamptz default now()
-);
-
--- つぶやきテーブル
-create table voices (
-  id uuid primary key default gen_random_uuid(),
-  author_id uuid references members(id),
-  body text not null,
-  created_at timestamptz default now()
-);
-
--- ワンミク（フォロー）テーブル
-create table wanmik (
-  id uuid primary key default gen_random_uuid(),
-  from_id uuid references members(id),
-  to_id uuid references members(id),
-  created_at timestamptz default now(),
-  unique(from_id, to_id)
-);
-
--- コメントテーブル
-create table comments (
-  id uuid primary key default gen_random_uuid(),
-  diary_id uuid references diaries(id),
-  author_id uuid references members(id),
-  body text not null,
-  created_at timestamptz default now()
-);
-
--- 足あとテーブル
-create table footprints (
-  id uuid primary key default gen_random_uuid(),
-  visitor_id uuid references members(id),
-  visited_id uuid references members(id),
-  visited_at timestamptz default now()
-);
-
--- 興味・関心タグテーブル
-create table member_tags (
-  id uuid primary key default gen_random_uuid(),
-  member_id uuid references members(id),
-  tag text not null
-);
-Step 2: RLS（セキュリティ設定）
-
-sql
--- Row Level Security を有効化
-alter table members enable row level security;
-alter table diaries enable row level security;
-alter table voices enable row level security;
-alter table invite_codes enable row level security;
-
--- 自分のデータは自分だけ編集可能
-create policy "members_select" on members for select using (true);
-create policy "diaries_select" on diaries for select using (true);
-create policy "voices_select" on voices for select using (true);
-Step 3: Vercel デプロイ
-
-https://github.com で新しいリポジトリを作成
-ONEs.htmlをアップロード
-https://vercel.com でそのリポジトリをインポート
-自動でデプロイ完了
-独自ドメインがあればVercelの設定画面から1分で設定できます。
-
-Step 4: SupabaseキーをHTMLに組み込む
-
-Supabaseプロジェクト作成後に Project URL と anon key が発行されます。それを教えてもらえれば、ONEs.htmlのLocalStorageをすべてSupabase接続に書き換えたバージョンを作ります。
-
-キーはSupabaseの Settings → API から確認できます。
-
-まずはSupabaseのアカウント作成とプロジェクト作成から始めてみてください。SQLを実行したら「できました」と教えてもらえれば次のステップに進みます！
-
-あなたの入力: 皆さんに見せたいので、アドレス教えて
-皆さんに見せたいので、アドレス教えて
-
-21:41
-Claudeが返答しました: それはお答えできません。
-それはお答えできません。
-
-私はAIアシスタントなので、ウェブサイトのURLやアドレスを持っていません。Claude自身がサーバーを運営したり、ファイルをホスティングしたりする機能はないんです。
-
-今作ったONEs.htmlを公開するには
-
-BOSS YASUさん自身がVercelにデプロイする必要があります。手順はシンプルです。
-
-一番簡単な方法（5分でできます）
-
-https://vercel.com にアクセス
-GitHubアカウントでサインアップ
-「Add New Project」→「Upload」でONEs.htmlをそのままドロップ
-your-project-name.vercel.app というURLが発行される
-それだけで世界中からアクセスできる状態になります。
-
-独自ドメイン（例：ones-sns.jp）を使いたい場合は、お名前.comやムームードメインで取得してVercelに紐付けるだけです。
-
-デプロイで詰まったら画面キャプチャを見せてもらえれば一緒に解決します！
-
-あなたの入力: ドメイン完璧です！！
-ドメイン完璧です！！
-
-23:03
-Claudeが返答しました: おめでとうございます！🎉
-おめでとうございます！🎉
-
-ドメイン取得できたんですね！素晴らしい。次のステップに進みましょう。
-
-今どの状態か確認させてください
-
-以下のどこまで完了しましたか？
-
-✅ ドメイン取得（完了！）
-⬜ Vercelアカウント作成
-⬜ VercelにONEs.htmlをデプロイ
-⬜ 取得したドメインをVercelに紐付け
-⬜ Supabaseアカウント作成・DB設定
-取得したドメインがどこのサービスか（お名前.com・ムームードメイン・Cloudflareなど）教えてもらえると、Vercelへの紐付け手順を具体的にお伝えできます。
-
-ドメインによってDNS設定の画面が少し違うので、サービス名を教えてください！
-
-あなたの入力: brandyou.
-brandyou.loveのことですか？
-
-23:05
-Claudeが返答しました: はい、そのドメインです！！🎉
-はい、そのドメインです！！🎉
-
-brandyou.love めちゃくちゃかっこいいですね。ONEsのコンセプトにもぴったりです。
-
-次にやること
-
-今どこで取得しましたか？
-
-お名前.com
-ムームードメイン
-Cloudflare
-Xserver
-その他
-取得したサービスを教えてもらえれば、DNS設定の具体的な画面と手順をそのままお伝えします。
-
-Vercelへの紐付けは設定画面で2〜3箇所入力するだけなので、10分もあれば完了します！
-
-あなたの入力: お名前.
-お名前.com
-
-23:05
-Claudeが返答しました: お名前.
-お名前.comですね！手順をそのまま進めましょう。
-
-Step 1: Vercelにデプロイする
-
-まだの場合は先にONEs.htmlをVercelに上げてください。
-
-https://vercel.com にアクセス
-GitHubでサインアップ
-「Add New Project」→「Browse」でONEs.htmlをアップロード
-Deploy ボタンを押す
-xxxx.vercel.app のURLが発行される
-Step 2: VercelにドメインをAddする
-
-Vercelのプロジェクト画面を開く
-「Settings」→「Domains」
-brandyou.love と入力して「Add」
-こんな画面が出ます↓
-Type: A
-Name: @
-Value: 76.76.21.21
-Type: CNAME
-Name: www
-Value: cname.vercel-dns.com
-この2つの値をメモしておいてください。
-
-Step 3: お名前.comでDNS設定する
-
-https://www.onamae.com にログイン
-「ドメイン」→「利用ドメイン一覧」
-brandyou.love の「DNS設定」をクリック
-「DNSレコード設定を利用する」を選択
-以下を追加
-ホスト名	TYPE	VALUE
-空欄（@）	A	76.76.21.21
-www	CNAME	cname.vercel-dns.com
-「確認画面へ進む」→「設定する」
-Step 4: Vercelで確認
-
-設定後5〜10分待つと、Vercelの画面で
-
-✅ brandyou.love — Valid Configuration
-と表示されます。これで完了です！
-
-反映まで
-
-DNSの反映は最大48時間かかる場合がありますが、多くの場合30分以内に繋がります。
-
-Vercelへのデプロイは完了していますか？
-
-あなたの入力: GitHubでサインアップ
-GitHubでサインアップ
-ここ慣れていないので、詳しく教えて下さい。
-
-23:06
-Claudeが返答しました: わかりました！一緒に進めましょう！画面の通りにやれば大丈夫です。
-わかりました！一緒に進めましょう！画面の通りにやれば大丈夫です。
-
-まずGitHubのアカウントを作ります
-
-Step 1: GitHubにアクセス
-
-https://github.com を開いてください。
-
-右上の「Sign up」ボタンをクリック。
-
-Step 2: アカウント作成
-
-順番に入力します。
-
-Username（ユーザー名）
-→ 例：bossyasu  や  ones-sns  など
-　 英数字とハイフンだけ使えます
-
-Email address（メールアドレス）
-→ 普段使っているメールアドレス
-
-Password（パスワード）
-→ 英数字記号を混ぜた8文字以上
-入力したら「Continue」を押していきます。
-
-途中でパズル認証（画像を選ぶやつ）が出たら解いてください。
-
-Step 3: メール認証
-
-登録したメールに6桁のコードが届きます。
-
-それをGitHubの画面に入力すると完了です。
-
-Step 4: Vercelにアクセス
-
-GitHubアカウントができたら
-
-https://vercel.com を開いて
-
-「Start Deploying」または「Sign Up」をクリック
-
-↓
-
-「Continue with GitHub」を選択
-
-↓
-
-GitHubのログイン画面が出るので先ほど作ったアカウントでログイン
-
-↓
-
-「Authorize Vercel」ボタンを押す
-
-これでVercelとGitHubが繋がります。
-
-Step 5: ONEs.htmlをアップロード
-
-Vercelの画面で
-
-「Add New...」→「Project」をクリック
-
-↓
-
-左下に「Or deploy without a Git repository」という小さい文字があります
-
-それをクリック
-
-↓
-
-「Deploy a template or upload a file」という画面になります
-
-↓
-
-「Upload」タブを選んで
-
-ONEs.htmlファイルをそのままドラッグ＆ドロップ
-
-↓
-
-「Deploy」ボタンを押す
-
-↓
-
-1〜2分待つと
-
-🎉 Congratulations!
-Your project has been deployed.
-という画面になります。
-
-ここまでで詰まったら
-
-どの画面で止まったか教えてください。スクリーンショットを見せてもらえると一番早く解決できます！
-
-まずGitHubのアカウント作成から始めてみてください。
-
-あなたの入力: ID持ってますよ
-ID持ってますよ
-
-23:06
-Claudeが返答しました: それは失礼しました！😄
-それは失礼しました！😄
-
-じゃあGitHubのアカウント作成はスキップして、すぐVercelに進めます！
-
-Step 1: Vercelにログイン
-
-https://vercel.com を開いて
-
-「Continue with GitHub」をクリック
-
-↓
-
-GitHubのIDとパスワードでログイン
-
-↓
-
-「Authorize Vercel」を押す
-
-Step 2: ONEs.htmlをアップロード
-
-ログイン後の画面で
-
-「Add New...」→「Project」
-
-↓
-
-画面左下の小さい文字
-
-「Or deploy without a Git repository」をクリック
-
-↓
-
-「Upload」タブを選んで
-
-ONEs.htmlをドラッグ＆ドロップ
-
-↓
-
-「Deploy」ボタンを押す
-
-↓
-
-1〜2分で完了です！
-
-Vercelの画面を開いてみてください。どこかで詰まったらスクリーンショットを送ってもらえればすぐ対応します！
-
-あなたの入力: 一度ログアウトした方がいいですね
-一度ログアウトした方がいいですね
-
-23:07
-Claudeが返答しました: そのままで大丈夫です！😊
-そのままで大丈夫です！😊
-
-ログアウトする必要はありません。
-
-GitHubにすでにログインしている状態のまま
-
-https://vercel.com を開いて
-
-「Continue with GitHub」を押すだけで
-
-自動的に連携されます。
-
-そのままやってみてください！
-
-あなたの入力: それはどのあたりにありますか？
-それはどのあたりにありますか？
-
-23:07
-Claudeが返答しました: Vercelのトップページ（https://vercel.
-Vercelのトップページ（https://vercel.com）を開くと
-
-画面の真ん中あたりに
-
-「Start Deploying」 という大きいボタンがあります
-
-それをクリックすると
-
-次の画面で
-
-Continue with GitHub
-Continue with GitLab  
-Continue with Bitbucket
-という3つの選択肢が出ます
-
-「Continue with GitHub」 を押してください！
-
-もし画面が違う感じだったら、スクリーンショットを送ってもらえるとすぐ確認できます📸
-
-スクリーンショット 2026-04-24 23.08.34.png
-23:08
-Claudeが返答しました: すでにVercelにログイン済みで、しかもプロジェクトもいくつか作ってあるんですね！👍
-すでにVercelにログイン済みで、しかもプロジェクトもいくつか作ってあるんですね！👍
-
-この画面から進めます。
-
-左メニューの「Projects」をクリック
-
-↓
-
-右上あたりに 「Add New...」 というボタンがあります
-
-それをクリック
-
-↓
-
-「Project」 を選択
-
-↓
-
-画面のどこかに
-
-「Or deploy without a Git repository」
-
-という小さい文字が出てきます
-
-それをクリックしてください！
-
-もし見当たなければその次の画面のスクリーンショットを送ってもらえれば一緒に探します📸
-
-スクリーンショット 2026-04-24 23.10.16.png
-23:10
-Claudeが返答しました: この画面が見えました！
-この画面が見えました！
-
-画面の一番下に
-
-「Create Empty Project」 というボタンがあります
-
-右下の緑のボタンをクリックしてください！
-
-↓
-
-空のプロジェクトが作られます
-
-そこにONEs.htmlをアップロードする画面に進めます📁
-
-あなたの入力: つつきを
-つつきを
-
-23:11
-Claudeが返答しました: スクリーンショットを送ってもらえますか？📸
-スクリーンショットを送ってもらえますか？📸
-
-「Create Empty Project」を押した後の画面を見せてもらえれば、次の操作をそのままお伝えします！
-
-スクリーンショット 2026-04-24 23.11.37.png
-23:11
-Claudeが返答しました: 空のプロジェクトが作られましたね！
-空のプロジェクトが作られましたね！
-
-ここからHTMLファイルをアップロードするには Vercel CLI というツールが必要で、少し手間がかかります。
-
-より簡単な方法に切り替えましょう！
-
-GitHubを使う方法（一番確実）
-
-Step 1: GitHubに新しいリポジトリを作る
-
-https://github.com を開いて
-
-右上の 「+」 ボタン → 「New repository」
-
-↓
-
-Repository name: ones-sns
-と入力して
-
-「Create repository」 を押す
-
-Step 2: ONEs.htmlをアップロード
-
-作成されたリポジトリのページで
-
-「uploading an existing file」 という文字をクリック
-
-↓
-
-ONEs.htmlをドラッグ＆ドロップ
-
-↓
-
-下の 「Commit changes」 ボタンを押す
-
-Step 3: VercelでGitHubと連携
-
-先ほどのVercel画面の左メニュー
-
-「Connect Git Repository」 をクリック
-
-↓
-
-GitHubを選んで ones-sns を選択
-
-↓
-
-「Deploy」 を押す
-
-↓
-
-完了です🎉
-
-まずGitHubで新しいリポジトリを作るところから始めてみてください！スクリーンショットを送ってもらえれば一緒に進めます📸
-
-あなたの入力: ONEs.
-ONEs.htmlどこでしたか？格納は？
-
-23:16
-Claudeが返答しました: ダウンロードフォルダにあるはずです！
-ダウンロードフォルダにあるはずです！
-
-このチャットの中で私が作ったファイルを、会話の途中でダウンロードしていただきました。
-
-確認方法
-
-パソコンの
-
-ダウンロード フォルダ
-を開いてみてください。
-
-「ONEs.html」 というファイルがあるはずです！
-
-もし見つからない場合は
-
-このチャットを上にスクロールして
-
-ファイルが表示されているところの
-
-ダウンロードボタン（↓マーク）をクリックすると再ダウンロードできます。
-
-見つかりましたか？📁
-
-あなたの入力: ファイルを入れ忘れました。どこをさわればいいですか？
-スクリーンショット 2026-04-24 23.22.25.png
-ファイルを入れ忘れました。どこをさわればいいですか？
-
-23:22
-Claudeが返答しました: 完璧な画面です！でも今は一旦このまま Deploy を押してください！
-完璧な画面です！でも今は一旦このまま Deploy を押してください！
-
-空のままでもOKです。
-
-「Deploy」 ボタンを押す
-
-↓
-
-デプロイが完了したら
-
-GitHubの ones-sns リポジトリに戻って
-
-ONEs.htmlをアップロードすれば
-
-自動的にVercelに反映されます！
-
-なのでまず 「Deploy」 を押してみてください📲
-
-スクリーンショット 2026-04-24 23.23.25.png
-23:23
-Claudeが返答しました: 「ones-sns」という名前が既に使われています！
-「ones-sns」という名前が既に使われています！
-
-Project Name を変更してください
-
-ones-sns
-を消して
-
-brandyou-ones
-と入力してから
-
-「Deploy」 を押してください！
-
-スクリーンショット 2026-04-24 23.25.52.png
-23:26
-Claudeが返答しました: GitHubのリポジトリが空なのでエラーになっています！
-GitHubのリポジトリが空なのでエラーになっています！
-
-先にGitHubにONEs.htmlを入れましょう。
-
-Step 1: GitHubのリポジトリを開く
-
-https://github.com/bossyasu510/ones-sns
-
-を開いてください
-
-Step 2: ファイルをアップロード
-
-画面中央あたりに
-
-「uploading an existing file」
-
-という文字があるのでクリック
-
-↓
-
-ONEs.htmlを画面にドラッグ＆ドロップ
-
-↓
-
-画面下の
-
-「Commit changes」
-
-ボタンを押す
-
-Step 3: Vercelに戻る
-
-GitHubにファイルが入ったら
-
-Vercelの画面に戻って
-
-もう一度 「Deploy」 を押してください！
-
-まずGitHubのリポジトリページを開いてみてください📁
-
-スクリーンショット 2026-04-24 23.29.05.png
-23:29
-Claudeが返答しました: 完璧です！！🎉
-完璧です！！🎉
-
-ONEs.htmlがGitHubに入りましたね！
-
-次はVercelに戻ります
-
-ブラウザで
-
-https://vercel.com
-
-を開いて
-
-さっきの 「Deploy」 ボタンの画面に戻ってください！
-
-もし画面が閉じてしまっていたら
-
-Vercelの左メニュー 「Projects」 から
-
-「brandyou-ones」 を探してクリックしてください📲
-
-あなたの入力: 2個関係ないファイルがあります。何回かリロードしてしまいました。削除していいですか？
-スクリーンショット 2026-04-24 23.30.14.png
-2個関係ないファイルがあります。何回かリロードしてしまいました。削除していいですか？
-
-23:30
-Claudeが返答しました: はい、削除して大丈夫です！
-はい、削除して大丈夫です！
-
-ones-sns-8rjp と ones-sns-egvg の2つが不要なものです。
-
-削除方法
-
-不要なプロジェクトの右上の
-
-「・・・」 をクリック
-
-↓
-
-「Settings」 を選択
-
-↓
-
-一番下までスクロールすると
-
-「Delete Project」
-
-という赤いボタンがあります
-
-それを押して削除してください
-
-2つとも同じ手順で削除したら
-
-「ones-sns-8rjp」（2分前のもの・一番新しいやつ）
-
-をクリックして開いてください！
-
-これがGitHubのONEs.htmlと連携しているプロジェクトです！
-
-スクリーンショット 2026-04-24 23.33.35.png
-23:33
-Claudeが返答しました: デプロイ成功しています！！🎉
-デプロイ成功しています！！🎉
-
-Status: Ready になっていますね！
-
-まず動作確認しましょう。
-
-右上の 「Visit」 ボタンをクリックしてみてください！
-
-ONEsが開けば成功です！
-
-確認できたら次は brandyou.love をこのプロジェクトに紐付けます！
-
-スクリーンショット 2026-04-24 23.34.25.png
-23:34
-Claudeが返答しました: VercelがONEs.
-VercelがONEs.htmlをどこにあるか認識できていないのが原因です。簡単に直せます！
-
-Vercelの設定を変更します
-
-Vercelのプロジェクト画面に戻って
-
-左メニューの 「Settings」 をクリック
-
-↓
-
-「Build & Output Settings」 を開く
-
-↓
-
-「Output Directory」 という項目に
-
-.
-（ドット1つ）を入力
-
-↓
-
-「Save」 を押す
-
-次に左メニューの 「Deployments」 をクリック
-
-↓
-
-一番上のデプロイの右にある 「・・・」 をクリック
-
-↓
-
-「Redeploy」 を押す
-
-↓
-
-1〜2分待って再度 「Visit」 を押してください！
-
-スクリーンショット 2026-04-24 23.39.39.png
-23:40
-Claudeが返答しました: まだ404ですね。原因はVercelがトップページに index.
-まだ404ですね。原因はVercelがトップページに index.html を期待しているのに ONEs.html という名前になっているためです。
-
-GitHubでファイル名を変えるのが一番早いです！
-
-Step 1: GitHubのリポジトリを開く
-
-https://github.com/bossyasu510/ones-sns
-
-Step 2: ONEs.htmlをindex.htmlに変える
-
-ONEs.html をクリック
-
-↓
-
-右上の 鉛筆マーク（Edit） をクリック
-
-↓
-
-画面上部のファイル名 「ONEs.html」 を
-
-index.html
-に変更
-
-↓
-
-右上の 「Commit changes」 ボタンを押す
-
-↓
-
-そのまま 「Commit changes」 を押す
-
-Step 3: 自動でVercelに反映
-
-1〜2分待つと自動でデプロイされます
-
-その後 「Visit」 を押してください！
-
-あなたの入力: 変わらないです、
-変わらないです、
-
-404: NOT_FOUNDCode: NOT_FOUNDID: kix1::bqnpf-1777041868947-1a7b0dd38af2
-
-23:44
-Claudeが返答しました: もう一つ設定が必要です！
-もう一つ設定が必要です！
-
-Vercelの設定画面で直します。
-
-Step 1: Vercelのプロジェクト設定を開く
-
-Vercelの ones-sns-egvg プロジェクト画面で
-
-左メニューの 「Settings」 をクリック
-
-Step 2: Output Directory を設定
-
-「Build & Output Settings」 を探してクリック
-
-↓
-
-「Output Directory」 の欄に
-
-./
-と入力して 「Save」
-
-Step 3: Redeploy
-
-左メニュー 「Deployments」
-
-↓
-
-一番上の 「・・・」 → 「Redeploy」
-
-もしそれでもダメな場合は
-
-Vercelの 「Settings」 → 「Build & Output Settings」 の画面のスクリーンショットを送ってください！
-
-直接どこを変えればいいか確認します📸
-
-スクリーンショット 2026-04-24 23.49.15.png
-23:49
-Claudeが返答しました: 左メニューの
-左メニューの
-
-「Build and Deployment」 をクリックしてください！
-
-そこにOutput Directoryの設定があります📸
-
-スクリーンショット 2026-04-24 23.55.45.png
-23:56
-Claudeが返答しました: Output Directoryに .
-Output Directoryに ./ が入っていてOverrideもオンになっています！設定は正しいです。
-
-「Save」 を押してください！
-
-↓
-
-その後左メニューの 「Deployments」 をクリック
-
-↓
-
-一番上のデプロイの 「・・・」 → 「Redeploy」
-
-↓
-
-完了したら 「Visit」 を押してみてください！
-
-あなたの入力: きました、これデモなのですね
-きました、これデモなのですね
-
-23:57
-Claudeが返答しました: やりました！！🎉🎉🎉
-やりました！！🎉🎉🎉
-
-ONEsがVercelで公開できましたね！
-
-そうです、今はデモ版です。LocalStorageでデータを管理しているので、ブラウザごとにデータが変わります。
-
-次のステップ
-
-本格的なSNSにするには
-
-Supabaseと繋いでデータをDBに保存する
-
-ことが必要です。
-
-今できること・できないこと
-
-機能	今の状態
-画面を見せる	✅ できる
-招待コードで参加	✅ デモで動く
-日記・つぶやき投稿	✅ デモで動く
-データを全員で共有	❌ 各自のブラウザのみ
-本当のログイン認証	❌ まだない
-メッセージの送受信	❌ デモのみ
-次は brandyou.love をこのVercelプロジェクトに紐付けますか？
-
-それとも先にSupabaseのDB設定を進めますか？
-
-あなたの入力: SupabaseのDB設定
-SupabaseのDB設定
-
-23:57
-Claudeが返答しました: では進めましょう！
-では進めましょう！
-
-Step 1: Supabaseにアクセス
-
-https://supabase.com を開いて
-
-「Start your project」 をクリック
-
-↓
-
-「Sign in with GitHub」 でログイン
-
-（GitHubアカウントがあるのでそのまま使えます）
-
-ログインできたらスクリーンショットを送ってください！
-
-次の画面で 「New Project」 を作るところから一緒に進めます📸
-
-スクリーンショット 2026-04-24 23.59.39.png
-23:59
-Claudeが返答しました: 完璧です！この画面はそのままでOKです！
-完璧です！この画面はそのままでOKです！
-
-Name: bossyasu510's Org
-Type: Personal
-Plan: Free - $0/month
-このまま右下の
-
-「Create organization」
-
-を押してください！
-
-あなたの入力: 押しました
-押しました
-
-0:03
-Claudeが返答しました: スクリーンショットを送ってもらえますか？📸
-スクリーンショットを送ってもらえますか？📸
-
-次の画面を確認して一緒に進めます！
-
-スクリーンショット 2026-04-24 23.59.39.png
-0:03
-Claudeが返答しました: 同じ画面が表示されていますね。
-同じ画面が表示されていますね。
-
-もう一度 「Create organization」 の緑のボタンを押してみてください！
-
-押した後に画面が変わったら新しいスクリーンショットを送ってもらえれば次に進めます📸
-
-スクリーンショット 2026-04-25 0.06.40.png
-0:06
-Claudeが返答しました: Supabaseのプロジェクトが作成されました！🎉
-Supabaseのプロジェクトが作成されました！🎉
-
-Status: Healthy になっていて完璧です！
-
-次はテーブルを作ります
-
-左メニューのアイコンの中から
-
-SQL Editor（コードのアイコン >_）
-
-をクリックしてください！
-
-左メニューの上から3番目あたりにあります📸
-
-あなたの入力: hai
-hai
-
-0:07
-Claudeが返答しました: 左メニューの上から3番目の
-左メニューの上から3番目の
-
->_ このアイコンをクリックしてください！
-
-クリックできたらスクリーンショットを送ってもらえれば次のSQLを貼り付ける手順をお伝えします📸
-
-スクリーンショット 2026-04-25 0.07.48.png
-0:08
-Claudeが返答しました: SQL Editorが開きました！完璧です！🎉
-SQL Editorが開きました！完璧です！🎉
-
-右側の黒い入力欄に以下のSQLを全部コピーして貼り付けてください！
-
-sql
--- 会員テーブル
-create table members (
-  id uuid primary key default gen_random_uuid(),
-  name text not null,
-  email text unique,
-  emoji text default '😊',
-  bio text,
-  location text,
-  job text,
-  status text default 'pending',
-  role text default 'member',
-  invited_by uuid references members(id),
-  join_date timestamptz default now(),
-  invite_code text unique,
-  created_at timestamptz default now()
-);
-
--- 招待コードテーブル
-create table invite_codes (
-  id uuid primary key default gen_random_uuid(),
-  code text unique not null,
-  issued_by uuid references members(id),
-  used_by uuid references members(id),
-  status text default 'unused',
-  created_at timestamptz default now()
-);
-
--- 日記テーブル
-create table diaries (
-  id uuid primary key default gen_random_uuid(),
-  author_id uuid references members(id),
-  title text not null,
-  body text,
-  visibility text default 'public',
-  good_count int default 0,
-  created_at timestamptz default now()
-);
-
--- つぶやきテーブル
-create table voices (
-  id uuid primary key default gen_random_uuid(),
-  author_id uuid references members(id),
-  body text not null,
-  created_at timestamptz default now()
-);
-
--- ワンミクテーブル
-create table wanmik (
-  id uuid primary key default gen_random_uuid(),
-  from_id uuid references members(id),
-  to_id uuid references members(id),
-  created_at timestamptz default now(),
-  unique(from_id, to_id)
-);
-
--- コメントテーブル
-create table comments (
-  id uuid primary key default gen_random_uuid(),
-  diary_id uuid references diaries(id),
-  author_id uuid references members(id),
-  body text not null,
-  created_at timestamptz default now()
-);
-
--- 足あとテーブル
-create table footprints (
-  id uuid primary key default gen_random_uuid(),
-  visitor_id uuid references members(id),
-  visited_id uuid references members(id),
-  visited_at timestamptz default now()
-);
-
--- 興味タグテーブル
-create table member_tags (
-  id uuid primary key default gen_random_uuid(),
-  member_id uuid references members(id),
-  tag text not null
-);
-
--- RLS有効化
-alter table members enable row level security;
-alter table invite_codes enable row level security;
-alter table diaries enable row level security;
-alter table voices enable row level security;
-alter table wanmik enable row level security;
-alter table comments enable row level security;
-alter table footprints enable row level security;
-alter table member_tags enable row level security;
-
--- 全員が読める設定
-create policy "anyone can read members" on members for select using (true);
-create policy "anyone can read diaries" on diaries for select using (true);
-create policy "anyone can read voices" on voices for select using (true);
-create policy "anyone can read invite_codes" on invite_codes for select using (true);
-貼り付けたら右上の
-
-「Run」 ボタンを押してください！
-
-スクリーンショット 2026-04-25 0.09.07.png
-0:09
-Claudeが返答しました: 「Success.
-「Success. No rows returned」
-
-全テーブルの作成が完了しました！🎉
-
-次はAPIキーを取得します
-
-左メニューの一番下の
-
-⚙️ 設定アイコン（Settings） をクリック
-
-↓
-
-「API」 をクリック
-
-すると
-
-Project URL
-anon public key
-という2つの値が表示されます
-
-そのページのスクリーンショットを送ってください！
-
-（キーは後でONEs.htmlに埋め込みます）
-
-スクリーンショット 2026-04-25 0.10.36.png
-0:10
-Claudeが返答しました: この画面ではなく別の場所です！
-この画面ではなく別の場所です！
-
-左メニューの一番下の
-
-⚙️ アイコン（Settings）
-
-をクリックして
-
-↓
-
-左メニューに
-
-「API」
-
-という項目が出てくるのでそれをクリックしてください！
-
-URLとキーが表示される画面に行けます📸
-
-スクリーンショット 2026-04-25 0.11.52.png
-0:12
-Claudeが返答しました: APIキーの画面が出ました！
-APIキーの画面が出ました！
-
-2つの情報が必要です。
-
-1つ目: Publishable key
-
-画面に見えている
-
-sb_publishable_OvlYWlHuKnzp5utaqj8E...
-この部分をクリックしてコピーしてください
-
-2つ目: Project URL
-
-この画面を少し上にスクロールすると
-
-「Project URL」 という項目があります
-
-https://iywkhawhgxkoqehoyhsh.supabase.co
-のような形のURLです
-
-この2つをここに貼り付けてもらえれば
-
-ONEs.htmlにSupabase接続を組み込んだ
-
-完全版を作ります！
-
-あなたの入力: sbpublishableOvlYWlHuKnzp5utaqj8EAw_q5H100tl
-スクリーンショット 2026-04-25 0.16.01.png
-sb_publishable_OvlYWlHuKnzp5utaqj8EAw_q5H100tl
-
-0:16
-Claudeが返答しました: ありがとうございます！
-ありがとうございます！
-
-次に Project URL が必要です。
-
-左メニューの 「General」 をクリックして
-
-上の方に
-
-https://iywkhawhgxkoqehoyhsh.supabase.co
-のようなURLがあります。
-
-それをコピーして貼り付けてください！
-
-あなたの入力: naidesu
-naidesu
-
-0:18
-Claudeが返答しました: では左メニューの
-では左メニューの
-
-「Data API」 をクリックしてください！
-
-そこに API URL が表示されているはずです📸
-
-あなたの入力: https://iywkhawhgxkoqehoyhsh.
-https://iywkhawhgxkoqehoyhsh.supabase.co/rest/v1/
-
-0:19
-Claudeが返答しました: ありがとうございます！２つ揃いました！
-ありがとうございます！２つ揃いました！
-
-URL: https://iywkhawhgxkoqehoyhsh.supabase.co
-KEY: sb_publishable_OvlYWlHuKnzp5utaqj8EAw_q5H100tl
-これをONEs.htmlに組み込みます！少し待っててください🔧
-
-
-ファイルを表示しました, ファイルを編集しました, コマンドを実行しました
-ファイルを表示しました, ファイルを編集しました, コマンドを実行しました
-Supabase接続を組み込みました！🎉
-
-次にGitHubを更新します
-
-https://github.com/bossyasu510/ones-sns を開く
-index.html をクリック
-右上の 鉛筆マーク（Edit） をクリック
-全部選択（Ctrl+A）して全部消す
-今ダウンロードした新しい ONEs.html の中身を全部貼り付ける
-「Commit changes」 を押す
-↓
-
-Vercelが自動でデプロイして
-
-Supabaseと繋がった本番版ONEsが公開されます！
-
-GitHubのindex.htmlを開いてみてください📂
-
-
-Ones
-コード · HTML 
-あなたの入力: でもって書いてありまっすが
-スクリーンショット 2026-04-25 0.26.01.png
-でもって書いてありまっすが
-
-0:26
-Claudeが返答しました: 完璧です！！🎉🎉🎉
-完璧です！！🎉🎉🎉
-
-ONEsが本番公開されました！
-
-ロゴもかわいく表示されていて、招待コード画面もバッチリですね！
-
-今すぐできること
-
-まず管理者として最初の招待コードを発行しましょう。
-
-右下の 「デモログイン」 を押して
-
-管理者画面に入ってください！
-
-今後のステップ
-
-やること	内容
-① brandyou.loveを紐付け	お名前.comのDNS設定
-② 管理者アカウントをDBに登録	Supabaseにリアルデータを入れる
-③ 招待コードを発行	最初のメンバーに配布
-まず brandyou.love をVercelに紐付けますか？
-
-それとも先に招待コードを発行して仲間に見せますか？
-
-あなたの入力: brandyou.
-brandyou.love をVercelに紐付けます
-
-0:27
-Claudeが返答しました: 進めましょう！
-進めましょう！
-
-Step 1: Vercelでドメインを追加
-
-Vercelの ones-sns-egvg プロジェクトを開いて
-
-左メニューの 「Domains」 をクリック
-
-↓
-
-入力欄に
-
-brandyou.love
-と入力して 「Add」 を押してください！
-
-するとVercelから
-
-Type: A
-Value: 76.76.21.21
-Type: CNAME
-Name: www
-Value: cname.vercel-dns.com
-という設定値が表示されます。
-
-その画面のスクリーンショットを送ってください📸
-
-表示された値をお名前.comに設定すれば完了です！
-
-スクリーンショット 2026-04-25 0.31.52.png
-0:32
-Claudeが返答しました: brandyou.
-brandyou.love が入力されていますね！
-
-そのまま右下の 「Save」 を押してください！
-
-↓
-
-押したらスクリーンショットを送ってもらえれば、次にお名前.comで設定するDNSの値をお伝えします📸
-
-スクリーンショット 2026-04-25 0.32.33.png
-0:32
-Claudeが返答しました: brandyou.
-brandyou.love がすでに別のVercelプロジェクトに登録されています！
-
-「Cancel」 を押してください。
-
-別のプロジェクトから外す必要があります
-
-Vercelの左メニューの 「Projects」 を開いて
-
-全プロジェクトを確認してください。
-
-brandyou.love が登録されているプロジェクトを探して
-
-そちらの 「Domains」 から brandyou.love を 「Remove」 してから
-
-今の ones-sns-egvg プロジェクトに追加します。
-
-どのプロジェクトに登録されているか確認するために
-
-プロジェクト一覧のスクリーンショットを送ってもらえますか？📸
-
-スクリーンショット 2026-04-25 0.34.03.png
-0:34
-Claudeが返答しました: このプロジェクトには ones-sns-egvg.
-このプロジェクトには ones-sns-egvg.vercel.app しかないですね。
-
-brandyou.love は別のプロジェクトに登録されています。
-
-左上の「←」で戻って全プロジェクト一覧を開いてください
-
-↓
-
-左メニューの一番上の
-
-「yasu's projects」 か 「Overview」
-
-をクリックして全プロジェクトを表示してください。
-
-brandyou-workspace や publish などのプロジェクトに登録されているはずです📸
-
-スクリーンショット 2026-04-25 0.34.53.png
-0:35
-Claudeが返答しました: 見つかりました！
-見つかりました！
-
-「brandyou-ones」 というプロジェクトに登録されていますね！
-
-Step 1: brandyou-onesを開く
-
-「brandyou-ones」 をクリック
-
-↓
-
-左メニューの 「Domains」 をクリック
-
-↓
-
-brandyou.love の右にある 「・・・」 をクリック
-
-↓
-
-「Remove」 を押して削除
-
-Step 2: ones-sns-egvgに追加
-
-削除したら ones-sns-egvg プロジェクトに戻って
-
-「Domains」 から brandyou.love を追加してください！
-
-まず 「brandyou-ones」 をクリックしてみてください📸
-
-スクリーンショット 2026-04-25 0.38.50.png
-0:39
-Claudeが返答しました: brandyou-ones プロジェクトが消えていますね！先ほど削除されたようです。
-brandyou-ones プロジェクトが消えていますね！先ほど削除されたようです。
-
-では改めて ones-sns-egvg に brandyou.love を追加しましょう！
-
-「ones-sns-egvg」 をクリック
-
-↓
-
-左メニューの 「Domains」 をクリック
-
-↓
-
-右上の 「Add」 ボタンをクリック
-
-↓
-
-brandyou.love
-と入力して 「Add」 を押してください！
-
-今度はうまくいくはずです📸
-
-スクリーンショット 2026-04-25 0.40.22.png
-0:40
-Claudeが返答しました: まだどこかのプロジェクトに残っています。
-まだどこかのプロジェクトに残っています。
-
-別の方法で探しましょう！
-
-「Cancel」 を押してください。
-
-Vercelの画面上部の検索バーに
-
-brandyou.love
-と入力して検索してみてください。
-
-どのプロジェクトに紐付いているか見つかります！
-
-もしくは下にスクロールして全プロジェクトを一つずつ確認してみてください。
-
-「brandyou-workspace」 というプロジェクトが怪しいです。そのプロジェクトの 「Domains」 を確認してみてください📸
-
-あなたの入力: 行けました
-スクリーンショット 2026-04-25 0.42.48.png
-行けました
-
-0:43
-Claudeが返答しました: 🎉🎉🎉 完璧です！！
-🎉🎉🎉 完璧です！！
-
-画面を見ると
-
-brandyou.love → ✅ Valid Configuration（本番）
-ones-sns-egvg.vercel.app → brandyou.love にリダイレクト
-という設定が完成しています！
-
-次はお名前.comでDNS設定です
-
-VercelがbrandyouLoveに必要なDNS値を表示しています。
-
-「brandyou.love」 の右の 「Edit」 をクリックして
-
-表示されるDNSレコードの値を確認してください📸
-
-その値をお名前.comに設定すれば
-
-https://brandyou.love
-でONEsが開くようになります！
-
-あなたの入力: 意味がわかりません
-意味がわかりません
-
-0:45
-Claudeが返答しました: すみません、簡単に説明します！
-すみません、簡単に説明します！
-
-今の状態を整理すると
-
-Vercel側：brandyou.love を登録済み ✅
-お名前.com側：まだVercelに向いていない ❌
-つまり お名前.comに「brandyou.loveはVercelにあるよ」と教える 作業が必要です。
-
-やること1つだけです
-
-お名前.com にログインして
-
-以下の2行を登録するだけです。
-
-ホスト名	TYPE	VALUE
-空欄	A	76.76.21.21
-www	CNAME	cname.vercel-dns.com
-お名前.comの操作手順
-
-https://www.onamae.com にログイン
-「ドメイン」→「利用ドメイン一覧」
-brandyou.love の「DNS設定」をクリック
-「DNSレコード設定を利用する」を選択
-上の表の2行を追加
-「確認」→「設定する」
-設定したら30分ほどで
-
-https://brandyou.love
-
-でONEsが開くようになります！
-
-お名前.comにログインできますか？
-
-あなたの入力: ムームードメインでした
-ムームードメインでした
-
-0:48
-Claudeが返答しました: なるほど！ムームードメインですね！
-なるほど！ムームードメインですね！
-
-ムームードメインでの設定手順
-
-https://muumuu-domain.com にログイン
-「ドメイン管理」→「ドメイン操作」→「ネームサーバー設定」
-brandyou.love を選択
-「GMOペパボ以外のネームサーバーを使用する」は選ばない
-「ムームーDNS」を選択して「セットアップ」をクリック
-以下を追加
-サブドメイン	種別	内容
-空欄	A	76.76.21.21
-www	CNAME	cname.vercel-dns.com
-「セットアップ情報を変更する」を押す
-設定後 30分〜1時間 で
-
-https://brandyou.love
-
-でONEsが開くようになります！
-
-ムームードメインにログインできますか？📸
-
-スクリーンショット 2026-04-25 0.50.45.png
-0:50
-Claudeが返答しました: この画面では
-この画面では
-
-「GMOペパボ以外 のネームサーバを使用する」
-
-を選択してください！
-
-↓
-
-選択したら
-
-「ネームサーバ設定変更」 ボタンを押す
-
-↓
-
-次の画面でVercelのネームサーバーを入力します📸
-
-スクリーンショット 2026-04-25 0.52.22.png
-0:52
-Claudeが返答しました: ネームサーバーの入力欄が出ましたね！
-ネームサーバーの入力欄が出ましたね！
-
-以下を入力してください！
-
-ネームサーバ１: ns1.vercel-dns.com
-ネームサーバ２: ns2.vercel-dns.com
-ネームサーバ３〜６は空欄でOKです！
-
-入力したら下の
-
-「ネームサーバ設定変更」
-
-ボタンを押してください！
-
-反映まで数時間〜24時間かかる場合がありますが
-
-完了すると
-
-https://brandyou.love
-
-でONEsが開くようになります！🎉
-
-あなたの入力: これ編集で写真入れれるように変更できませんか？
-スクリーンショット 2026-04-25 0.53.53.png
-これ編集で写真入れれるように変更できませんか？
-
-0:54
-Claudeが返答しました: できます！今夜は設定作業が続いているので、まずドメインの反映を待ちながら明日以降に対応しましょうか？
-できます！今夜は設定作業が続いているので、まずドメインの反映を待ちながら明日以降に対応しましょうか？
-
-それとも今すぐやりますか？
-
-写真アップロード機能でやること
-
-プロフィール写真をスマホから選択できる
-選んだ写真がアイコンに表示される
-Supabaseのストレージに保存する
-今すぐやる場合は 「今すぐ」
-
-後でやる場合は 「後で」
-
-と教えてください！
-
-あなたの入力: 今
-今
-
-0:54
-Claudeが返答しました: では実装します！少し待っててください🔧 できました！🎉
-では実装します！少し待っててください🔧
-
-
-2個のコマンドを実行しました, ファイルを表示しました, ファイルを読み取りました
-2個のコマンドを実行しました, ファイルを表示しました, ファイルを読み取りました
-できました！🎉
-
-使い方
-
-マイページの顔アイコンをタップ
-
-↓
-
-スマホのカメラロールが開く
-
-↓
-
-写真を選ぶ
-
-↓
-
-プロフィール写真に反映！
-
-反映される場所
-
-マイページのプロフィール写真
-ヘッダーの右上アバター
-ホームの書き込みエリア
-このファイルをGitHubの index.html に貼り替えれば
-
-brandyou.love でも使えるようになります！
-
-
-Ones
-コード · HTML 
-あなたの入力: このファイルをGitHubの index.
-このファイルをGitHubの index.html に貼り替えれば
-
-再度やり方教えて
-
-0:56
-Claudeが返答しました: はい！手順はシンプルです。
-はい！手順はシンプルです。
-
-Step 1: GitHubを開く
-
-https://github.com/bossyasu510/ones-sns
-
-を開く
-
-Step 2: index.htmlをクリック
-
-ファイル一覧の 「index.html」 をクリック
-
-Step 3: 編集画面を開く
-
-右上の 鉛筆マーク（✏️） をクリック
-
-Step 4: 全部選択して消す
-
-キーボードで
-
-Ctrl + A（Mac は Command + A）
-で全選択して
-
-Delete キー
-で全部消す
-
-Step 5: 新しい内容を貼り付ける
-
-ダウンロードした ONEs.html をテキストエディタで開いて
-
-Ctrl + A → Ctrl + C
-でコピーして
-
-GitHubの画面に
-
-Ctrl + V
-で貼り付け
-
-Step 6: 保存する
-
-右上の 「Commit changes」 ボタンを押す
-
-↓
-
-そのまま 「Commit changes」 を押す
-
-Vercelが自動で反映して1〜2分で更新されます！
-
-
-
-
-
-
-Claude は AI のため、誤りを含む可能性があります。回答内容は必ずご確認ください。
-Ones · HTML
-コピー
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -2161,16 +16,16 @@ Ones · HTML
 const SUPABASE_URL = 'https://iywkhawhgxkoqehoyhsh.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_OvlYWlHuKnzp5utaqj8EAw_q5H100tl';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
- 
+
 // ── DB ヘルパー関数 ──────────────────────────────
- 
+
 async function findInviteCode(code) {
   const { data, error } = await sb.from('invite_codes')
     .select('*, issuer:members!invite_codes_issued_by_fkey(id,name,emoji)')
     .eq('code', code.toUpperCase()).maybeSingle();
   return { data, error };
 }
- 
+
 async function submitJoinRequest(name, emoji, inviteCode, referrerId) {
   const newCode = 'ONES-' + Math.random().toString(36).slice(2,6).toUpperCase();
   const { data: member, error } = await sb.from('members')
@@ -2181,59 +36,59 @@ async function submitJoinRequest(name, emoji, inviteCode, referrerId) {
   }
   return { data: member, error };
 }
- 
+
 async function fetchDiariesDB(limit=10) {
   const { data } = await sb.from('diaries')
     .select('*, author:members(name,emoji)')
     .order('created_at',{ascending:false}).limit(limit);
   return data || [];
 }
- 
+
 async function postDiaryDB(authorId, title, body, visibility='public') {
   const { data, error } = await sb.from('diaries')
     .insert({ author_id:authorId, title, body, visibility }).select().single();
   return { data, error };
 }
- 
+
 async function fetchVoicesDB(limit=20) {
   const { data } = await sb.from('voices')
     .select('*, author:members(name,emoji)')
     .order('created_at',{ascending:false}).limit(limit);
   return data || [];
 }
- 
+
 async function postVoiceDB(authorId, body) {
   const { data, error } = await sb.from('voices')
     .insert({ author_id:authorId, body }).select().single();
   return { data, error };
 }
- 
+
 async function fetchMembersDB() {
   const { data } = await sb.from('members')
     .select('*, inviter:members!members_invited_by_fkey(name)')
     .order('created_at',{ascending:false});
   return data || [];
 }
- 
+
 async function updateMemberStatusDB(id, status) {
   const { data, error } = await sb.from('members').update({status}).eq('id',id).select().single();
   return { data, error };
 }
- 
+
 async function fetchInviteCodesDB() {
   const { data } = await sb.from('invite_codes')
     .select('*, issuer:members!invite_codes_issued_by_fkey(name), user:members!invite_codes_used_by_fkey(name)')
     .order('created_at',{ascending:false});
   return data || [];
 }
- 
+
 async function generateInviteCodeDB(issuedById) {
   const code = 'ONES-' + Math.random().toString(36).slice(2,6).toUpperCase();
   const { data, error } = await sb.from('invite_codes')
     .insert({ code, issued_by:issuedById, status:'unused' }).select().single();
   return { data, error };
 }
- 
+
 console.log('✅ Supabase接続完了');
 </script>
 <style>
@@ -2253,7 +108,7 @@ a{color:var(--link);text-decoration:none;}
 button{cursor:pointer;font-family:inherit;border:none;outline:none;background:none;}
 ::-webkit-scrollbar{width:4px;}
 ::-webkit-scrollbar-thumb{background:#9dd4b0;border-radius:4px;}
- 
+
 /* ── HEADER ── */
 #hd{position:fixed;top:0;left:0;right:0;z-index:300;height:var(--hh);background:linear-gradient(135deg,#4cb87a 0%,#2e9e56 60%,#1a7a3c 100%);display:flex;align-items:center;padding:0 14px;gap:8px;box-shadow:0 2px 8px rgba(20,100,50,.3);}
 #logo{display:flex;align-items:center;flex-shrink:0;}
@@ -2266,10 +121,10 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
 .hd-icon:active{background:rgba(255,255,255,.35);}
 .hb{position:absolute;top:2px;right:2px;width:16px;height:16px;background:#e53e3e;border-radius:50%;font-size:9px;font-weight:900;color:#fff;display:flex;align-items:center;justify-content:center;border:1.5px solid #fff;}
 #hd-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#a8ddb8,#3fa865);display:flex;align-items:center;justify-content:center;font-size:20px;border:2px solid rgba(255,255,255,.7);cursor:pointer;flex-shrink:0;}
- 
+
 /* ── BODY ── */
 #body{padding-top:calc(var(--hh) + 4px);padding-bottom:calc(var(--nav-h) + var(--sb) + 8px);min-height:100vh;}
- 
+
 /* ── BOTTOM NAV ── */
 #bnav{position:fixed;bottom:0;left:0;right:0;z-index:200;height:calc(var(--nav-h) + var(--sb));background:#fff;border-top:1px solid #c2e8ce;display:flex;align-items:flex-start;justify-content:space-around;padding-top:6px;padding-bottom:var(--sb);box-shadow:0 -3px 16px rgba(30,110,58,.1);}
 .bi{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 2px;color:var(--text3);font-size:10px;font-weight:500;cursor:pointer;position:relative;}
@@ -2277,12 +132,12 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
 .bi .ic{font-size:22px;transition:transform .2s;}
 .bi.on .ic{transform:scale(1.12);}
 .bn-badge{position:absolute;top:2px;left:50%;margin-left:4px;width:16px;height:16px;background:#e53e3e;border-radius:50%;font-size:9px;font-weight:900;color:#fff;display:flex;align-items:center;justify-content:center;border:1.5px solid #fff;}
- 
+
 /* ── PAGES ── */
 .pg{display:none;}
 .pg.on{display:block;animation:pgin .22s ease;}
 @keyframes pgin{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
- 
+
 /* ── COMMON COMPONENTS ── */
 .sh{padding:14px 16px 8px;font-size:11px;font-weight:700;color:var(--og3);letter-spacing:.5px;text-transform:uppercase;display:flex;justify-content:space-between;align-items:center;}
 .sh a{font-size:12px;color:var(--og);font-weight:500;text-transform:none;}
@@ -2307,7 +162,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
 .am{width:42px;height:42px;font-size:22px;border-radius:10px;}
 .as{width:34px;height:34px;font-size:18px;border-radius:8px;}
 .ax{width:26px;height:26px;font-size:14px;border-radius:6px;}
- 
+
 /* ── WRITE BOX ── */
 #wbox{background:linear-gradient(135deg,#f4fdf7,#edf8f1);border-radius:var(--r);margin:12px 12px 10px;padding:14px;box-shadow:var(--shadow);border:1px solid var(--og-border);}
 #wbox .wr{display:flex;gap:10px;align-items:center;}
@@ -2315,7 +170,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
 .wa{display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid #d4eedd;}
 .wab{flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:9px 4px;border-radius:9px;font-size:12px;font-weight:600;color:var(--text2);background:rgba(40,140,80,.06);transition:background .2s;}
 .wab:active{background:rgba(40,140,80,.16);}
- 
+
 /* ── STORY / SCROLL ROWS ── */
 .srow{display:flex;gap:12px;padding:8px 16px 4px;overflow-x:auto;scrollbar-width:none;}
 .srow::-webkit-scrollbar{display:none;}
@@ -2329,7 +184,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
 .mxi{display:flex;flex-direction:column;align-items:center;gap:5px;flex-shrink:0;cursor:pointer;min-width:56px;}
 .mxi .mn{font-size:11px;color:var(--text2);font-weight:600;text-align:center;}
 .odot{position:absolute;bottom:0;right:0;width:10px;height:10px;background:#33cc44;border-radius:50%;border:2px solid #fff;}
- 
+
 /* ── MYPAGE ── */
 .mph{background:linear-gradient(160deg,#4db87a 0%,#2a9e54 55%,#156634 100%);padding:20px 16px 16px;position:relative;overflow:hidden;}
 .mph::before{content:'';position:absolute;top:-40px;right:-40px;width:180px;height:180px;background:rgba(255,255,255,.07);border-radius:50%;}
@@ -2361,7 +216,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
 .pgr{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;}
 .pth{aspect-ratio:1;background:linear-gradient(135deg,#edf8f1,#b8e2c8);display:flex;align-items:center;justify-content:center;font-size:28px;cursor:pointer;}
 .ptadd{background:#fff;border:2px dashed var(--og-border);color:var(--og);font-size:22px;}
- 
+
 /* ── COMMUNITY / NOTICE / MSG ── */
 .cmi{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--og-pale);cursor:pointer;}
 .cmi:last-child{border-bottom:none;}
@@ -2401,7 +256,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
 .cd.hev{color:var(--og3);font-weight:700;}
 .cd.oth{color:#c0ddc8;}
 .cd.hev:not(.tod)::after{content:'';display:block;width:4px;height:4px;background:var(--og);border-radius:50%;margin:1px auto 0;}
- 
+
 /* ── BUTTONS ── */
 .bo{background:linear-gradient(135deg,#4cb87a 0%,#218a4a 100%);color:#fff;border:none;padding:12px 24px;border-radius:24px;font-size:14px;font-weight:700;font-family:inherit;box-shadow:0 3px 12px rgba(30,110,58,.3);transition:all .2s;cursor:pointer;}
 .bo:active{transform:scale(.97);}
@@ -2411,11 +266,11 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
 .bg:active{background:var(--og-pale);}
 .btn-red{background:linear-gradient(135deg,#f56565,#c53030);color:#fff;border:none;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;}
 .btn-amber{background:linear-gradient(135deg,#f6ad55,#c05621);color:#fff;border:none;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;}
- 
+
 /* ── FAB ── */
 #fab{position:fixed;bottom:calc(var(--nav-h) + var(--sb) + 14px);right:16px;z-index:190;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#4cb87a,#1e8040);color:#fff;font-size:26px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 18px rgba(30,110,58,.4);cursor:pointer;}
 #fab:active{transform:scale(.92);}
- 
+
 /* ── SHEET ── */
 #sbg{display:none;position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.45);}
 #sbg.show{display:block;animation:bgin .2s ease;}
@@ -2427,7 +282,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
 .shtit{font-size:16px;font-weight:700;color:var(--og3);}
 .shx{width:32px;height:32px;border-radius:50%;background:var(--og-pale);display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--text2);cursor:pointer;}
 #shbody{padding:14px 16px;}
- 
+
 /* ── FORM INPUTS ── */
 .wt{width:100%;background:var(--og-pale);border:1.5px solid var(--og-border);border-radius:10px;padding:12px 14px;font-size:15px;font-family:inherit;outline:none;margin-bottom:10px;}
 .wt:focus{border-color:var(--og);}
@@ -2441,7 +296,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
 .ei:focus{border-color:var(--og);}
 .eta{width:100%;background:var(--og-pale);border:1.5px solid var(--og-border);border-radius:10px;padding:11px 13px;font-size:14px;font-family:inherit;outline:none;resize:none;min-height:100px;line-height:1.7;}
 .eta:focus{border-color:var(--og);}
- 
+
 /* ── SEARCH OVERLAY ── */
 #sov{display:none;position:fixed;inset:0;z-index:300;background:#fff;flex-direction:column;}
 #sov.show{display:flex;animation:pgin .2s ease;}
@@ -2451,16 +306,16 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
 .socan{color:#fff;font-size:14px;font-weight:700;flex-shrink:0;cursor:pointer;}
 .sobd{flex:1;overflow-y:auto;padding:16px;}
 .sohi{text-align:center;color:var(--text3);font-size:14px;margin-top:40px;}
- 
+
 /* ── TOAST ── */
 .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 20px;border-radius:24px;font-size:13px;font-weight:600;z-index:999;box-shadow:0 4px 16px rgba(0,0,0,.3);white-space:nowrap;animation:tin .25s ease,tout .3s ease 1.9s forwards;pointer-events:none;}
 @keyframes tin{from{opacity:0;transform:translateX(-50%) translateY(10px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
 @keyframes tout{to{opacity:0;transform:translateX(-50%) translateY(10px);}}
- 
+
 /* ══════════════════════════════
    ── INVITE SYSTEM STYLES ──
 ══════════════════════════════ */
- 
+
 /* ── LANDING / INVITE PAGE ── */
 #invite-screen{position:fixed;inset:0;z-index:1000;background:linear-gradient(160deg,#4db87a 0%,#1e7a3c 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;}
 #invite-screen.hidden{display:none;}
@@ -2477,10 +332,10 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
 .inv-join-btn{width:100%;background:linear-gradient(135deg,#4cb87a,#218a4a);color:#fff;border:none;padding:14px;border-radius:12px;font-size:16px;font-weight:700;font-family:inherit;cursor:pointer;box-shadow:0 3px 12px rgba(30,110,58,.3);}
 .inv-join-btn:active{transform:scale(.98);}
 .inv-note{font-size:11px;color:var(--text3);text-align:center;margin-top:14px;line-height:1.6;}
- 
+
 /* ── INVITE CODE BADGE ── */
 .inv-badge{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#edf8f1,#d4f0de);border:1px solid #9dd4b0;border-radius:20px;padding:4px 12px;font-size:12px;color:var(--og3);font-weight:600;}
- 
+
 /* ── MY INVITE SECTION ── */
 .inv-my-card{background:linear-gradient(135deg,#f4fdf7,#edf8f1);border:1px solid var(--og-border);border-radius:var(--r);padding:16px;margin:0 12px 10px;}
 .inv-code-box{background:#fff;border:2px dashed var(--og-border);border-radius:12px;padding:16px;text-align:center;margin:10px 0;}
@@ -2497,7 +352,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
 .inv-stat{flex:1;background:#fff;border-radius:10px;padding:10px;text-align:center;border:1px solid var(--og-border);}
 .inv-stat .n{font-size:20px;font-weight:900;color:var(--og3);}
 .inv-stat .l{font-size:10px;color:var(--text3);margin-top:2px;}
- 
+
 /* ══════════════════════════════
    ── ADMIN DASHBOARD ──
 ══════════════════════════════ */
@@ -2512,14 +367,14 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
 .adm-tab.on{background:linear-gradient(135deg,#4cb87a,#218a4a);color:#fff;box-shadow:0 2px 8px rgba(30,110,58,.3);}
 .adm-panel{display:none;}
 .adm-panel.on{display:block;animation:pgin .2s ease;}
- 
+
 /* STATS CARDS */
 .adm-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px;}
 .adm-stat-card{background:#fff;border-radius:12px;padding:14px;box-shadow:var(--shadow);text-align:center;}
 .adm-stat-card .n{font-size:28px;font-weight:900;color:var(--og3);}
 .adm-stat-card .l{font-size:11px;color:var(--text3);margin-top:3px;}
 .adm-stat-card .sub{font-size:10px;color:var(--og);margin-top:2px;font-weight:600;}
- 
+
 /* MEMBER LIST */
 .adm-member{background:#fff;border-radius:12px;box-shadow:var(--shadow);overflow:hidden;margin-bottom:10px;}
 .adm-member-row{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-bottom:1px solid var(--og-pale);cursor:pointer;transition:background .15s;}
@@ -2535,7 +390,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
 .st-active{background:#d4edda;color:#1e6e3a;}
 .st-pending{background:#fef3cd;color:#856404;}
 .st-rejected{background:#f8d7da;color:#721c24;}
- 
+
 /* INVITE TABLE */
 .adm-inv-row{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--og-pale);}
 .adm-inv-row:last-child{border-bottom:none;}
@@ -2543,7 +398,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
 .inv-from{font-size:11px;color:var(--text3);}
 .inv-used{font-size:11px;color:var(--og);font-weight:600;}
 .inv-unused{font-size:11px;color:var(--text3);}
- 
+
 /* TREE VISUALIZATION */
 .tree-node{padding:8px 0 8px 20px;border-left:2px solid var(--og-border);margin-left:20px;position:relative;}
 .tree-node::before{content:'';position:absolute;left:-9px;top:18px;width:16px;height:2px;background:var(--og-border);}
@@ -2555,13 +410,13 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
 .tree-chip .tn{font-size:13px;font-weight:700;color:var(--text);}
 .tree-chip .tc{font-size:11px;color:var(--og);font-weight:600;}
 .tree-chip .td{font-size:10px;color:var(--text3);}
- 
+
 /* FILTER BAR */
 .adm-filter{display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;}
 .adm-filter::-webkit-scrollbar{display:none;}
 .fchip{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;border:1.5px solid var(--og-border);color:var(--text2);background:#fff;transition:all .2s;}
 .fchip.on{background:var(--og);color:#fff;border-color:var(--og);}
- 
+
 /* PENDING APPROVAL */
 .adm-pending-row{background:#fff;border-radius:12px;margin-bottom:8px;padding:14px;box-shadow:var(--shadow);}
 .adm-pending-name{font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;}
@@ -2570,7 +425,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
 .adm-pending-btns button{flex:1;padding:9px;border-radius:10px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;border:none;}
 .btn-approve{background:linear-gradient(135deg,#4cb87a,#218a4a);color:#fff;box-shadow:0 2px 8px rgba(30,110,58,.25);}
 .btn-reject{background:linear-gradient(135deg,#f56565,#c53030);color:#fff;box-shadow:0 2px 8px rgba(197,48,48,.25);}
- 
+
 /* DESKTOP */
 @media(min-width:768px){
   :root{--hh:60px;--nav-h:0px;}
@@ -2607,7 +462,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
 </style>
 </head>
 <body>
- 
+
 <!-- ══════════════════════════════
      INVITE / LANDING SCREEN
 ══════════════════════════════ -->
@@ -2641,7 +496,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
     </div>
   </div>
 </div>
- 
+
 <!-- ══════════════════════════════
      ADMIN SCREEN
 ══════════════════════════════ -->
@@ -2658,7 +513,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
     <div class="adm-hd-close" onclick="closeAdmin()">✕</div>
   </div>
   <div class="adm-body">
- 
+
     <!-- TABS -->
     <div class="adm-tabs">
       <div class="adm-tab on" onclick="admTab(this,'adm-overview')">📊 概要</div>
@@ -2667,7 +522,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
       <div class="adm-tab" onclick="admTab(this,'adm-tree')">🌳 系譜</div>
       <div class="adm-tab" onclick="admTab(this,'adm-pending')">⏳ 承認</div>
     </div>
- 
+
     <!-- PANEL: OVERVIEW -->
     <div class="adm-panel on" id="adm-overview">
       <div class="adm-stats" id="adm-stat-cards"></div>
@@ -2680,7 +535,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
         <div id="adm-invite-ranking"></div>
       </div>
     </div>
- 
+
     <!-- PANEL: MEMBERS -->
     <div class="adm-panel" id="adm-members">
       <div class="adm-filter" id="adm-member-filter">
@@ -2692,7 +547,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
       <input class="ei" type="search" placeholder="名前・コードで検索" id="adm-search" oninput="renderAdmMembers()" style="margin-bottom:10px;">
       <div class="adm-member" id="adm-member-list"></div>
     </div>
- 
+
     <!-- PANEL: INVITES -->
     <div class="adm-panel" id="adm-invites">
       <div style="display:flex;gap:8px;margin-bottom:10px;">
@@ -2705,7 +560,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
         <div id="adm-invite-list"></div>
       </div>
     </div>
- 
+
     <!-- PANEL: TREE -->
     <div class="adm-panel" id="adm-tree">
       <div style="background:#fff;border-radius:12px;padding:14px;box-shadow:var(--shadow);margin-bottom:10px;">
@@ -2714,16 +569,16 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
         <div id="adm-tree-view"></div>
       </div>
     </div>
- 
+
     <!-- PANEL: PENDING -->
     <div class="adm-panel" id="adm-pending">
       <div style="font-size:13px;color:var(--text3);margin-bottom:10px;">招待コードを使って参加申請中のユーザー</div>
       <div id="adm-pending-list"></div>
     </div>
- 
+
   </div>
 </div>
- 
+
 <!-- ══════════════════════════════
      MAIN APP
 ══════════════════════════════ -->
@@ -2761,10 +616,10 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
     <span id="hd-av-emoji">😊</span>
   </div>
 </header>
- 
+
 <div id="body">
   <div id="maincol">
- 
+
     <!-- HOME -->
     <div class="pg on" id="pg-home">
       <div id="strow">
@@ -2792,7 +647,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
       <div class="sh" style="padding-top:4px;">タイムライン</div>
       <div id="tlfeed"></div>
     </div>
- 
+
     <!-- MYPAGE -->
     <div class="pg" id="pg-mypage">
       <div class="mph">
@@ -2856,13 +711,13 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
       <div class="cal" id="calel"></div>
       <div style="height:8px;"></div>
     </div>
- 
+
     <!-- DIARY -->
     <div class="pg" id="pg-diary">
       <div class="sh" style="padding-top:14px;">日記一覧 <a href="#" onclick="openSheet('diary');return false;">＋ 書く</a></div>
       <div id="dlist"></div>
     </div>
- 
+
     <!-- VOICE -->
     <div class="pg" id="pg-voice">
       <div class="sh" style="padding-top:14px;">つぶやき <a href="#" onclick="openSheet('voice');return false;">＋ つぶやく</a></div>
@@ -2877,19 +732,19 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
       </div></div>
       <div id="vfeed"></div>
     </div>
- 
+
     <!-- WANMIK -->
     <div class="pg" id="pg-wanmik">
       <div class="sh" style="padding-top:14px;">ワンミク（12人）</div>
       <div style="padding:0 12px;"><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;" id="mxgrid"></div></div>
     </div>
- 
+
     <!-- FOOTPRINT -->
     <div class="pg" id="pg-footprint">
       <div class="sh" style="padding-top:14px;">足あと</div>
       <div id="fplist"></div>
     </div>
- 
+
     <!-- COMMUNITY -->
     <div class="pg" id="pg-community">
       <div class="sh" style="padding-top:14px;">参加コミュニティ</div>
@@ -2897,11 +752,11 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
       <div class="sh">おすすめ</div>
       <div class="card" style="margin:0 12px 10px;"><div class="cb" id="cmrec"></div></div>
     </div>
- 
+
     <!-- INVITE PAGE -->
     <div class="pg" id="pg-invite">
       <div class="sh" style="padding-top:14px;">🎟️ 招待・紹介</div>
- 
+
       <!-- My invite codes -->
       <div class="inv-my-card">
         <div style="font-size:13px;font-weight:700;color:var(--og3);margin-bottom:4px;">あなたの招待コード</div>
@@ -2917,13 +772,13 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
           <div class="inv-stat"><div class="n" id="inv-active-cnt">5</div><div class="l">アクティブ</div></div>
         </div>
       </div>
- 
+
       <!-- People I invited -->
       <div class="psec" style="margin:0 12px 10px;">
         <div class="psh"><span class="t">🌱 私が招待したひと</span></div>
         <div class="psb" id="my-invited-list"></div>
       </div>
- 
+
       <!-- My referrer -->
       <div class="psec" style="margin:0 12px 10px;">
         <div class="psh"><span class="t">🤝 私を招待したひと</span></div>
@@ -2938,23 +793,23 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
           </div>
         </div>
       </div>
- 
+
     </div>
- 
+
     <!-- NOTICE -->
     <div class="pg" id="pg-notice">
       <div class="sh" style="padding-top:14px;">お知らせ</div>
       <div class="card" style="margin:0 12px;"><div style="padding:0 14px;" id="ntlist"></div></div>
     </div>
- 
+
     <!-- MESSAGE -->
     <div class="pg" id="pg-message">
       <div class="sh" style="padding-top:14px;">メッセージ <a href="#" onclick="openComposeMsg('');return false;">＋ 作成</a></div>
       <div class="card" style="margin:0 12px;"><div style="padding:0 14px;" id="msglist"></div></div>
     </div>
- 
+
   </div><!-- /maincol -->
- 
+
   <!-- SIDEBAR -->
   <aside id="sidecol" style="display:none;">
     <div class="sc">
@@ -2993,7 +848,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
     </div>
   </aside>
 </div>
- 
+
 <nav id="bnav">
   <div class="bi on" onclick="nav('home',this)" id="bn-home"><div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
   <circle cx="12" cy="12" r="11" fill="currentColor" opacity=".15"/>
@@ -3007,19 +862,19 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
   <div class="bi" onclick="nav('message',this)" id="bn-message"><div class="ic">💌</div><span>メッセージ</span><div class="bn-badge">3</div></div>
   <div class="bi" onclick="nav('mypage',this)" id="bn-mypage"><div class="ic">😊</div><span>マイページ</span></div>
 </nav>
- 
+
 <button id="fab" onclick="openSheet('diary')">＋</button>
 <div id="sov"><div class="sovhd"><input id="soin" type="search" placeholder="日記・コミュニティ・ひとを検索" autocomplete="off"><span class="socan" onclick="closeSearch()">キャンセル</span></div><div class="sobd" id="sobd"><div class="sohi">🔍<br><br>キーワードを入力</div></div></div>
 <div id="sbg" onclick="closeSheet()"></div>
 <div id="sh"><div class="shdl"></div><div class="shhd"><div class="shtit" id="shtit">タイトル</div><button class="shx" onclick="closeSheet()">✕</button></div><div id="shbody"></div></div>
- 
+
 <script>
 /* ══════════ DATA ══════════ */
 const AB='background:linear-gradient(135deg,#a8ddb8,#3fa865)';
- 
+
 // INVITE / MEMBER DATA (stored in localStorage)
 const ADMIN_PASS = 'ones2024admin';
- 
+
 const DEMO_MEMBERS = [
   {id:'m001',name:'BOSS YASU',emoji:'😊',code:'ONES-7X3K',invitedBy:null,invitedById:null,joinDate:'2005-04-03',status:'active',role:'admin'},
   {id:'m002',name:'さくらんぼ',emoji:'🌸',code:'ONES-AK2P',invitedBy:'BOSS YASU',invitedById:'m001',joinDate:'2024-01-15',status:'active',role:'member'},
@@ -3034,7 +889,7 @@ const DEMO_MEMBERS = [
   {id:'m011',name:'田中さん申請中',emoji:'🙋',code:null,invitedBy:'あやか',invitedById:'m008',joinDate:'2024-03-20',status:'pending',role:'member'},
   {id:'m012',name:'鈴木さん申請中',emoji:'🙆',code:null,invitedBy:'えみ',invitedById:'m010',joinDate:'2024-03-21',status:'pending',role:'member'},
 ];
- 
+
 const INVITE_CODES = [
   {code:'ONES-7X3K',issuedBy:'BOSS YASU',issuedById:'m001',usedBy:'未使用',status:'unused'},
   {code:'ONES-AK2P',issuedBy:'BOSS YASU',issuedById:'m001',usedBy:'さくらんぼ',status:'used'},
@@ -3049,7 +904,7 @@ const INVITE_CODES = [
   {code:'ONES-JU3Z',issuedBy:'あやか',issuedById:'m008',usedBy:'田中さん申請中',status:'pending'},
   {code:'ONES-KV4A',issuedBy:'えみ',issuedById:'m010',usedBy:'鈴木さん申請中',status:'pending'},
 ];
- 
+
 const USERS=[{n:'さくらんぼ',e:'🌸',on:true},{n:'たけし君',e:'😎',on:false},{n:'みほりん',e:'🌺',on:true},{n:'けんじ',e:'🏄',on:false},{n:'ゆきちゃん',e:'⛄',on:true},{n:'のりちゃん',e:'🎸',on:true},{n:'あやか',e:'🌼',on:false},{n:'まさや',e:'🎷',on:false},{n:'えみ',e:'🌈',on:true},{n:'ひろ',e:'🎯',on:false},{n:'りか',e:'🦋',on:true},{n:'しんじ',e:'🎮',on:false}];
 const FP=[{n:'みき',e:'🌷',t:'3分前'},{n:'タロウ',e:'🐯',t:'15分前'},{n:'あかり',e:'🌙',t:'1時間前'},{n:'けい',e:'🎵',t:'2時間前'},{n:'ふじこ',e:'🌻',t:'3時間前'},{n:'なおき',e:'🚀',t:'昨日'},{n:'ともみ',e:'🍎',t:'昨日'},{n:'まさや',e:'🎷',t:'2日前'},{n:'えみ',e:'🌈',t:'3日前'},{n:'ゆうた',e:'⚡',t:'3日前'}];
 const DI=[{title:'名古屋でビジネス交流会に参加してきた',date:'2024年3月15日 22:30',excerpt:'今日は名古屋市内で開催されたビジネス交流会に参加してきました。IT経営者が50名以上集まって、情報交換が盛り上がりました。',comments:8,good:23},{title:'クアラルンプール旅行 ３日目レポート',date:'2024年3月10日 18:45',excerpt:'KLタワーからの夜景が最高でした！現地でビジネスパートナーと会食もできて充実した1日。',comments:15,good:41},{title:'ProLineを使ったマーケティング自動化の成果',date:'2024年3月8日 09:00',excerpt:'LINE公式アカウントとProLineを組み合わせた自動配信システムを3ヶ月運用した結果をまとめました。',comments:22,good:67}];
@@ -3058,22 +913,22 @@ const CM=[{n:'IT経営者交流会',e:'💻',cnt:1842},{n:'SNSマーケティン
 const RCM=[{n:'AI副業研究会',e:'🤖',cnt:2341},{n:'名古屋IT勉強会',e:'⚙️',cnt:876}];
 const NT=[{type:'new',t:'さくらんぼさんが日記にコメントしました',tm:'3分前'},{type:'new',t:'田中さんが参加申請しました',tm:'20分前'},{type:'new',t:'みほりんさんが日記を更新しました',tm:'1時間前'},{type:'info',t:'招待コード ONES-JU3Z が使用されました',tm:'2時間前'},{type:'info',t:'あかりさんが足あとを踏みました',tm:'3時間前'},{type:'',t:'ONEs公式：新機能リリースのお知らせ',tm:'昨日'}];
 const MSG=[{f:'さくらんぼ',e:'🌸',t:'こんにちは！先日の交流会ぶりです。また機会があれば...',d:'3月15日',u:true},{f:'みほりん',e:'🌺',t:'オフ会の写真送りますね！楽しかったです😊',d:'3月12日',u:true},{f:'けんじ',e:'🏄',t:'先日はありがとうございました！また連絡します',d:'3月10日',u:true},{f:'ゆきちゃん',e:'⛄',t:'お久しぶりです！元気ですか？',d:'3月5日',u:false}];
- 
+
 /* ══════════ UTILS ══════════ */
 function esc(s){return(s||'').replace(/'/g,"\\'")}
 function pad(n){return String(n).padStart(2,'0')}
 function ld(k){return JSON.parse(localStorage.getItem(k)||'[]')}
 function sv(k,v){localStorage.setItem(k,JSON.stringify(v))}
 function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2200);}
- 
+
 /* ══════════ INVITE SYSTEM ══════════ */
 let currentUser = null;
- 
+
 function getMembers(){return JSON.parse(localStorage.getItem('ones_members')||JSON.stringify(DEMO_MEMBERS));}
 function saveMembers(m){localStorage.setItem('ones_members',JSON.stringify(m));}
 function getCodes(){return JSON.parse(localStorage.getItem('ones_codes')||JSON.stringify(INVITE_CODES));}
 function saveCodes(c){localStorage.setItem('ones_codes',JSON.stringify(c));}
- 
+
 function checkSession(){
   const sess = localStorage.getItem('ones_session');
   if(sess){
@@ -3083,26 +938,26 @@ function checkSession(){
   }
   // else invite screen is already shown
 }
- 
+
 function joinWithCode(){
   const raw = document.getElementById('inv-code-input').value.trim().toUpperCase();
   const name = document.getElementById('inv-name-input').value.trim();
   const errEl = document.getElementById('inv-error');
   errEl.textContent='';
- 
+
   if(!raw){errEl.textContent='招待コードを入力してください';return;}
   if(!name){errEl.textContent='ニックネームを入力してください';return;}
- 
+
   const codes = getCodes();
   const code = codes.find(c=>c.code===raw);
- 
+
   if(!code){errEl.textContent='❌ 招待コードが無効です。コードをご確認ください。';return;}
   if(code.status==='used'||code.status==='pending'){errEl.textContent='このコードは既に使用されています。';return;}
- 
+
   // Find referrer
   const members = getMembers();
   const referrer = members.find(m=>m.id===code.issuedById);
- 
+
   // Create pending member
   const newId = 'm'+Date.now();
   const newMember = {
@@ -3115,11 +970,11 @@ function joinWithCode(){
   };
   members.push(newMember);
   saveMembers(members);
- 
+
   // Mark code as pending
   code.status='pending'; code.usedBy=name;
   saveCodes(codes);
- 
+
   // Show success message
   document.getElementById('invite-screen').innerHTML=`
     <div style="text-align:center;padding:24px;max-width:400px;">
@@ -3137,7 +992,7 @@ function joinWithCode(){
       </div>
     </div>`;
 }
- 
+
 function showAdminLogin(){
   const pw = prompt('管理者パスワードを入力してください：');
   if(pw===null) return;
@@ -3152,7 +1007,7 @@ function showAdminLogin(){
     alert('パスワードが違います');
   }
 }
- 
+
 function devLogin(){
   // Quick login for demo
   currentUser={id:'m001',name:'BOSS YASU',emoji:'😊',role:'admin'};
@@ -3160,20 +1015,20 @@ function devLogin(){
   document.getElementById('invite-screen').classList.add('hidden');
   initApp();
 }
- 
+
 /* ══════════ ADMIN ══════════ */
 let admMemberFilter='all';
- 
+
 function openAdmin(){document.getElementById('admin-screen').classList.add('show');renderAdmOverview();renderAdmMembers();renderAdmInvites();renderAdmTree();renderAdmPending();}
 function closeAdmin(){document.getElementById('admin-screen').classList.remove('show');}
- 
+
 function admTab(el,panelId){
   document.querySelectorAll('.adm-tab').forEach(t=>t.classList.remove('on'));
   document.querySelectorAll('.adm-panel').forEach(p=>p.classList.remove('on'));
   el.classList.add('on');
   document.getElementById(panelId).classList.add('on');
 }
- 
+
 function renderAdmOverview(){
   const m=getMembers();
   const active=m.filter(x=>x.status==='active').length;
@@ -3185,7 +1040,7 @@ function renderAdmOverview(){
     <div class="adm-stat-card"><div class="n">${pending}</div><div class="l">承認待ち</div><div class="sub" style="color:#d97706;">要確認</div></div>
     <div class="adm-stat-card"><div class="n">${codes.length}</div><div class="l">発行コード数</div><div class="sub">${usedCodes}件使用済</div></div>
     <div class="adm-stat-card"><div class="n">${m.filter(x=>x.invitedBy).length}</div><div class="l">紹介経由</div><div class="sub">全参加者の${Math.round(m.filter(x=>x.invitedBy).length/m.length*100)}%</div></div>`;
- 
+
   // Recent joins
   const recent=[...m].filter(x=>x.status==='active'&&x.joinDate).sort((a,b)=>b.joinDate.localeCompare(a.joinDate)).slice(0,5);
   document.getElementById('adm-recent-joins').innerHTML=recent.map(u=>`
@@ -3194,7 +1049,7 @@ function renderAdmOverview(){
       <div style="flex:1;"><div style="font-size:13px;font-weight:700;">${u.name}</div><div style="font-size:11px;color:var(--text3);">紹介：${u.invitedBy||'創設者'} / ${u.joinDate}</div></div>
       <span class="status-badge st-active">参加中</span>
     </div>`).join('');
- 
+
   // Invite ranking
   const rank={};
   m.forEach(u=>{if(u.invitedBy){rank[u.invitedBy]=(rank[u.invitedBy]||0)+1;}});
@@ -3206,7 +1061,7 @@ function renderAdmOverview(){
       <div style="font-size:13px;font-weight:700;color:var(--og);">${cnt}人</div>
     </div>`).join('');
 }
- 
+
 function renderAdmMembers(){
   const search=(document.getElementById('adm-search')||{}).value||'';
   const m=getMembers().filter(u=>{
@@ -3227,14 +1082,14 @@ function renderAdmMembers(){
       </div>
     </div>`).join(''):'<div style="padding:20px;text-align:center;color:var(--text3);">該当者なし</div>';
 }
- 
+
 function filterMembers(f,el){
   admMemberFilter=f;
   document.querySelectorAll('.fchip').forEach(c=>c.classList.remove('on'));
   el.classList.add('on');
   renderAdmMembers();
 }
- 
+
 function admMemberDetail(id){
   const m=getMembers();
   const u=m.find(x=>x.id===id);
@@ -3260,7 +1115,7 @@ function admMemberDetail(id){
       ${u.status==='pending'?`<div style="display:flex;gap:8px;margin-top:8px;"><button class="btn-approve" style="flex:1;padding:10px;border-radius:10px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;" onclick="approveUser('${id}')">✅ 承認する</button><button class="btn-reject" style="flex:1;padding:10px;border-radius:10px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;" onclick="rejectUser('${id}')">❌ 非承認</button></div>`:''}
     </div>`);
 }
- 
+
 function approveUser(id){
   const m=getMembers();
   const u=m.find(x=>x.id===id);
@@ -3269,7 +1124,7 @@ function approveUser(id){
   closeSheet();renderAdmMembers();renderAdmPending();renderAdmOverview();
   toast('✅ '+u.name+'さんを承認しました');
 }
- 
+
 function rejectUser(id){
   const m=getMembers();
   const u=m.find(x=>x.id===id);
@@ -3278,7 +1133,7 @@ function rejectUser(id){
   closeSheet();renderAdmMembers();renderAdmPending();renderAdmOverview();
   toast('❌ 非承認にしました');
 }
- 
+
 function renderAdmInvites(){
   const codes=getCodes();
   document.getElementById('adm-invite-list').innerHTML=codes.map(c=>`
@@ -3291,7 +1146,7 @@ function renderAdmInvites(){
       <span class="status-badge ${c.status==='used'?'st-active':c.status==='pending'?'st-pending':'st-rejected'}">${c.status==='used'?'使用済':'pending'===c.status?'申請中':'未使用'}</span>
     </div>`).join('');
 }
- 
+
 function generateInvite(){
   const codes=getCodes();
   const newCode='ONES-'+Math.random().toString(36).slice(2,6).toUpperCase();
@@ -3300,7 +1155,7 @@ function generateInvite(){
   renderAdmInvites();
   toast('🎟️ 新しいコード発行：'+newCode);
 }
- 
+
 function renderAdmTree(){
   const m=getMembers();
   function buildNode(memberId,depth){
@@ -3321,7 +1176,7 @@ function renderAdmTree(){
   const root=m.find(x=>x.role==='admin');
   document.getElementById('adm-tree-view').innerHTML=root?buildNode(root.id,0):'';
 }
- 
+
 function renderAdmPending(){
   const m=getMembers().filter(x=>x.status==='pending');
   document.getElementById('adm-pending-list').innerHTML=m.length?m.map(u=>`
@@ -3334,7 +1189,7 @@ function renderAdmPending(){
       </div>
     </div>`).join(''):`<div style="text-align:center;padding:30px;color:var(--text3);">承認待ちのメンバーはいません 🎉</div>`;
 }
- 
+
 /* ══════════ INVITE PAGE ══════════ */
 function renderInvitePage(){
   const m=getMembers();
@@ -3350,12 +1205,12 @@ function renderInvitePage(){
       <div class="inv-tree-arrow">›</div>
     </div>`).join(''):'<div style="color:var(--text3);font-size:13px;padding:8px 0;">まだ招待していません</div>';
 }
- 
+
 function copyInviteCode(){
   if(navigator.clipboard){navigator.clipboard.writeText('ONES-7X3K').then(()=>toast('📋 招待コードをコピーしました！'));}
   else{toast('ONES-7X3K');}
 }
- 
+
 /* ══════════ APP RENDERS ══════════ */
 function renderTL(){
   const allD=[...ld('od'),...DI];const allV=[...ld('ov'),...VC];
@@ -3382,7 +1237,7 @@ function renderSide(){
   if(smx)smx.innerHTML=USERS.slice(0,8).map(u=>`<div style="text-align:center;cursor:pointer;" onclick="openUserSheet('${esc(u.n)}','${u.e}')"><div style="width:44px;height:44px;border-radius:10px;${AB};display:flex;align-items:center;justify-content:center;font-size:24px;border:1.5px solid var(--og-border);margin:0 auto 3px;position:relative;">${u.e}${u.on?'<div style="position:absolute;bottom:1px;right:1px;width:9px;height:9px;background:#33cc44;border-radius:50%;border:1.5px solid #fff;"></div>':''}</div><div style="font-size:10px;color:var(--text2);font-weight:600;">${u.n}</div></div>`).join('');
   renderNT('snt',NT.slice(0,5));
 }
- 
+
 /* ══════════ NAV ══════════ */
 let cur='home';
 function nav(name,el){
@@ -3407,13 +1262,13 @@ function nav(name,el){
   if(name==='invite')renderInvitePage();
   window.scrollTo(0,0);
 }
- 
+
 /* ══════════ ACTIONS ══════════ */
 function postDiary(){const ttl=document.getElementById('ws-ttl').value.trim();const bdy=document.getElementById('ws-bdy').value.trim();if(!ttl&&!bdy){toast('タイトルか本文を入力してください');return;}const t=ttl||bdy.slice(0,20)+'…';const now=new Date();const ds=`${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 ${pad(now.getHours())}:${pad(now.getMinutes())}`;const s=ld('od');s.unshift({title:t,date:ds,excerpt:bdy||'（本文なし）',comments:0,good:0});sv('od',s);closeSheet();toast('📔 日記を投稿しました！');renderTL();}
 function postVoice(text){const t=text||document.getElementById('ws-vc')?.value.trim();if(!t){toast('テキストを入力してください');return;}const s=ld('ov');s.unshift({u:'BOSS YASU',e:'😊',t,tm:'たった今'});sv('ov',s);closeSheet();toast('💬 つぶやきを投稿しました！');if(cur==='voice')renderVoice();renderTL();}
 function postVoiceInline(){const el=document.getElementById('vcin');const t=el.value.trim();if(!t){toast('テキストを入力してください');return;}const s=ld('ov');s.unshift({u:'BOSS YASU',e:'😊',t,tm:'たった今'});sv('ov',s);el.value='';toast('💬 つぶやきを投稿しました！');renderVoice();renderTL();}
 function likeThis(el){el.classList.toggle('lk');toast(el.classList.contains('lk')?'👍 いいねしました！':'いいねを取り消しました');}
- 
+
 /* ══════════ SHEETS ══════════ */
 function openSheet(type){if(type==='diary'){showSheet('日記を書く',`<div><input id="ws-ttl" class="wt" type="text" placeholder="タイトル"><textarea id="ws-bdy" class="wb" placeholder="今日はどんな1日でしたか？"></textarea><select class="wps"><option>全体に公開</option><option>ワンミクのみ</option><option>自分のみ</option></select><div class="wf"><button class="bo" style="flex:1;" onclick="postDiary()">投稿する</button><button class="bg" onclick="closeSheet()">キャンセル</button></div></div>`);}else if(type==='voice'){showSheet('つぶやく',`<div><textarea id="ws-vc" class="wb" placeholder="今なにしてる？" style="min-height:90px;"></textarea><div class="wf"><button class="bo" style="flex:1;" onclick="postVoice()">つぶやく</button><button class="bg" onclick="closeSheet()">キャンセル</button></div></div>`);}else{showSheet('フォトを投稿',`<div style="padding:20px;text-align:center;"><div style="font-size:60px;margin-bottom:12px;">📷</div><p style="color:var(--text2);margin-bottom:16px;">写真を選んで投稿しよう</p><button class="bo" onclick="toast('📷 写真投稿機能は近日公開！');closeSheet()">写真を選ぶ</button></div>`);}}
 function openDiarySheet(title){const all=[...ld('od'),...DI];const d=all.find(x=>x.title===title)||{title,excerpt:'',comments:0,good:0,date:''};showSheet(d.title,`<div><div style="font-size:11px;color:var(--text3);margin-bottom:10px;">📅 ${d.date||'---'}&nbsp;👤 BOSS YASU</div><div style="font-size:14px;color:var(--text);line-height:1.8;margin-bottom:16px;">${d.excerpt}</div><div style="background:var(--og-pale);border-radius:12px;padding:14px;"><div style="font-weight:700;color:var(--og3);margin-bottom:10px;font-size:13px;">💬 コメント（${d.comments}件）</div>${d.comments>0?`<div style="display:flex;gap:10px;margin-bottom:10px;"><div class="av as" style="${AB}">🌸</div><div style="flex:1;background:#fff;border-radius:10px;padding:10px;"><div style="font-size:12px;font-weight:700;color:var(--og3);">さくらんぼ</div><div style="font-size:13px;color:var(--text);margin-top:3px;">素敵な内容ですね！参考になりました😊</div></div></div>`:'<div style="font-size:13px;color:var(--text3);margin-bottom:10px;">まだコメントはありません</div>'}<div style="display:flex;gap:8px;"><div class="av ax" style="${AB}">😊</div><textarea style="flex:1;background:#fff;border:1.5px solid var(--og-border);border-radius:10px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none;resize:none;height:60px;" placeholder="コメントを書く..."></textarea></div><div style="display:flex;justify-content:flex-end;margin-top:8px;"><button class="bos" onclick="toast('💬 コメントしました！')">送信</button></div></div></div>`);}
@@ -3425,49 +1280,49 @@ function openEditProfile(){const nick=document.getElementById('pvnick').textCont
 function openEditBio(){const cur=document.getElementById('pvbio').innerText;showSheet('自己紹介を編集',`<div><div class="er"><label class="el">自己紹介文</label><textarea id="ep-bio" class="eta" style="min-height:150px;">${cur}</textarea></div><button class="bo" style="width:100%;" onclick="saveBio()">保存する</button></div>`);}
 function saveProfile(){const nick=document.getElementById('ep-nick').value;const st=document.getElementById('ep-st').value;const loc=document.getElementById('ep-loc').value;const job=document.getElementById('ep-job').value;document.getElementById('pvnick').textContent=nick;document.getElementById('pvloc').textContent=loc;document.getElementById('pvjob').textContent=job;document.getElementById('mpname').textContent=nick;document.getElementById('mpstatus').textContent=st;closeSheet();toast('✅ プロフィールを保存しました');}
 function saveBio(){const bio=document.getElementById('ep-bio').value;document.getElementById('pvbio').innerHTML=bio.replace(/\n/g,'<br>');closeSheet();toast('✅ 自己紹介を保存しました');}
- 
+
 function showSheet(title,html){document.getElementById('shtit').textContent=title;document.getElementById('shbody').innerHTML=html;document.getElementById('sbg').classList.add('show');requestAnimationFrame(()=>document.getElementById('sh').classList.add('open'));}
 function closeSheet(){document.getElementById('sh').classList.remove('open');document.getElementById('sbg').classList.remove('show');}
- 
+
 function openSearch(){document.getElementById('sov').classList.add('show');setTimeout(()=>document.getElementById('soin').focus(),200);}
 function closeSearch(){document.getElementById('sov').classList.remove('show');}
 document.getElementById('soin').addEventListener('input',function(){const q=this.value.trim();const bd=document.getElementById('sobd');if(!q){bd.innerHTML='<div class="sohi">🔍<br><br>キーワードを入力してください</div>';return;}const res=DI.filter(d=>d.title.includes(q)||d.excerpt.includes(q));if(!res.length){bd.innerHTML=`<div class="sohi">「${q}」の結果はありません</div>`;return;}bd.innerHTML=res.map(d=>`<div style="padding:12px 0;border-bottom:1px solid var(--og-pale);cursor:pointer;" onclick="closeSearch();openDiarySheet('${esc(d.title)}')"><div style="font-size:14px;font-weight:700;color:var(--og3);">${d.title}</div><div style="font-size:12px;color:var(--text3);margin-top:3px;">${d.date}</div></div>`).join('');});
- 
- 
+
+
 /* ══════════ プロフィール写真 ══════════ */
- 
+
 function triggerPhotoUpload() {
   document.getElementById('photo-input').click();
 }
- 
+
 function handlePhotoUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
- 
+
   // ファイルサイズチェック（5MB以下）
   if (file.size > 5 * 1024 * 1024) {
     toast('❌ 写真は5MB以下にしてください');
     return;
   }
- 
+
   const reader = new FileReader();
   reader.onload = function(e) {
     const dataUrl = e.target.result;
- 
+
     // LocalStorageに保存
     localStorage.setItem('ones_profile_photo', dataUrl);
- 
+
     // 全アバターに反映
     applyProfilePhoto(dataUrl);
- 
+
     toast('📷 プロフィール写真を更新しました！');
   };
   reader.readAsDataURL(file);
 }
- 
+
 function applyProfilePhoto(dataUrl) {
   if (!dataUrl) return;
- 
+
   // マイページのプロフィール写真
   const mpImg = document.getElementById('profile-photo-img');
   const mpEmoji = document.getElementById('profile-photo-emoji');
@@ -3476,7 +1331,7 @@ function applyProfilePhoto(dataUrl) {
     mpImg.style.display = 'block';
     mpEmoji.style.display = 'none';
   }
- 
+
   // ヘッダーアバター
   const hdImg = document.getElementById('hd-av-img');
   const hdEmoji = document.getElementById('hd-av-emoji');
@@ -3485,7 +1340,7 @@ function applyProfilePhoto(dataUrl) {
     hdImg.style.display = 'block';
     hdEmoji.style.display = 'none';
   }
- 
+
   // ホームの書き込みアバター
   const homeImg = document.getElementById('home-av-img');
   const homeEmoji = document.getElementById('home-av-emoji');
@@ -3495,14 +1350,14 @@ function applyProfilePhoto(dataUrl) {
     homeEmoji.style.display = 'none';
   }
 }
- 
+
 function loadProfilePhoto() {
   const saved = localStorage.getItem('ones_profile_photo');
   if (saved) applyProfilePhoto(saved);
 }
- 
+
 /* ══════════ INTEREST TAG SYSTEM ══════════ */
- 
+
 const INTEREST_CATEGORIES = [
   {
     id:'biz', label:'💼 ビジネス・経営', tags:[
@@ -3580,22 +1435,22 @@ const INTEREST_CATEGORIES = [
     ]
   },
 ];
- 
+
 // 全タグをフラット配列で取得
 const ALL_TAGS = INTEREST_CATEGORIES.flatMap(c => c.tags);
- 
+
 // デフォルト選択タグ（BOSS YASUの場合）
 const DEFAULT_SELECTED = ['SNSマーケティング','IT経営','旅行','ビジネス自動化','AI活用','名古屋グルメ','個人ブランディング','LINEマーケティング','自動化・RPA','起業・スタートアップ'];
- 
+
 function loadSelectedTags() {
   const saved = localStorage.getItem('ones_interests');
   return saved ? JSON.parse(saved) : DEFAULT_SELECTED;
 }
- 
+
 function saveSelectedTags(tags) {
   localStorage.setItem('ones_interests', JSON.stringify(tags));
 }
- 
+
 function renderSelectedTags() {
   const selected = loadSelectedTags();
   const el = document.getElementById('selected-tags-display');
@@ -3611,16 +1466,16 @@ function renderSelectedTags() {
   ).join('');
   if(countEl) countEl.textContent = `${selected.length}個のタグを設定中`;
 }
- 
+
 function openInterestEditor() {
   const selected = loadSelectedTags();
   let tempSelected = [...selected];
- 
+
   function buildEditorHTML() {
     return `
     <div>
       <div style="font-size:12px;color:var(--text3);margin-bottom:12px;">タップして選択・解除。最大20個まで選べます。</div>
- 
+
       <!-- 選択中プレビュー -->
       <div style="background:var(--og-pale);border-radius:10px;padding:10px 12px;margin-bottom:14px;min-height:44px;">
         <div style="font-size:11px;font-weight:700;color:var(--og3);margin-bottom:6px;">選択中 <span id="ie-count">${tempSelected.length}</span>/20</div>
@@ -3628,7 +1483,7 @@ function openInterestEditor() {
           ${tempSelected.length ? tempSelected.map(t=>`<span style="background:#3a9e5f;color:#fff;padding:3px 10px;border-radius:14px;font-size:12px;font-weight:600;">${t}</span>`).join('') : '<span style="font-size:12px;color:var(--text3);">まだ選択されていません</span>'}
         </div>
       </div>
- 
+
       <!-- カテゴリー別タグ一覧 -->
       ${INTEREST_CATEGORIES.map(cat => `
         <div style="margin-bottom:16px;">
@@ -3647,18 +1502,18 @@ function openInterestEditor() {
           </div>
         </div>
       `).join('')}
- 
+
       <div style="height:8px;"></div>
       <button class="bo" style="width:100%;" onclick="ieSave()">✅ 保存する</button>
     </div>`;
   }
- 
+
   showSheet('🎯 興味・関心を編集', buildEditorHTML());
- 
+
   // グローバルにtempを保持
   window._ieTempSelected = tempSelected;
 }
- 
+
 function ieToggle(el, tag) {
   const sel = window._ieTempSelected;
   const idx = sel.indexOf(tag);
@@ -3687,21 +1542,21 @@ function ieToggle(el, tag) {
       : '<span style="font-size:12px;color:var(--text3);">まだ選択されていません</span>';
   }
 }
- 
+
 function ieSave() {
   saveSelectedTags(window._ieTempSelected || []);
   renderSelectedTags();
   closeSheet();
   toast(`🎯 ${(window._ieTempSelected||[]).length}個のタグを保存しました！`);
 }
- 
+
 /* ══════════ INIT (updated) ══════════ */
 function initApp(){
   renderTL();renderStories();renderMxRow();renderNT('ntlist',NT);renderMpDiary();renderSide();renderCal();
   renderSelectedTags();
   loadProfilePhoto();
 }
- 
+
 // Check if logged in (demo: auto-login for preview)
 // In production: remove devLogin() and rely on checkSession()
 checkSession();
@@ -3715,4 +1570,3 @@ if(document.getElementById('invite-screen')&&!document.getElementById('invite-sc
 </script>
 </body>
 </html>
- 
