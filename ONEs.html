@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#3a9e5f">
+<title>ONEs — つながりを、ひとつに。</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%233a9e5f'/><circle cx='16' cy='16' r='12' fill='none' stroke='white' stroke-width='2.5' opacity='.2'/><ellipse cx='12' cy='13' rx='4' ry='7' fill='white' opacity='.28' transform='rotate(-35 12 13)'/><ellipse cx='20' cy='19' rx='3.5' ry='6' fill='%23c8f7d4' opacity='.32' transform='rotate(-35 20 19)'/><text x='16' y='21' font-family='Arial,sans-serif' font-size='13' fill='white' text-anchor='middle' font-weight='900' font-style='italic'>ONEs</text></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='40' fill='%233a9e5f'/><circle cx='90' cy='90' r='68' fill='none' stroke='white' stroke-width='12' opacity='.18'/><ellipse cx='72' cy='75' rx='20' ry='34' fill='white' opacity='.22' transform='rotate(-35 72 75)'/><ellipse cx='108' cy='105' rx='18' ry='30' fill='%23c8f7d4' opacity='.25' transform='rotate(-35 108 105)'/><circle cx='90' cy='30' r='8' fill='%23c8f7d4' opacity='.6'/><circle cx='150' cy='90' r='6' fill='%239dd4b0' opacity='.5'/><circle cx='30' cy='90' r='6' fill='%239dd4b0' opacity='.5'/><text x='90' y='102' font-family='Arial,sans-serif' font-size='52' fill='white' text-anchor='middle' font-weight='900' font-style='italic'>ONEs</text></svg>">
+<meta name="application-name" content="ONEs">
+<meta name="apple-mobile-web-app-title" content="ONEs">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
+:root{
+  --og:#3a9e5f;--og2:#2d8a50;--og3:#1e6e3a;--og4:#5ab87a;
+  --og-pale:#edf8f1;--og-bg:#f0faf4;--og-border:#9dd4b0;
+  --link:#1e6e3a;--text:#0d2b18;--text2:#2a5e3c;--text3:#7a9e88;
+  --white:#fff;--shadow:0 2px 12px rgba(30,110,58,.1);
+  --r:14px;--nav-h:60px;--hh:52px;--sb:env(safe-area-inset-bottom,0px);
+  --red:#e53e3e;--amber:#d97706;--blue:#2563eb;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN','Meiryo',sans-serif;font-size:14px;background:var(--og-bg);color:var(--text);line-height:1.6;min-height:100vh;overscroll-behavior:none;}
+a{color:var(--link);text-decoration:none;}
+button{cursor:pointer;font-family:inherit;border:none;outline:none;background:none;}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-thumb{background:#9dd4b0;border-radius:4px;}
+
+/* ── HEADER ── */
+#hd{position:fixed;top:0;left:0;right:0;z-index:300;height:var(--hh);background:linear-gradient(135deg,#4cb87a 0%,#2e9e56 60%,#1a7a3c 100%);display:flex;align-items:center;padding:0 14px;gap:8px;box-shadow:0 2px 8px rgba(20,100,50,.3);}
+#logo{display:flex;align-items:center;flex-shrink:0;}
+#logo em{color:#c8f7d4;font-style:normal;}
+#hd-desktnav{display:none;gap:0;margin-left:16px;}
+.dn{color:rgba(255,255,255,.85);padding:0 12px;height:var(--hh);display:flex;align-items:center;font-size:12px;font-weight:700;border-bottom:3px solid transparent;transition:all .15s;cursor:pointer;}
+.dn:hover{color:#fff;background:rgba(0,0,0,.1);}
+.dn.on{color:#fff;border-bottom-color:#c8f7d4;}
+.hd-icon{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;}
+.hd-icon:active{background:rgba(255,255,255,.35);}
+.hb{position:absolute;top:2px;right:2px;width:16px;height:16px;background:#e53e3e;border-radius:50%;font-size:9px;font-weight:900;color:#fff;display:flex;align-items:center;justify-content:center;border:1.5px solid #fff;}
+#hd-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#a8ddb8,#3fa865);display:flex;align-items:center;justify-content:center;font-size:20px;border:2px solid rgba(255,255,255,.7);cursor:pointer;flex-shrink:0;}
+
+/* ── BODY ── */
+#body{padding-top:calc(var(--hh) + 4px);padding-bottom:calc(var(--nav-h) + var(--sb) + 8px);min-height:100vh;}
+
+/* ── BOTTOM NAV ── */
+#bnav{position:fixed;bottom:0;left:0;right:0;z-index:200;height:calc(var(--nav-h) + var(--sb));background:#fff;border-top:1px solid #c2e8ce;display:flex;align-items:flex-start;justify-content:space-around;padding-top:6px;padding-bottom:var(--sb);box-shadow:0 -3px 16px rgba(30,110,58,.1);}
+.bi{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 2px;color:var(--text3);font-size:10px;font-weight:500;cursor:pointer;position:relative;}
+.bi.on{color:var(--og);}
+.bi .ic{font-size:22px;transition:transform .2s;}
+.bi.on .ic{transform:scale(1.12);}
+.bn-badge{position:absolute;top:2px;left:50%;margin-left:4px;width:16px;height:16px;background:#e53e3e;border-radius:50%;font-size:9px;font-weight:900;color:#fff;display:flex;align-items:center;justify-content:center;border:1.5px solid #fff;}
+
+/* ── PAGES ── */
+.pg{display:none;}
+.pg.on{display:block;animation:pgin .22s ease;}
+@keyframes pgin{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+/* ── COMMON COMPONENTS ── */
+.sh{padding:14px 16px 8px;font-size:11px;font-weight:700;color:var(--og3);letter-spacing:.5px;text-transform:uppercase;display:flex;justify-content:space-between;align-items:center;}
+.sh a{font-size:12px;color:var(--og);font-weight:500;text-transform:none;}
+.card{background:#fff;border-radius:var(--r);margin:0 12px 10px;box-shadow:var(--shadow);overflow:hidden;}
+.cb{padding:10px 14px 14px;}
+.fc{background:#fff;border-radius:var(--r);margin:0 12px 10px;box-shadow:var(--shadow);overflow:hidden;}
+.fch{padding:12px 14px 0;display:flex;align-items:center;gap:10px;}
+.fui{flex:1;}
+.fname{font-size:13px;font-weight:700;color:var(--og3);}
+.fsub{font-size:11px;color:var(--text3);}
+.fbadge{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:700;}
+.bd{background:#edf8f1;color:#1e6e3a;}
+.bv{background:#e8f8ff;color:#0066aa;}
+.fcb{padding:8px 14px 0;}
+.ftit{font-size:15px;font-weight:700;color:var(--og3);margin-bottom:4px;cursor:pointer;line-height:1.4;}
+.ftxt{font-size:13px;color:var(--text);line-height:1.7;}
+.fcf{padding:8px 14px 12px;display:flex;border-top:1px solid #edf8f1;margin-top:10px;}
+.fbtn{flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:8px 4px;font-size:12px;color:var(--text3);font-weight:500;border-radius:8px;transition:all .15s;cursor:pointer;}
+.fbtn:active,.fbtn.lk{color:var(--og);}
+.av{border-radius:50%;background:linear-gradient(135deg,#a8ddb8,#3fa865);display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;border:2px solid var(--og-border);}
+.al{width:52px;height:52px;font-size:28px;}
+.am{width:42px;height:42px;font-size:22px;border-radius:10px;}
+.as{width:34px;height:34px;font-size:18px;border-radius:8px;}
+.ax{width:26px;height:26px;font-size:14px;border-radius:6px;}
+
+/* ── WRITE BOX ── */
+#wbox{background:linear-gradient(135deg,#f4fdf7,#edf8f1);border-radius:var(--r);margin:12px 12px 10px;padding:14px;box-shadow:var(--shadow);border:1px solid var(--og-border);}
+#wbox .wr{display:flex;gap:10px;align-items:center;}
+#wtrig{flex:1;background:#fff;border:1.5px solid var(--og-border);border-radius:22px;padding:10px 16px;font-size:14px;color:var(--text3);cursor:pointer;text-align:left;}
+.wa{display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid #d4eedd;}
+.wab{flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:9px 4px;border-radius:9px;font-size:12px;font-weight:600;color:var(--text2);background:rgba(40,140,80,.06);transition:background .2s;}
+.wab:active{background:rgba(40,140,80,.16);}
+
+/* ── STORY / SCROLL ROWS ── */
+.srow{display:flex;gap:12px;padding:8px 16px 4px;overflow-x:auto;scrollbar-width:none;}
+.srow::-webkit-scrollbar{display:none;}
+.sit{display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;cursor:pointer;}
+.sring{width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,#5bc87e,#27954d);padding:2.5px;}
+.sinn{width:100%;height:100%;border-radius:50%;background:linear-gradient(135deg,#a8ddb8,#3fa865);display:flex;align-items:center;justify-content:center;font-size:28px;border:2.5px solid #fff;}
+.snm{font-size:10px;color:var(--text2);max-width:56px;text-align:center;}
+.stm{font-size:9px;color:var(--text3);}
+.mxrow{display:flex;gap:10px;padding:4px 16px 8px;overflow-x:auto;scrollbar-width:none;}
+.mxrow::-webkit-scrollbar{display:none;}
+.mxi{display:flex;flex-direction:column;align-items:center;gap:5px;flex-shrink:0;cursor:pointer;min-width:56px;}
+.mxi .mn{font-size:11px;color:var(--text2);font-weight:600;text-align:center;}
+.odot{position:absolute;bottom:0;right:0;width:10px;height:10px;background:#33cc44;border-radius:50%;border:2px solid #fff;}
+
+/* ── MYPAGE ── */
+.mph{background:linear-gradient(160deg,#4db87a 0%,#2a9e54 55%,#156634 100%);padding:20px 16px 16px;position:relative;overflow:hidden;}
+.mph::before{content:'';position:absolute;top:-40px;right:-40px;width:180px;height:180px;background:rgba(255,255,255,.07);border-radius:50%;}
+.mphr{display:flex;gap:14px;align-items:flex-end;position:relative;z-index:1;}
+.mpph{width:78px;height:78px;border-radius:18px;background:linear-gradient(135deg,#b8e6c8,#4ab870);display:flex;align-items:center;justify-content:center;font-size:44px;flex-shrink:0;border:3px solid rgba(255,255,255,.8);box-shadow:0 4px 14px rgba(0,0,0,.25);cursor:pointer;position:relative;}
+.mppe{position:absolute;bottom:0;right:0;left:0;background:rgba(0,0,0,.45);color:#fff;font-size:9px;text-align:center;padding:2px 0;border-radius:0 0 14px 14px;}
+.mphi{flex:1;}
+.mphn{font-size:20px;font-weight:900;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.3);}
+.mphs{font-size:11px;color:rgba(255,255,255,.8);margin-top:2px;font-style:italic;}
+.mpst{display:flex;background:rgba(0,0,0,.15);border-radius:12px;margin-top:12px;overflow:hidden;position:relative;z-index:1;}
+.mps{flex:1;text-align:center;padding:10px 4px;border-right:1px solid rgba(255,255,255,.15);cursor:pointer;}
+.mps:last-child{border-right:none;}
+.mps .n{font-size:18px;font-weight:900;color:#fff;line-height:1;}
+.mps .l{font-size:10px;color:rgba(255,255,255,.75);margin-top:2px;}
+.mps:active{background:rgba(255,255,255,.1);}
+.psec{background:#fff;border-radius:var(--r);margin:10px 12px;overflow:hidden;box-shadow:var(--shadow);}
+.psh{padding:12px 14px 8px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--og-pale);}
+.psh .t{font-size:13px;font-weight:700;color:var(--og3);}
+.psh a{font-size:12px;color:var(--og);}
+.psb{padding:10px 14px 14px;}
+.pr{display:flex;padding:8px 0;border-bottom:1px solid var(--og-pale);font-size:13px;}
+.pr:last-child{border-bottom:none;}
+.pk{width:80px;color:var(--text3);flex-shrink:0;font-size:12px;}
+.pv{color:var(--text);font-weight:500;}
+.bio{background:var(--og-pale);border-radius:10px;padding:12px;font-size:13px;color:var(--text);line-height:1.8;}
+.tgw{display:flex;flex-wrap:wrap;gap:6px;}
+.tg{background:#edf8f1;border:1px solid #9dd4b0;color:#2a5e3c;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;}
+.tg:active{background:#a8ddb8;}
+.pgr{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;}
+.pth{aspect-ratio:1;background:linear-gradient(135deg,#edf8f1,#b8e2c8);display:flex;align-items:center;justify-content:center;font-size:28px;cursor:pointer;}
+.ptadd{background:#fff;border:2px dashed var(--og-border);color:var(--og);font-size:22px;}
+
+/* ── COMMUNITY / NOTICE / MSG ── */
+.cmi{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--og-pale);cursor:pointer;}
+.cmi:last-child{border-bottom:none;}
+.cmico{width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,#a8dbb8,#3fa860);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;}
+.cn{font-size:14px;font-weight:700;color:var(--og3);}
+.cc{font-size:11px;color:var(--text3);margin-top:2px;}
+.nti{display:flex;gap:10px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--og-pale);}
+.nti:last-child{border-bottom:none;}
+.ntd{width:8px;height:8px;border-radius:50%;background:var(--og);flex-shrink:0;margin-top:6px;}
+.ntd.info{background:#44aa66;}
+.ntd.old{background:#c0ddc8;}
+.ntt{font-size:13px;color:var(--text);line-height:1.5;}
+.ntm{font-size:10px;color:var(--text3);margin-top:2px;}
+.mlit{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--og-pale);cursor:pointer;}
+.mlit:last-child{border-bottom:none;}
+.mlit:active{background:var(--og-pale);}
+.mlfrom{font-size:14px;font-weight:700;color:var(--text);}
+.mlprev{font-size:12px;color:var(--text3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;}
+.mldate{font-size:10px;color:var(--text3);margin-left:auto;white-space:nowrap;flex-shrink:0;}
+.unrd .mlfrom::after{content:'';display:inline-block;width:7px;height:7px;background:var(--og);border-radius:50%;margin-left:6px;vertical-align:middle;}
+.dc{background:#fff;border-radius:var(--r);margin:0 12px 10px;overflow:hidden;box-shadow:var(--shadow);}
+.dct{height:5px;background:linear-gradient(90deg,#3a9e5f,#27894a);}
+.dcb{padding:14px;}
+.dctit{font-size:16px;font-weight:700;color:var(--og3);line-height:1.4;margin-bottom:4px;cursor:pointer;}
+.dcm{font-size:11px;color:var(--text3);margin-bottom:8px;}
+.dcex{font-size:13px;color:var(--text);line-height:1.7;}
+.dcf{display:flex;gap:16px;padding:10px 14px 12px;border-top:1px solid var(--og-pale);background:#f4fdf7;}
+.dcfb{font-size:12px;color:var(--text3);display:flex;align-items:center;gap:4px;cursor:pointer;}
+.cal{background:#fff;border-radius:var(--r);margin:0 12px 10px;padding:14px;box-shadow:var(--shadow);}
+.calhd{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.calt{font-size:15px;font-weight:700;color:var(--og3);}
+.calhd button{width:32px;height:32px;border-radius:50%;background:var(--og-pale);color:var(--og);font-size:14px;font-family:inherit;display:flex;align-items:center;justify-content:center;}
+.calg{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;}
+.cdow{font-size:11px;color:var(--text3);padding:4px 0;font-weight:600;}
+.cd{font-size:13px;padding:7px 2px;border-radius:8px;cursor:pointer;}
+.cd.tod{background:var(--og);color:#fff;font-weight:700;}
+.cd.hev{color:var(--og3);font-weight:700;}
+.cd.oth{color:#c0ddc8;}
+.cd.hev:not(.tod)::after{content:'';display:block;width:4px;height:4px;background:var(--og);border-radius:50%;margin:1px auto 0;}
+
+/* ── BUTTONS ── */
+.bo{background:linear-gradient(135deg,#4cb87a 0%,#218a4a 100%);color:#fff;border:none;padding:12px 24px;border-radius:24px;font-size:14px;font-weight:700;font-family:inherit;box-shadow:0 3px 12px rgba(30,110,58,.3);transition:all .2s;cursor:pointer;}
+.bo:active{transform:scale(.97);}
+.bos{background:linear-gradient(135deg,#4cb87a 0%,#218a4a 100%);color:#fff;border:none;padding:8px 18px;border-radius:20px;font-size:13px;font-weight:700;font-family:inherit;box-shadow:0 2px 8px rgba(30,110,58,.25);cursor:pointer;}
+.bos:active{transform:scale(.96);}
+.bg{background:transparent;border:1.5px solid var(--og-border);color:var(--text2);padding:8px 18px;border-radius:20px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;}
+.bg:active{background:var(--og-pale);}
+.btn-red{background:linear-gradient(135deg,#f56565,#c53030);color:#fff;border:none;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;}
+.btn-amber{background:linear-gradient(135deg,#f6ad55,#c05621);color:#fff;border:none;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;}
+
+/* ── FAB ── */
+#fab{position:fixed;bottom:calc(var(--nav-h) + var(--sb) + 14px);right:16px;z-index:190;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#4cb87a,#1e8040);color:#fff;font-size:26px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 18px rgba(30,110,58,.4);cursor:pointer;}
+#fab:active{transform:scale(.92);}
+
+/* ── SHEET ── */
+#sbg{display:none;position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.45);}
+#sbg.show{display:block;animation:bgin .2s ease;}
+@keyframes bgin{from{opacity:0;}to{opacity:1;}}
+#sh{position:fixed;bottom:0;left:0;right:0;z-index:500;background:#fff;border-radius:22px 22px 0 0;max-height:88vh;overflow-y:auto;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,1,.32,1);padding-bottom:calc(16px + var(--sb));}
+#sh.open{transform:translateY(0);}
+.shdl{width:40px;height:4px;background:#c0ddc8;border-radius:2px;margin:12px auto 4px;}
+.shhd{padding:8px 16px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--og-pale);position:sticky;top:0;background:#fff;z-index:1;}
+.shtit{font-size:16px;font-weight:700;color:var(--og3);}
+.shx{width:32px;height:32px;border-radius:50%;background:var(--og-pale);display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--text2);cursor:pointer;}
+#shbody{padding:14px 16px;}
+
+/* ── FORM INPUTS ── */
+.wt{width:100%;background:var(--og-pale);border:1.5px solid var(--og-border);border-radius:10px;padding:12px 14px;font-size:15px;font-family:inherit;outline:none;margin-bottom:10px;}
+.wt:focus{border-color:var(--og);}
+.wb{width:100%;background:var(--og-pale);border:1.5px solid var(--og-border);border-radius:10px;padding:12px 14px;font-size:14px;font-family:inherit;outline:none;resize:none;min-height:120px;line-height:1.7;}
+.wb:focus{border-color:var(--og);}
+.wps{background:var(--og-pale);border:1.5px solid var(--og-border);border-radius:9px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none;color:var(--text2);margin-bottom:14px;width:100%;}
+.wf{display:flex;gap:10px;align-items:center;}
+.er{margin-bottom:14px;}
+.el{display:block;font-size:12px;font-weight:700;color:var(--text2);margin-bottom:6px;}
+.ei{width:100%;background:var(--og-pale);border:1.5px solid var(--og-border);border-radius:10px;padding:11px 13px;font-size:14px;font-family:inherit;outline:none;}
+.ei:focus{border-color:var(--og);}
+.eta{width:100%;background:var(--og-pale);border:1.5px solid var(--og-border);border-radius:10px;padding:11px 13px;font-size:14px;font-family:inherit;outline:none;resize:none;min-height:100px;line-height:1.7;}
+.eta:focus{border-color:var(--og);}
+
+/* ── SEARCH OVERLAY ── */
+#sov{display:none;position:fixed;inset:0;z-index:300;background:#fff;flex-direction:column;}
+#sov.show{display:flex;animation:pgin .2s ease;}
+.sovhd{padding:10px 14px;display:flex;gap:10px;align-items:center;background:linear-gradient(135deg,#4cb87a,#27894a);}
+#soin{flex:1;background:rgba(255,255,255,.25);border:none;border-radius:20px;padding:9px 16px;font-size:15px;color:#fff;font-family:inherit;outline:none;}
+#soin::placeholder{color:rgba(255,255,255,.7);}
+.socan{color:#fff;font-size:14px;font-weight:700;flex-shrink:0;cursor:pointer;}
+.sobd{flex:1;overflow-y:auto;padding:16px;}
+.sohi{text-align:center;color:var(--text3);font-size:14px;margin-top:40px;}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 20px;border-radius:24px;font-size:13px;font-weight:600;z-index:999;box-shadow:0 4px 16px rgba(0,0,0,.3);white-space:nowrap;animation:tin .25s ease,tout .3s ease 1.9s forwards;pointer-events:none;}
+@keyframes tin{from{opacity:0;transform:translateX(-50%) translateY(10px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
+@keyframes tout{to{opacity:0;transform:translateX(-50%) translateY(10px);}}
+
+/* ══════════════════════════════
+   ── INVITE SYSTEM STYLES ──
+══════════════════════════════ */
+
+/* ── LANDING / INVITE PAGE ── */
+#invite-screen{position:fixed;inset:0;z-index:1000;background:linear-gradient(160deg,#4db87a 0%,#1e7a3c 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;}
+#invite-screen.hidden{display:none;}
+.inv-logo-wrap{text-align:center;margin-bottom:0;}
+.inv-logo em{color:#c8f7d4;font-style:normal;}
+.inv-tagline{color:rgba(255,255,255,.8);font-size:13px;margin-bottom:40px;text-align:center;}
+.inv-card{background:#fff;border-radius:20px;padding:24px;width:100%;max-width:400px;box-shadow:0 8px 32px rgba(0,0,0,.2);}
+.inv-card h2{font-size:18px;font-weight:700;color:var(--og3);margin-bottom:6px;text-align:center;}
+.inv-card p{font-size:13px;color:var(--text3);text-align:center;margin-bottom:20px;line-height:1.6;}
+.inv-input{width:100%;background:var(--og-pale);border:2px solid var(--og-border);border-radius:12px;padding:14px 16px;font-size:16px;font-family:inherit;outline:none;text-align:center;letter-spacing:.1em;margin-bottom:12px;}
+.inv-input:focus{border-color:var(--og);}
+.inv-input::placeholder{letter-spacing:0;font-size:14px;}
+.inv-error{color:#e53e3e;font-size:12px;text-align:center;margin-top:-6px;margin-bottom:10px;min-height:18px;}
+.inv-join-btn{width:100%;background:linear-gradient(135deg,#4cb87a,#218a4a);color:#fff;border:none;padding:14px;border-radius:12px;font-size:16px;font-weight:700;font-family:inherit;cursor:pointer;box-shadow:0 3px 12px rgba(30,110,58,.3);}
+.inv-join-btn:active{transform:scale(.98);}
+.inv-note{font-size:11px;color:var(--text3);text-align:center;margin-top:14px;line-height:1.6;}
+
+/* ── INVITE CODE BADGE ── */
+.inv-badge{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#edf8f1,#d4f0de);border:1px solid #9dd4b0;border-radius:20px;padding:4px 12px;font-size:12px;color:var(--og3);font-weight:600;}
+
+/* ── MY INVITE SECTION ── */
+.inv-my-card{background:linear-gradient(135deg,#f4fdf7,#edf8f1);border:1px solid var(--og-border);border-radius:var(--r);padding:16px;margin:0 12px 10px;}
+.inv-code-box{background:#fff;border:2px dashed var(--og-border);border-radius:12px;padding:16px;text-align:center;margin:10px 0;}
+.inv-code-num{font-size:28px;font-weight:900;color:var(--og3);letter-spacing:.15em;margin-bottom:4px;}
+.inv-code-label{font-size:11px;color:var(--text3);}
+.inv-tree{margin-top:12px;}
+.inv-tree-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--og-pale);}
+.inv-tree-item:last-child{border-bottom:none;}
+.inv-tree-icon{width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,#a8ddb8,#3fa865);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.inv-tree-name{font-size:13px;font-weight:700;color:var(--text);}
+.inv-tree-date{font-size:10px;color:var(--text3);}
+.inv-tree-arrow{margin-left:auto;color:var(--text3);font-size:12px;}
+.inv-stat-row{display:flex;gap:8px;margin-top:10px;}
+.inv-stat{flex:1;background:#fff;border-radius:10px;padding:10px;text-align:center;border:1px solid var(--og-border);}
+.inv-stat .n{font-size:20px;font-weight:900;color:var(--og3);}
+.inv-stat .l{font-size:10px;color:var(--text3);margin-top:2px;}
+
+/* ══════════════════════════════
+   ── ADMIN DASHBOARD ──
+══════════════════════════════ */
+#admin-screen{position:fixed;inset:0;z-index:900;background:var(--og-bg);display:none;flex-direction:column;}
+#admin-screen.show{display:flex;}
+.adm-hd{background:linear-gradient(135deg,#1e6e3a,#0d3d20);padding:14px 16px;display:flex;align-items:center;gap:10px;box-shadow:0 2px 8px rgba(0,0,0,.2);flex-shrink:0;}
+.adm-hd h1{font-size:16px;font-weight:900;color:#fff;flex:1;}
+.adm-hd-close{color:rgba(255,255,255,.8);font-size:22px;cursor:pointer;line-height:1;}
+.adm-body{flex:1;overflow-y:auto;padding:12px 12px 24px;}
+.adm-tabs{display:flex;gap:4px;margin-bottom:12px;background:#fff;border-radius:12px;padding:4px;box-shadow:var(--shadow);}
+.adm-tab{flex:1;padding:8px 4px;text-align:center;font-size:12px;font-weight:700;color:var(--text3);border-radius:9px;cursor:pointer;transition:all .2s;}
+.adm-tab.on{background:linear-gradient(135deg,#4cb87a,#218a4a);color:#fff;box-shadow:0 2px 8px rgba(30,110,58,.3);}
+.adm-panel{display:none;}
+.adm-panel.on{display:block;animation:pgin .2s ease;}
+
+/* STATS CARDS */
+.adm-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px;}
+.adm-stat-card{background:#fff;border-radius:12px;padding:14px;box-shadow:var(--shadow);text-align:center;}
+.adm-stat-card .n{font-size:28px;font-weight:900;color:var(--og3);}
+.adm-stat-card .l{font-size:11px;color:var(--text3);margin-top:3px;}
+.adm-stat-card .sub{font-size:10px;color:var(--og);margin-top:2px;font-weight:600;}
+
+/* MEMBER LIST */
+.adm-member{background:#fff;border-radius:12px;box-shadow:var(--shadow);overflow:hidden;margin-bottom:10px;}
+.adm-member-row{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-bottom:1px solid var(--og-pale);cursor:pointer;transition:background .15s;}
+.adm-member-row:last-child{border-bottom:none;}
+.adm-member-row:active{background:var(--og-pale);}
+.adm-av{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#a8ddb8,#3fa865);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+.adm-info{flex:1;min-width:0;}
+.adm-name{font-size:13px;font-weight:700;color:var(--text);}
+.adm-meta{font-size:11px;color:var(--text3);margin-top:2px;line-height:1.5;}
+.adm-chain{font-size:10px;color:var(--og);margin-top:3px;font-weight:600;}
+.adm-status{flex-shrink:0;text-align:right;}
+.status-badge{display:inline-block;padding:3px 9px;border-radius:12px;font-size:10px;font-weight:700;}
+.st-active{background:#d4edda;color:#1e6e3a;}
+.st-pending{background:#fef3cd;color:#856404;}
+.st-rejected{background:#f8d7da;color:#721c24;}
+
+/* INVITE TABLE */
+.adm-inv-row{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--og-pale);}
+.adm-inv-row:last-child{border-bottom:none;}
+.inv-code-chip{background:linear-gradient(135deg,#edf8f1,#c2e8ce);border:1px solid #9dd4b0;border-radius:8px;padding:4px 10px;font-size:12px;font-weight:700;color:var(--og3);letter-spacing:.08em;flex-shrink:0;}
+.inv-from{font-size:11px;color:var(--text3);}
+.inv-used{font-size:11px;color:var(--og);font-weight:600;}
+.inv-unused{font-size:11px;color:var(--text3);}
+
+/* TREE VISUALIZATION */
+.tree-node{padding:8px 0 8px 20px;border-left:2px solid var(--og-border);margin-left:20px;position:relative;}
+.tree-node::before{content:'';position:absolute;left:-9px;top:18px;width:16px;height:2px;background:var(--og-border);}
+.tree-root{margin-left:0;padding-left:0;border-left:none;}
+.tree-root::before{display:none;}
+.tree-label{display:flex;align-items:center;gap:8px;cursor:pointer;}
+.tree-label:active .tree-chip{transform:scale(.96);}
+.tree-chip{background:#fff;border:1.5px solid var(--og-border);border-radius:10px;padding:6px 10px;display:flex;align-items:center;gap:6px;box-shadow:var(--shadow);}
+.tree-chip .tn{font-size:13px;font-weight:700;color:var(--text);}
+.tree-chip .tc{font-size:11px;color:var(--og);font-weight:600;}
+.tree-chip .td{font-size:10px;color:var(--text3);}
+
+/* FILTER BAR */
+.adm-filter{display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;}
+.adm-filter::-webkit-scrollbar{display:none;}
+.fchip{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;border:1.5px solid var(--og-border);color:var(--text2);background:#fff;transition:all .2s;}
+.fchip.on{background:var(--og);color:#fff;border-color:var(--og);}
+
+/* PENDING APPROVAL */
+.adm-pending-row{background:#fff;border-radius:12px;margin-bottom:8px;padding:14px;box-shadow:var(--shadow);}
+.adm-pending-name{font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;}
+.adm-pending-info{font-size:12px;color:var(--text3);margin-bottom:10px;line-height:1.6;}
+.adm-pending-btns{display:flex;gap:8px;}
+.adm-pending-btns button{flex:1;padding:9px;border-radius:10px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;border:none;}
+.btn-approve{background:linear-gradient(135deg,#4cb87a,#218a4a);color:#fff;box-shadow:0 2px 8px rgba(30,110,58,.25);}
+.btn-reject{background:linear-gradient(135deg,#f56565,#c53030);color:#fff;box-shadow:0 2px 8px rgba(197,48,48,.25);}
+
+/* DESKTOP */
+@media(min-width:768px){
+  :root{--hh:60px;--nav-h:0px;}
+  body{background:#e8f5ee;}
+  #hd{padding:0 16px;gap:6px;}
+  #logo svg{width:36px;height:36px;}
+  /* ナビ全項目が収まるようフォント・パディング縮小 */
+  #hd-desktnav{display:flex;margin-left:8px;}
+  .dn{font-size:11.5px;padding:0 9px;}
+  /* 右アイコン群を縮小 */
+  .hd-icon{width:32px;height:32px;font-size:14px;}
+  #hd-av{width:32px;height:32px;font-size:18px;}
+  #hd-desktnav{display:flex;}
+  #bnav{display:none;}
+  #fab{display:none;}
+  /* ヘッダー高さ60px + 余白20px = 80px で確実に隠れない */
+  #body{max-width:980px;margin:0 auto;padding-top:80px;padding-bottom:30px;display:grid;grid-template-columns:1fr 256px;gap:14px;padding-left:14px;padding-right:14px;}
+  #maincol{min-width:0;}
+  /* PC: 各ページの最初の要素が絶対に隠れないよう追加余白 */
+  #maincol .pg.on > *:first-child { margin-top: 0 !important; }
+  #maincol .pg.on { padding-top: 0; }
+  #sidecol{display:block!important;}
+  .sc{background:#fff;border-radius:var(--r);margin-bottom:10px;overflow:hidden;box-shadow:var(--shadow);}
+  .sch{background:linear-gradient(135deg,#4cb87a,#27894a);color:#fff;padding:8px 12px;font-size:12px;font-weight:700;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #1e6e3a;}
+  .sch a{color:#d4f0de;font-weight:500;font-size:11px;}
+  .scb{padding:10px 12px;}
+  #strow{display:none;}#mxsrow{display:none;}
+  #wbox{margin:0 0 14px;}
+  .fc{margin:0 0 10px;}.dc{margin:0 0 10px;}.psec{margin:10px 0;}.cal{margin:0 0 10px;}
+  .adm-stats{grid-template-columns:repeat(4,1fr);}
+  .mph { border-radius: var(--r) var(--r) 0 0; }
+}
+@media(max-width:767px){#hd-desktnav{display:none;}#sidecol{display:none!important;}}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════
+     INVITE / LANDING SCREEN
+══════════════════════════════ -->
+<div id="invite-screen">
+  <svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" style="display:block;margin:0 auto 8px;">
+  <circle cx="60" cy="60" r="58" fill="rgba(255,255,255,0.12)"/>
+  <circle cx="60" cy="60" r="46" fill="rgba(255,255,255,0.18)"/>
+  <circle cx="60" cy="60" r="34" fill="rgba(255,255,255,0.22)"/>
+  <ellipse cx="47" cy="50" rx="11" ry="19" fill="white" opacity=".28" transform="rotate(-35 47 50)"/>
+  <ellipse cx="73" cy="70" rx="10" ry="17" fill="#c8f7d4" opacity=".32" transform="rotate(-35 73 70)"/>
+  <ellipse cx="60" cy="60" rx="6" ry="20" fill="white" opacity=".15" transform="rotate(15 60 60)"/>
+  <circle cx="60" cy="14" r="5" fill="#c8f7d4" opacity=".8"/>
+  <circle cx="106" cy="60" r="4" fill="#9dd4b0" opacity=".6"/>
+  <circle cx="14" cy="60" r="4" fill="#9dd4b0" opacity=".6"/>
+  <circle cx="93" cy="27" r="3" fill="#c8f7d4" opacity=".5"/>
+  <circle cx="27" cy="93" r="3" fill="#c8f7d4" opacity=".5"/>
+  <text x="60" y="70" font-family="'Helvetica Neue',Arial,sans-serif" font-size="30" fill="white" text-anchor="middle" font-weight="900" font-style="italic" opacity=".95">ONEs</text>
+</svg>
+  <div class="inv-tagline">つながりを、ひとつに。<br>招待制クローズドSNS</div>
+  <div class="inv-card">
+    <h2>🔐 招待コードで参加</h2>
+    <p>ONEsは紹介制のプライベートSNSです。<br>招待コードをお持ちの方のみ参加できます。</p>
+    <input id="inv-code-input" class="inv-input" type="text" placeholder="招待コードを入力（例：ONES-XXXX）" autocomplete="off">
+    <div class="inv-error" id="inv-error"></div>
+    <input id="inv-name-input" class="inv-input" type="text" placeholder="ニックネームを入力" style="letter-spacing:0;font-size:14px;margin-top:2px;">
+    <div style="height:8px;"></div>
+    <button class="inv-join-btn" onclick="joinWithCode()">参加する →</button>
+    <div class="inv-note">
+      招待コードは既存メンバーから受け取ってください。<br>
+      <span style="color:var(--og3);font-weight:700;cursor:pointer;" onclick="showAdminLogin()">管理者の方はこちら</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════
+     ADMIN SCREEN
+══════════════════════════════ -->
+<div id="admin-screen">
+  <div class="adm-hd">
+    <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="16" cy="16" r="15" fill="#1e6e3a"/>
+  <circle cx="16" cy="16" r="11" fill="none" stroke="white" stroke-width="1.5" opacity=".25"/>
+  <ellipse cx="12.5" cy="13" rx="3.5" ry="6" fill="white" opacity=".3" transform="rotate(-35 12.5 13)"/>
+  <ellipse cx="19.5" cy="19" rx="3" ry="5.5" fill="#c8f7d4" opacity=".35" transform="rotate(-35 19.5 19)"/>
+  <text x="16" y="21" font-family="Arial,sans-serif" font-size="10.5" fill="white" text-anchor="middle" font-weight="900" font-style="italic">ONEs</text>
+</svg>
+    <h1>管理者ダッシュボード</h1>
+    <div class="adm-hd-close" onclick="closeAdmin()">✕</div>
+  </div>
+  <div class="adm-body">
+
+    <!-- TABS -->
+    <div class="adm-tabs">
+      <div class="adm-tab on" onclick="admTab(this,'adm-overview')">📊 概要</div>
+      <div class="adm-tab" onclick="admTab(this,'adm-members')">👥 メンバー</div>
+      <div class="adm-tab" onclick="admTab(this,'adm-invites')">🎟️ 招待</div>
+      <div class="adm-tab" onclick="admTab(this,'adm-tree')">🌳 系譜</div>
+      <div class="adm-tab" onclick="admTab(this,'adm-pending')">⏳ 承認</div>
+    </div>
+
+    <!-- PANEL: OVERVIEW -->
+    <div class="adm-panel on" id="adm-overview">
+      <div class="adm-stats" id="adm-stat-cards"></div>
+      <div style="background:#fff;border-radius:12px;padding:14px;box-shadow:var(--shadow);margin-bottom:10px;">
+        <div style="font-size:13px;font-weight:700;color:var(--og3);margin-bottom:10px;">📈 直近の参加者</div>
+        <div id="adm-recent-joins"></div>
+      </div>
+      <div style="background:#fff;border-radius:12px;padding:14px;box-shadow:var(--shadow);">
+        <div style="font-size:13px;font-weight:700;color:var(--og3);margin-bottom:10px;">🏆 招待ランキング</div>
+        <div id="adm-invite-ranking"></div>
+      </div>
+    </div>
+
+    <!-- PANEL: MEMBERS -->
+    <div class="adm-panel" id="adm-members">
+      <div class="adm-filter" id="adm-member-filter">
+        <div class="fchip on" onclick="filterMembers('all',this)">すべて</div>
+        <div class="fchip" onclick="filterMembers('active',this)">アクティブ</div>
+        <div class="fchip" onclick="filterMembers('pending',this)">承認待ち</div>
+        <div class="fchip" onclick="filterMembers('rejected',this)">非承認</div>
+      </div>
+      <input class="ei" type="search" placeholder="名前・コードで検索" id="adm-search" oninput="renderAdmMembers()" style="margin-bottom:10px;">
+      <div class="adm-member" id="adm-member-list"></div>
+    </div>
+
+    <!-- PANEL: INVITES -->
+    <div class="adm-panel" id="adm-invites">
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <button class="bo" style="flex:1;padding:10px;" onclick="generateInvite()">＋ 招待コード発行</button>
+      </div>
+      <div style="background:#fff;border-radius:12px;box-shadow:var(--shadow);overflow:hidden;">
+        <div style="padding:10px 14px;font-size:12px;font-weight:700;color:var(--text3);border-bottom:1px solid var(--og-pale);display:grid;grid-template-columns:1fr 1fr 1fr 60px;gap:4px;">
+          <span>コード</span><span>発行者</span><span>使用者</span><span>状態</span>
+        </div>
+        <div id="adm-invite-list"></div>
+      </div>
+    </div>
+
+    <!-- PANEL: TREE -->
+    <div class="adm-panel" id="adm-tree">
+      <div style="background:#fff;border-radius:12px;padding:14px;box-shadow:var(--shadow);margin-bottom:10px;">
+        <div style="font-size:13px;font-weight:700;color:var(--og3);margin-bottom:4px;">🌳 紹介系譜ツリー</div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:14px;">誰が誰を招待したかの繋がりを表示</div>
+        <div id="adm-tree-view"></div>
+      </div>
+    </div>
+
+    <!-- PANEL: PENDING -->
+    <div class="adm-panel" id="adm-pending">
+      <div style="font-size:13px;color:var(--text3);margin-bottom:10px;">招待コードを使って参加申請中のユーザー</div>
+      <div id="adm-pending-list"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════
+     MAIN APP
+══════════════════════════════ -->
+<header id="hd">
+  <div id="logo">
+    <!-- アイコン丸バッジ -->
+    <svg width="36" height="36" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" style="display:block;flex-shrink:0;">
+      <circle cx="18" cy="18" r="17" fill="rgba(255,255,255,0.22)"/>
+      <circle cx="18" cy="18" r="13" fill="none" stroke="white" stroke-width="2" opacity=".3"/>
+      <ellipse cx="14" cy="15" rx="4.5" ry="8" fill="white" opacity=".3" transform="rotate(-35 14 15)"/>
+      <ellipse cx="22" cy="21" rx="4" ry="7" fill="#c8f7d4" opacity=".4" transform="rotate(-35 22 21)"/>
+      <circle cx="18" cy="3" r="2.5" fill="#c8f7d4" opacity=".8"/>
+      <text x="18" y="23" font-family="'Helvetica Neue',Arial,sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="900" font-style="italic">ONEs</text>
+    </svg>
+    <!-- ワードマーク -->
+    <div style="display:flex;flex-direction:column;line-height:1.1;margin-left:7px;">
+      <span style="font-size:20px;font-weight:900;font-style:italic;color:#fff;letter-spacing:-.5px;font-family:'Helvetica Neue',Arial,sans-serif;">ON<span style="color:#c8f7d4;">Es</span></span>
+      <span style="font-size:9px;color:rgba(255,255,255,.7);font-weight:500;letter-spacing:.3px;white-space:nowrap;">つながりを、ひとつに。</span>
+    </div>
+  </div>
+  <nav id="hd-desktnav">
+    <div class="dn on" onclick="nav('home',this)">ホーム</div>
+    <div class="dn" onclick="nav('mypage',this)">マイページ</div>
+    <div class="dn" onclick="nav('diary',this)">日記</div>
+    <div class="dn" onclick="nav('voice',this)">つぶやき</div>
+    <div class="dn" onclick="nav('wanmik',this)">ワンミク</div>
+    <div class="dn" onclick="nav('footprint',this)">足あと</div>
+    <div class="dn" onclick="nav('community',this)">コミュニティ</div>
+    <div class="dn" onclick="nav('invite',this)">招待</div>
+  </nav>
+  <button class="hd-icon" onclick="openSearch()" style="margin-left:auto;">🔍</button>
+  <button class="hd-icon" onclick="nav('notice',null)">🔔<div class="hb">7</div></button>
+  <div id="hd-av" onclick="nav('mypage',null)">😊</div>
+</header>
+
+<div id="body">
+  <div id="maincol">
+
+    <!-- HOME -->
+    <div class="pg on" id="pg-home">
+      <div id="strow">
+        <div class="sh">最近の足あと <a href="#" onclick="nav('footprint',null);return false;">全部見る</a></div>
+        <div class="srow" id="strow-inner"></div>
+      </div>
+      <div id="mxsrow">
+        <div class="sh">ワンミク <a href="#" onclick="nav('wanmik',null);return false;">一覧</a></div>
+        <div class="mxrow" id="mxrow-inner"></div>
+      </div>
+      <div id="wbox">
+        <div class="wr">
+          <div class="av am">😊</div>
+          <div id="wtrig" onclick="openSheet('diary')">今日はどんな1日でしたか？</div>
+        </div>
+        <div class="wa">
+          <button class="wab" onclick="openSheet('diary')">📔 日記</button>
+          <button class="wab" onclick="openSheet('voice')">💬 つぶやき</button>
+          <button class="wab" onclick="openSheet('photo')">📷 フォト</button>
+        </div>
+      </div>
+      <div class="sh" style="padding-top:4px;">タイムライン</div>
+      <div id="tlfeed"></div>
+    </div>
+
+    <!-- MYPAGE -->
+    <div class="pg" id="pg-mypage">
+      <div class="mph">
+        <div class="mphr">
+          <div class="mpph" onclick="openEditProfile()">😊<div class="mppe">編集</div></div>
+          <div class="mphi">
+            <div class="mphn" id="mpname">BOSS YASU</div>
+            <div class="mphs" id="mpstatus">「経験を自動化して収益化する」</div>
+          </div>
+        </div>
+        <div class="mpst">
+          <div class="mps" onclick="nav('wanmik',null)"><div class="n">12</div><div class="l">ワンミク</div></div>
+          <div class="mps"><div class="n">47</div><div class="l">日記</div></div>
+          <div class="mps" onclick="nav('footprint',null)"><div class="n">23</div><div class="l">足あと</div></div>
+          <div class="mps" onclick="nav('invite',null)"><div class="n" id="mp-inv-count">5</div><div class="l">招待数</div></div>
+        </div>
+      </div>
+      <div class="psec">
+        <div class="psh"><span class="t">👤 基本情報</span><a href="#" onclick="openEditProfile();return false;">編集</a></div>
+        <div class="psb">
+          <div class="pr"><div class="pk">ニックネーム</div><div class="pv" id="pvnick">BOSS YASU</div></div>
+          <div class="pr"><div class="pk">性別</div><div class="pv">男性</div></div>
+          <div class="pr"><div class="pk">居住地</div><div class="pv" id="pvloc">愛知県 名古屋市</div></div>
+          <div class="pr"><div class="pk">職業</div><div class="pv" id="pvjob">IT会社経営</div></div>
+          <div class="pr"><div class="pk">招待者</div><div class="pv">🌱 創設メンバー（管理者）</div></div>
+          <div class="pr"><div class="pk">登録日</div><div class="pv">2005年4月3日</div></div>
+        </div>
+      </div>
+      <div class="psec">
+        <div class="psh"><span class="t">📝 自己紹介</span><a href="#" onclick="openEditBio();return false;">編集</a></div>
+        <div class="psb"><div class="bio" id="pvbio">名古屋を拠点にIT会社を30年経営しています。<br>SNS集客・マーケティング自動化・個人ブランディング支援が専門です。<br>「経験を自動化して収益化する」をテーマに活動中 🔥</div></div>
+      </div>
+      <div class="psec">
+        <div class="psh"><span class="t">📔 最近の日記</span><a href="#" onclick="nav('diary',null);return false;">すべて</a></div>
+        <div class="psb" id="mpdiary"></div>
+      </div>
+      <div class="psec" id="interest-section">
+        <div class="psh">
+          <span class="t">🎯 興味・関心</span>
+          <a href="#" onclick="openInterestEditor();return false;">編集</a>
+        </div>
+        <div class="psb">
+          <!-- 選択済みタグ表示 -->
+          <div class="tgw" id="selected-tags-display"></div>
+          <div style="font-size:11px;color:var(--text3);margin-top:8px;" id="selected-count-label"></div>
+        </div>
+      </div>
+      <div class="psec">
+        <div class="psh"><span class="t">📷 フォト</span><a href="#">管理</a></div>
+        <div class="pgr">
+          <div class="pth">🌏</div><div class="pth">🍜</div><div class="pth">✈️</div>
+          <div class="pth">🏢</div><div class="pth">🌸</div><div class="pth ptadd">＋</div>
+        </div>
+      </div>
+      <div class="sh" style="padding-top:14px;">📅 カレンダー</div>
+      <div class="cal" id="calel"></div>
+      <div style="height:8px;"></div>
+    </div>
+
+    <!-- DIARY -->
+    <div class="pg" id="pg-diary">
+      <div class="sh" style="padding-top:14px;">日記一覧 <a href="#" onclick="openSheet('diary');return false;">＋ 書く</a></div>
+      <div id="dlist"></div>
+    </div>
+
+    <!-- VOICE -->
+    <div class="pg" id="pg-voice">
+      <div class="sh" style="padding-top:14px;">つぶやき <a href="#" onclick="openSheet('voice');return false;">＋ つぶやく</a></div>
+      <div class="card" style="margin:0 12px 10px;"><div style="padding:14px;">
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <div class="av am">😊</div>
+          <textarea id="vcin" style="flex:1;background:var(--og-pale);border:1.5px solid var(--og-border);border-radius:10px;padding:10px 13px;font-size:14px;font-family:inherit;outline:none;resize:none;height:70px;line-height:1.6;" placeholder="今なにしてる？"></textarea>
+        </div>
+        <div style="display:flex;justify-content:flex-end;margin-top:10px;">
+          <button class="bos" onclick="postVoiceInline()">投稿する</button>
+        </div>
+      </div></div>
+      <div id="vfeed"></div>
+    </div>
+
+    <!-- WANMIK -->
+    <div class="pg" id="pg-wanmik">
+      <div class="sh" style="padding-top:14px;">ワンミク（12人）</div>
+      <div style="padding:0 12px;"><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;" id="mxgrid"></div></div>
+    </div>
+
+    <!-- FOOTPRINT -->
+    <div class="pg" id="pg-footprint">
+      <div class="sh" style="padding-top:14px;">足あと</div>
+      <div id="fplist"></div>
+    </div>
+
+    <!-- COMMUNITY -->
+    <div class="pg" id="pg-community">
+      <div class="sh" style="padding-top:14px;">参加コミュニティ</div>
+      <div class="card" style="margin:0 12px 10px;"><div class="cb" id="cmjoined"></div></div>
+      <div class="sh">おすすめ</div>
+      <div class="card" style="margin:0 12px 10px;"><div class="cb" id="cmrec"></div></div>
+    </div>
+
+    <!-- INVITE PAGE -->
+    <div class="pg" id="pg-invite">
+      <div class="sh" style="padding-top:14px;">🎟️ 招待・紹介</div>
+
+      <!-- My invite codes -->
+      <div class="inv-my-card">
+        <div style="font-size:13px;font-weight:700;color:var(--og3);margin-bottom:4px;">あなたの招待コード</div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:10px;">このコードを友人に共有してください</div>
+        <div class="inv-code-box">
+          <div class="inv-code-num" id="my-invite-code">ONES-7X3K</div>
+          <div class="inv-code-label">タップしてコピー</div>
+        </div>
+        <button class="bo" style="width:100%;padding:11px;" onclick="copyInviteCode()">📋 招待コードをコピー</button>
+        <div class="inv-stat-row">
+          <div class="inv-stat"><div class="n" id="inv-used-cnt">5</div><div class="l">招待済み</div></div>
+          <div class="inv-stat"><div class="n">∞</div><div class="l">残り枠</div></div>
+          <div class="inv-stat"><div class="n" id="inv-active-cnt">5</div><div class="l">アクティブ</div></div>
+        </div>
+      </div>
+
+      <!-- People I invited -->
+      <div class="psec" style="margin:0 12px 10px;">
+        <div class="psh"><span class="t">🌱 私が招待したひと</span></div>
+        <div class="psb" id="my-invited-list"></div>
+      </div>
+
+      <!-- My referrer -->
+      <div class="psec" style="margin:0 12px 10px;">
+        <div class="psh"><span class="t">🤝 私を招待したひと</span></div>
+        <div class="psb">
+          <div style="display:flex;align-items:center;gap:12px;padding:8px 0;">
+            <div class="av am">🌱</div>
+            <div>
+              <div style="font-size:14px;font-weight:700;color:var(--text);">ONEs 創設者</div>
+              <div style="font-size:12px;color:var(--text3);">管理者 / 2005年4月3日</div>
+              <div class="inv-badge" style="margin-top:4px;">🌳 ルートメンバー</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- NOTICE -->
+    <div class="pg" id="pg-notice">
+      <div class="sh" style="padding-top:14px;">お知らせ</div>
+      <div class="card" style="margin:0 12px;"><div style="padding:0 14px;" id="ntlist"></div></div>
+    </div>
+
+    <!-- MESSAGE -->
+    <div class="pg" id="pg-message">
+      <div class="sh" style="padding-top:14px;">メッセージ <a href="#" onclick="openComposeMsg('');return false;">＋ 作成</a></div>
+      <div class="card" style="margin:0 12px;"><div style="padding:0 14px;" id="msglist"></div></div>
+    </div>
+
+  </div><!-- /maincol -->
+
+  <!-- SIDEBAR -->
+  <aside id="sidecol" style="display:none;">
+    <div class="sc">
+      <div class="sch" style="display:flex;align-items:center;gap:8px;">
+        <svg width="20" height="20" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><circle cx="16" cy="16" r="15" fill="rgba(255,255,255,.25)"/><circle cx="16" cy="16" r="11" fill="none" stroke="white" stroke-width="2" opacity=".4"/><ellipse cx="12.5" cy="13" rx="3.5" ry="6" fill="white" opacity=".4" transform="rotate(-35 12.5 13)"/><ellipse cx="19.5" cy="19" rx="3" ry="5.5" fill="#c8f7d4" opacity=".5" transform="rotate(-35 19.5 19)"/><text x="16" y="21" font-family="Arial,sans-serif" font-size="10" fill="white" text-anchor="middle" font-weight="900" font-style="italic">ONEs</text></svg>
+        BOSS YASU</div>
+      <div class="scb" style="text-align:center;padding:14px;">
+        <div style="width:70px;height:70px;border-radius:18px;background:linear-gradient(135deg,#a8ddb8,#3fa865);display:flex;align-items:center;justify-content:center;font-size:40px;margin:0 auto 8px;border:2px solid var(--og-border);cursor:pointer;" onclick="nav('mypage',null)">😊</div>
+        <div style="font-weight:700;color:var(--og3);margin-bottom:6px;">BOSS YASU</div>
+        <div class="inv-badge" style="margin-bottom:8px;">🌱 創設メンバー</div>
+        <div style="font-size:11px;color:var(--text3);line-height:2.1;">ワンミク <strong>12</strong>人<br>招待数 <strong>5</strong>人<br>日記 <strong>47</strong>件</div>
+        <button class="bos" style="margin-top:10px;width:100%;" onclick="nav('mypage',null)">マイページへ</button>
+        <button class="bos" style="margin-top:6px;width:100%;background:linear-gradient(135deg,#1e6e3a,#0d3d20);" onclick="openAdmin()">🛡️ 管理者画面</button>
+      </div>
+    </div>
+    <div class="sc">
+      <div class="sch">👣 足あと <a href="#" onclick="nav('footprint',null);return false;">一覧</a></div>
+      <div class="scb"><div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;" id="sfp"></div></div>
+    </div>
+    <div class="sc">
+      <div class="sch">👥 ワンミク <a href="#" onclick="nav('wanmik',null);return false;">一覧</a></div>
+      <div class="scb"><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;" id="smx"></div></div>
+    </div>
+    <div class="sc">
+      <div class="sch">🎟️ 招待状況</div>
+      <div class="scb">
+        <div style="font-size:12px;color:var(--text3);margin-bottom:6px;">あなたのコード</div>
+        <div style="background:var(--og-pale);border-radius:8px;padding:8px;text-align:center;font-size:16px;font-weight:900;color:var(--og3);letter-spacing:.1em;cursor:pointer;" onclick="copyInviteCode()">ONES-7X3K</div>
+        <div style="font-size:11px;color:var(--og);text-align:center;margin-top:4px;">招待済み 5人</div>
+        <button class="bos" style="width:100%;margin-top:8px;" onclick="nav('invite',null)">招待ページへ</button>
+      </div>
+    </div>
+    <div class="sc">
+      <div class="sch">🔔 お知らせ <span style="background:#e53e3e;color:#fff;border-radius:8px;padding:0 5px;font-size:10px;font-weight:900;">7</span></div>
+      <div class="scb" id="snt"></div>
+    </div>
+  </aside>
+</div>
+
+<nav id="bnav">
+  <div class="bi on" onclick="nav('home',this)" id="bn-home"><div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="12" cy="12" r="11" fill="currentColor" opacity=".15"/>
+  <circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.8" opacity=".6"/>
+  <ellipse cx="9.5" cy="10" rx="3" ry="5.5" fill="currentColor" opacity=".4" transform="rotate(-35 9.5 10)"/>
+  <ellipse cx="14.5" cy="14" rx="2.8" ry="5" fill="currentColor" opacity=".35" transform="rotate(-35 14.5 14)"/>
+  <text x="12" y="16" font-family="Arial,sans-serif" font-size="7" fill="currentColor" text-anchor="middle" font-weight="900" font-style="italic">ONEs</text>
+</svg></div><span>ホーム</span></div>
+  <div class="bi" onclick="nav('wanmik',this)" id="bn-wanmik"><div class="ic">👥</div><span>ワンミク</span></div>
+  <div class="bi" onclick="nav('invite',this)" id="bn-invite"><div class="ic">🎟️</div><span>招待</span></div>
+  <div class="bi" onclick="nav('message',this)" id="bn-message"><div class="ic">💌</div><span>メッセージ</span><div class="bn-badge">3</div></div>
+  <div class="bi" onclick="nav('mypage',this)" id="bn-mypage"><div class="ic">😊</div><span>マイページ</span></div>
+</nav>
+
+<button id="fab" onclick="openSheet('diary')">＋</button>
+<div id="sov"><div class="sovhd"><input id="soin" type="search" placeholder="日記・コミュニティ・ひとを検索" autocomplete="off"><span class="socan" onclick="closeSearch()">キャンセル</span></div><div class="sobd" id="sobd"><div class="sohi">🔍<br><br>キーワードを入力</div></div></div>
+<div id="sbg" onclick="closeSheet()"></div>
+<div id="sh"><div class="shdl"></div><div class="shhd"><div class="shtit" id="shtit">タイトル</div><button class="shx" onclick="closeSheet()">✕</button></div><div id="shbody"></div></div>
+
+<script>
+/* ══════════ DATA ══════════ */
+const AB='background:linear-gradient(135deg,#a8ddb8,#3fa865)';
+
+// INVITE / MEMBER DATA (stored in localStorage)
+const ADMIN_PASS = 'ones2024admin';
+
+const DEMO_MEMBERS = [
+  {id:'m001',name:'BOSS YASU',emoji:'😊',code:'ONES-7X3K',invitedBy:null,invitedById:null,joinDate:'2005-04-03',status:'active',role:'admin'},
+  {id:'m002',name:'さくらんぼ',emoji:'🌸',code:'ONES-AK2P',invitedBy:'BOSS YASU',invitedById:'m001',joinDate:'2024-01-15',status:'active',role:'member'},
+  {id:'m003',name:'たけし君',emoji:'😎',code:'ONES-BT9R',invitedBy:'BOSS YASU',invitedById:'m001',joinDate:'2024-02-03',status:'active',role:'member'},
+  {id:'m004',name:'みほりん',emoji:'🌺',code:'ONES-CM4S',invitedBy:'さくらんぼ',invitedById:'m002',joinDate:'2024-02-20',status:'active',role:'member'},
+  {id:'m005',name:'けんじ',emoji:'🏄',code:'ONES-DN7T',invitedBy:'さくらんぼ',invitedById:'m002',joinDate:'2024-02-28',status:'active',role:'member'},
+  {id:'m006',name:'ゆきちゃん',emoji:'⛄',code:'ONES-EP1U',invitedBy:'たけし君',invitedById:'m003',joinDate:'2024-03-05',status:'active',role:'member'},
+  {id:'m007',name:'のりちゃん',emoji:'🎸',code:'ONES-FQ8V',invitedBy:'みほりん',invitedById:'m004',joinDate:'2024-03-08',status:'active',role:'member'},
+  {id:'m008',name:'あやか',emoji:'🌼',code:'ONES-GR2W',invitedBy:'BOSS YASU',invitedById:'m001',joinDate:'2024-03-10',status:'active',role:'member'},
+  {id:'m009',name:'まさや',emoji:'🎷',code:'ONES-HS5X',invitedBy:'けんじ',invitedById:'m005',joinDate:'2024-03-12',status:'active',role:'member'},
+  {id:'m010',name:'えみ',emoji:'🌈',code:'ONES-IT6Y',invitedBy:'のりちゃん',invitedById:'m007',joinDate:'2024-03-14',status:'active',role:'member'},
+  {id:'m011',name:'田中さん申請中',emoji:'🙋',code:null,invitedBy:'あやか',invitedById:'m008',joinDate:'2024-03-20',status:'pending',role:'member'},
+  {id:'m012',name:'鈴木さん申請中',emoji:'🙆',code:null,invitedBy:'えみ',invitedById:'m010',joinDate:'2024-03-21',status:'pending',role:'member'},
+];
+
+const INVITE_CODES = [
+  {code:'ONES-7X3K',issuedBy:'BOSS YASU',issuedById:'m001',usedBy:'未使用',status:'unused'},
+  {code:'ONES-AK2P',issuedBy:'BOSS YASU',issuedById:'m001',usedBy:'さくらんぼ',status:'used'},
+  {code:'ONES-BT9R',issuedBy:'BOSS YASU',issuedById:'m001',usedBy:'たけし君',status:'used'},
+  {code:'ONES-CM4S',issuedBy:'さくらんぼ',issuedById:'m002',usedBy:'みほりん',status:'used'},
+  {code:'ONES-DN7T',issuedBy:'さくらんぼ',issuedById:'m002',usedBy:'けんじ',status:'used'},
+  {code:'ONES-EP1U',issuedBy:'たけし君',issuedById:'m003',usedBy:'ゆきちゃん',status:'used'},
+  {code:'ONES-FQ8V',issuedBy:'みほりん',issuedById:'m004',usedBy:'のりちゃん',status:'used'},
+  {code:'ONES-GR2W',issuedBy:'BOSS YASU',issuedById:'m001',usedBy:'あやか',status:'used'},
+  {code:'ONES-HS5X',issuedBy:'けんじ',issuedById:'m005',usedBy:'まさや',status:'used'},
+  {code:'ONES-IT6Y',issuedBy:'のりちゃん',issuedById:'m007',usedBy:'えみ',status:'used'},
+  {code:'ONES-JU3Z',issuedBy:'あやか',issuedById:'m008',usedBy:'田中さん申請中',status:'pending'},
+  {code:'ONES-KV4A',issuedBy:'えみ',issuedById:'m010',usedBy:'鈴木さん申請中',status:'pending'},
+];
+
+const USERS=[{n:'さくらんぼ',e:'🌸',on:true},{n:'たけし君',e:'😎',on:false},{n:'みほりん',e:'🌺',on:true},{n:'けんじ',e:'🏄',on:false},{n:'ゆきちゃん',e:'⛄',on:true},{n:'のりちゃん',e:'🎸',on:true},{n:'あやか',e:'🌼',on:false},{n:'まさや',e:'🎷',on:false},{n:'えみ',e:'🌈',on:true},{n:'ひろ',e:'🎯',on:false},{n:'りか',e:'🦋',on:true},{n:'しんじ',e:'🎮',on:false}];
+const FP=[{n:'みき',e:'🌷',t:'3分前'},{n:'タロウ',e:'🐯',t:'15分前'},{n:'あかり',e:'🌙',t:'1時間前'},{n:'けい',e:'🎵',t:'2時間前'},{n:'ふじこ',e:'🌻',t:'3時間前'},{n:'なおき',e:'🚀',t:'昨日'},{n:'ともみ',e:'🍎',t:'昨日'},{n:'まさや',e:'🎷',t:'2日前'},{n:'えみ',e:'🌈',t:'3日前'},{n:'ゆうた',e:'⚡',t:'3日前'}];
+const DI=[{title:'名古屋でビジネス交流会に参加してきた',date:'2024年3月15日 22:30',excerpt:'今日は名古屋市内で開催されたビジネス交流会に参加してきました。IT経営者が50名以上集まって、情報交換が盛り上がりました。',comments:8,good:23},{title:'クアラルンプール旅行 ３日目レポート',date:'2024年3月10日 18:45',excerpt:'KLタワーからの夜景が最高でした！現地でビジネスパートナーと会食もできて充実した1日。',comments:15,good:41},{title:'ProLineを使ったマーケティング自動化の成果',date:'2024年3月8日 09:00',excerpt:'LINE公式アカウントとProLineを組み合わせた自動配信システムを3ヶ月運用した結果をまとめました。',comments:22,good:67}];
+const VC=[{u:'さくらんぼ',e:'🌸',t:'やっと春になってきた～🌸 お花見楽しみ！',tm:'5分前'},{u:'たけし君',e:'😎',t:'今日のランチはラーメン。旨かった！',tm:'23分前'},{u:'BOSS YASU',e:'😊',t:'新しいプロジェクト始動！楽しみ🔥',tm:'1時間前'},{u:'みほりん',e:'🌺',t:'コミュニティのオフ会楽しかった〜！',tm:'3時間前'}];
+const CM=[{n:'IT経営者交流会',e:'💻',cnt:1842},{n:'SNSマーケティング研究',e:'📱',cnt:3204},{n:'名古屋グルメ探索隊',e:'🍜',cnt:5610}];
+const RCM=[{n:'AI副業研究会',e:'🤖',cnt:2341},{n:'名古屋IT勉強会',e:'⚙️',cnt:876}];
+const NT=[{type:'new',t:'さくらんぼさんが日記にコメントしました',tm:'3分前'},{type:'new',t:'田中さんが参加申請しました',tm:'20分前'},{type:'new',t:'みほりんさんが日記を更新しました',tm:'1時間前'},{type:'info',t:'招待コード ONES-JU3Z が使用されました',tm:'2時間前'},{type:'info',t:'あかりさんが足あとを踏みました',tm:'3時間前'},{type:'',t:'ONEs公式：新機能リリースのお知らせ',tm:'昨日'}];
+const MSG=[{f:'さくらんぼ',e:'🌸',t:'こんにちは！先日の交流会ぶりです。また機会があれば...',d:'3月15日',u:true},{f:'みほりん',e:'🌺',t:'オフ会の写真送りますね！楽しかったです😊',d:'3月12日',u:true},{f:'けんじ',e:'🏄',t:'先日はありがとうございました！また連絡します',d:'3月10日',u:true},{f:'ゆきちゃん',e:'⛄',t:'お久しぶりです！元気ですか？',d:'3月5日',u:false}];
+
+/* ══════════ UTILS ══════════ */
+function esc(s){return(s||'').replace(/'/g,"\\'")}
+function pad(n){return String(n).padStart(2,'0')}
+function ld(k){return JSON.parse(localStorage.getItem(k)||'[]')}
+function sv(k,v){localStorage.setItem(k,JSON.stringify(v))}
+function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2200);}
+
+/* ══════════ INVITE SYSTEM ══════════ */
+let currentUser = null;
+
+function getMembers(){return JSON.parse(localStorage.getItem('ones_members')||JSON.stringify(DEMO_MEMBERS));}
+function saveMembers(m){localStorage.setItem('ones_members',JSON.stringify(m));}
+function getCodes(){return JSON.parse(localStorage.getItem('ones_codes')||JSON.stringify(INVITE_CODES));}
+function saveCodes(c){localStorage.setItem('ones_codes',JSON.stringify(c));}
+
+function checkSession(){
+  const sess = localStorage.getItem('ones_session');
+  if(sess){
+    currentUser = JSON.parse(sess);
+    document.getElementById('invite-screen').classList.add('hidden');
+    initApp();
+  }
+  // else invite screen is already shown
+}
+
+function joinWithCode(){
+  const raw = document.getElementById('inv-code-input').value.trim().toUpperCase();
+  const name = document.getElementById('inv-name-input').value.trim();
+  const errEl = document.getElementById('inv-error');
+  errEl.textContent='';
+
+  if(!raw){errEl.textContent='招待コードを入力してください';return;}
+  if(!name){errEl.textContent='ニックネームを入力してください';return;}
+
+  const codes = getCodes();
+  const code = codes.find(c=>c.code===raw);
+
+  if(!code){errEl.textContent='❌ 招待コードが無効です。コードをご確認ください。';return;}
+  if(code.status==='used'||code.status==='pending'){errEl.textContent='このコードは既に使用されています。';return;}
+
+  // Find referrer
+  const members = getMembers();
+  const referrer = members.find(m=>m.id===code.issuedById);
+
+  // Create pending member
+  const newId = 'm'+Date.now();
+  const newMember = {
+    id:newId, name, emoji:'🙋',
+    code: null,
+    invitedBy: referrer ? referrer.name : 'Unknown',
+    invitedById: referrer ? referrer.id : null,
+    joinDate: new Date().toISOString().slice(0,10),
+    status:'pending', role:'member'
+  };
+  members.push(newMember);
+  saveMembers(members);
+
+  // Mark code as pending
+  code.status='pending'; code.usedBy=name;
+  saveCodes(codes);
+
+  // Show success message
+  document.getElementById('invite-screen').innerHTML=`
+    <div style="text-align:center;padding:24px;max-width:400px;">
+      <div style="font-size:64px;margin-bottom:16px;">🎉</div>
+      <div style="font-size:24px;font-weight:900;color:#fff;margin-bottom:8px;">申請完了！</div>
+      <div style="color:rgba(255,255,255,.85);line-height:1.7;margin-bottom:24px;">
+        <strong>${name}</strong> さんの参加申請を受け付けました。<br>
+        招待者 <strong>${referrer?referrer.name:'管理者'}</strong> による紹介として記録されました。<br><br>
+        管理者が承認後にご利用いただけます。<br>今しばらくお待ちください。
+      </div>
+      <div style="background:rgba(255,255,255,.15);border-radius:12px;padding:14px;margin-bottom:16px;">
+        <div style="color:rgba(255,255,255,.7);font-size:11px;">使用した招待コード</div>
+        <div style="color:#c8f7d4;font-size:20px;font-weight:900;letter-spacing:.1em;">${raw}</div>
+        <div style="color:rgba(255,255,255,.7);font-size:11px;margin-top:4px;">紹介者：${referrer?referrer.name:'管理者'}</div>
+      </div>
+    </div>`;
+}
+
+function showAdminLogin(){
+  const pw = prompt('管理者パスワードを入力してください：');
+  if(pw===null) return;
+  if(pw===ADMIN_PASS){
+    // Login as admin
+    currentUser={id:'m001',name:'BOSS YASU',emoji:'😊',role:'admin'};
+    localStorage.setItem('ones_session',JSON.stringify(currentUser));
+    document.getElementById('invite-screen').classList.add('hidden');
+    initApp();
+    openAdmin();
+  } else {
+    alert('パスワードが違います');
+  }
+}
+
+function devLogin(){
+  // Quick login for demo
+  currentUser={id:'m001',name:'BOSS YASU',emoji:'😊',role:'admin'};
+  localStorage.setItem('ones_session',JSON.stringify(currentUser));
+  document.getElementById('invite-screen').classList.add('hidden');
+  initApp();
+}
+
+/* ══════════ ADMIN ══════════ */
+let admMemberFilter='all';
+
+function openAdmin(){document.getElementById('admin-screen').classList.add('show');renderAdmOverview();renderAdmMembers();renderAdmInvites();renderAdmTree();renderAdmPending();}
+function closeAdmin(){document.getElementById('admin-screen').classList.remove('show');}
+
+function admTab(el,panelId){
+  document.querySelectorAll('.adm-tab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.adm-panel').forEach(p=>p.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById(panelId).classList.add('on');
+}
+
+function renderAdmOverview(){
+  const m=getMembers();
+  const active=m.filter(x=>x.status==='active').length;
+  const pending=m.filter(x=>x.status==='pending').length;
+  const codes=getCodes();
+  const usedCodes=codes.filter(x=>x.status==='used').length;
+  document.getElementById('adm-stat-cards').innerHTML=`
+    <div class="adm-stat-card"><div class="n">${active}</div><div class="l">アクティブ会員</div><div class="sub">+2 今月</div></div>
+    <div class="adm-stat-card"><div class="n">${pending}</div><div class="l">承認待ち</div><div class="sub" style="color:#d97706;">要確認</div></div>
+    <div class="adm-stat-card"><div class="n">${codes.length}</div><div class="l">発行コード数</div><div class="sub">${usedCodes}件使用済</div></div>
+    <div class="adm-stat-card"><div class="n">${m.filter(x=>x.invitedBy).length}</div><div class="l">紹介経由</div><div class="sub">全参加者の${Math.round(m.filter(x=>x.invitedBy).length/m.length*100)}%</div></div>`;
+
+  // Recent joins
+  const recent=[...m].filter(x=>x.status==='active'&&x.joinDate).sort((a,b)=>b.joinDate.localeCompare(a.joinDate)).slice(0,5);
+  document.getElementById('adm-recent-joins').innerHTML=recent.map(u=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--og-pale);">
+      <div class="adm-av">${u.emoji}</div>
+      <div style="flex:1;"><div style="font-size:13px;font-weight:700;">${u.name}</div><div style="font-size:11px;color:var(--text3);">紹介：${u.invitedBy||'創設者'} / ${u.joinDate}</div></div>
+      <span class="status-badge st-active">参加中</span>
+    </div>`).join('');
+
+  // Invite ranking
+  const rank={};
+  m.forEach(u=>{if(u.invitedBy){rank[u.invitedBy]=(rank[u.invitedBy]||0)+1;}});
+  const sorted=Object.entries(rank).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('adm-invite-ranking').innerHTML=sorted.map(([name,cnt],i)=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--og-pale);">
+      <div style="width:24px;height:24px;border-radius:50%;background:${i===0?'#fbbf24':i===1?'#d1d5db':'#b45309'};color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;">${i+1}</div>
+      <div style="flex:1;font-size:13px;font-weight:700;">${name}</div>
+      <div style="font-size:13px;font-weight:700;color:var(--og);">${cnt}人</div>
+    </div>`).join('');
+}
+
+function renderAdmMembers(){
+  const search=(document.getElementById('adm-search')||{}).value||'';
+  const m=getMembers().filter(u=>{
+    const matchStatus=admMemberFilter==='all'||u.status===admMemberFilter;
+    const matchSearch=!search||u.name.includes(search)||(u.code||'').includes(search);
+    return matchStatus&&matchSearch;
+  });
+  document.getElementById('adm-member-list').innerHTML=m.length?m.map(u=>`
+    <div class="adm-member-row" onclick="admMemberDetail('${u.id}')">
+      <div class="adm-av">${u.emoji}</div>
+      <div class="adm-info">
+        <div class="adm-name">${u.name} ${u.role==='admin'?'🛡️':''}</div>
+        <div class="adm-meta">参加日：${u.joinDate||'-'}<br>招待者：${u.invitedBy||'創設者'}</div>
+        ${u.code?`<div class="adm-chain">コード：${u.code}</div>`:''}
+      </div>
+      <div class="adm-status">
+        <span class="status-badge ${u.status==='active'?'st-active':u.status==='pending'?'st-pending':'st-rejected'}">${u.status==='active'?'参加中':u.status==='pending'?'承認待':'非承認'}</span>
+      </div>
+    </div>`).join(''):'<div style="padding:20px;text-align:center;color:var(--text3);">該当者なし</div>';
+}
+
+function filterMembers(f,el){
+  admMemberFilter=f;
+  document.querySelectorAll('.fchip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+  renderAdmMembers();
+}
+
+function admMemberDetail(id){
+  const m=getMembers();
+  const u=m.find(x=>x.id===id);
+  if(!u) return;
+  const invited=m.filter(x=>x.invitedById===id);
+  const codes=getCodes();
+  const myCode=codes.find(c=>c.issuedById===id&&c.status==='unused');
+  showSheet(u.name+'さんの詳細',`
+    <div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+        <div style="width:56px;height:56px;border-radius:14px;${AB};display:flex;align-items:center;justify-content:center;font-size:32px;">${u.emoji}</div>
+        <div>
+          <div style="font-size:18px;font-weight:700;color:var(--og3);">${u.name}</div>
+          <div style="font-size:12px;color:var(--text3);">参加日：${u.joinDate||'-'}</div>
+          <span class="status-badge ${u.status==='active'?'st-active':u.status==='pending'?'st-pending':'st-rejected'}" style="margin-top:4px;display:inline-block;">${u.status==='active'?'参加中':u.status==='pending'?'承認待ち':'非承認'}</span>
+        </div>
+      </div>
+      <div style="background:var(--og-pale);border-radius:10px;padding:12px;margin-bottom:12px;">
+        <div style="font-size:12px;color:var(--text3);margin-bottom:4px;">招待の繋がり</div>
+        <div style="font-size:13px;font-weight:600;">${u.invitedBy?'🔗 '+u.invitedBy+' → '+u.name:'🌱 創設メンバー'}</div>
+      </div>
+      ${invited.length?`<div style="margin-bottom:12px;"><div style="font-size:12px;font-weight:700;color:var(--og3);margin-bottom:8px;">このひとが招待（${invited.length}人）</div>${invited.map(i=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--og-pale);">${i.emoji} <span style="font-size:13px;font-weight:600;">${i.name}</span><span class="status-badge ${i.status==='active'?'st-active':'st-pending'}" style="margin-left:auto;">${i.status==='active'?'参加中':'待機中'}</span></div>`).join('')}</div>`:''}
+      ${u.status==='pending'?`<div style="display:flex;gap:8px;margin-top:8px;"><button class="btn-approve" style="flex:1;padding:10px;border-radius:10px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;" onclick="approveUser('${id}')">✅ 承認する</button><button class="btn-reject" style="flex:1;padding:10px;border-radius:10px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;" onclick="rejectUser('${id}')">❌ 非承認</button></div>`:''}
+    </div>`);
+}
+
+function approveUser(id){
+  const m=getMembers();
+  const u=m.find(x=>x.id===id);
+  if(u){u.status='active';u.code='ONES-'+Math.random().toString(36).slice(2,6).toUpperCase();}
+  saveMembers(m);
+  closeSheet();renderAdmMembers();renderAdmPending();renderAdmOverview();
+  toast('✅ '+u.name+'さんを承認しました');
+}
+
+function rejectUser(id){
+  const m=getMembers();
+  const u=m.find(x=>x.id===id);
+  if(u)u.status='rejected';
+  saveMembers(m);
+  closeSheet();renderAdmMembers();renderAdmPending();renderAdmOverview();
+  toast('❌ 非承認にしました');
+}
+
+function renderAdmInvites(){
+  const codes=getCodes();
+  document.getElementById('adm-invite-list').innerHTML=codes.map(c=>`
+    <div class="adm-inv-row">
+      <div class="inv-code-chip">${c.code}</div>
+      <div style="flex:1;min-width:0;">
+        <div class="inv-from">発行：${c.issuedBy}</div>
+        <div class="${c.status==='used'?'inv-used':c.status==='pending'?'inv-from':'inv-unused'}">${c.status==='used'?'✅ '+c.usedBy:c.status==='pending'?'⏳ '+c.usedBy:'未使用'}</div>
+      </div>
+      <span class="status-badge ${c.status==='used'?'st-active':c.status==='pending'?'st-pending':'st-rejected'}">${c.status==='used'?'使用済':'pending'===c.status?'申請中':'未使用'}</span>
+    </div>`).join('');
+}
+
+function generateInvite(){
+  const codes=getCodes();
+  const newCode='ONES-'+Math.random().toString(36).slice(2,6).toUpperCase();
+  codes.unshift({code:newCode,issuedBy:'BOSS YASU',issuedById:'m001',usedBy:'未使用',status:'unused'});
+  saveCodes(codes);
+  renderAdmInvites();
+  toast('🎟️ 新しいコード発行：'+newCode);
+}
+
+function renderAdmTree(){
+  const m=getMembers();
+  function buildNode(memberId,depth){
+    const u=m.find(x=>x.id===memberId);
+    if(!u)return'';
+    const children=m.filter(x=>x.invitedById===memberId);
+    const inv=m.filter(x=>x.invitedById===memberId&&x.status==='active').length;
+    return`<div class="${depth===0?'tree-root':'tree-node'}">
+      <div class="tree-label" onclick="admMemberDetail('${u.id}')">
+        <div class="tree-chip">
+          <span style="font-size:18px;">${u.emoji}</span>
+          <div><div class="tn">${u.name}${u.role==='admin'?' 🛡️':''}</div><div class="tc">招待 ${inv}人</div><div class="td">${u.joinDate||''}</div></div>
+        </div>
+      </div>
+      ${children.length?children.map(c=>buildNode(c.id,depth+1)).join(''):''}
+    </div>`;
+  }
+  const root=m.find(x=>x.role==='admin');
+  document.getElementById('adm-tree-view').innerHTML=root?buildNode(root.id,0):'';
+}
+
+function renderAdmPending(){
+  const m=getMembers().filter(x=>x.status==='pending');
+  document.getElementById('adm-pending-list').innerHTML=m.length?m.map(u=>`
+    <div class="adm-pending-row">
+      <div class="adm-pending-name">${u.emoji} ${u.name}</div>
+      <div class="adm-pending-info">申請日：${u.joinDate||'-'}<br>招待者：${u.invitedBy||'-'}</div>
+      <div class="adm-pending-btns">
+        <button class="btn-approve" onclick="approveUser('${u.id}')">✅ 承認</button>
+        <button class="btn-reject" onclick="rejectUser('${u.id}')">❌ 非承認</button>
+      </div>
+    </div>`).join(''):`<div style="text-align:center;padding:30px;color:var(--text3);">承認待ちのメンバーはいません 🎉</div>`;
+}
+
+/* ══════════ INVITE PAGE ══════════ */
+function renderInvitePage(){
+  const m=getMembers();
+  const invited=m.filter(x=>x.invitedById==='m001');
+  document.getElementById('my-invited-list').innerHTML=invited.length?invited.map(u=>`
+    <div class="inv-tree-item">
+      <div class="inv-tree-icon">${u.emoji}</div>
+      <div style="flex:1;">
+        <div class="inv-tree-name">${u.name}</div>
+        <div class="inv-tree-date">${u.joinDate} / <span class="${u.status==='active'?'':u.status==='pending'?'':''}">
+          ${u.status==='active'?'✅ 参加中':'⏳ 承認待ち'}</span></div>
+      </div>
+      <div class="inv-tree-arrow">›</div>
+    </div>`).join(''):'<div style="color:var(--text3);font-size:13px;padding:8px 0;">まだ招待していません</div>';
+}
+
+function copyInviteCode(){
+  if(navigator.clipboard){navigator.clipboard.writeText('ONES-7X3K').then(()=>toast('📋 招待コードをコピーしました！'));}
+  else{toast('ONES-7X3K');}
+}
+
+/* ══════════ APP RENDERS ══════════ */
+function renderTL(){
+  const allD=[...ld('od'),...DI];const allV=[...ld('ov'),...VC];
+  let h='';
+  allD.slice(0,2).forEach(d=>{h+=`<div class="fc"><div class="fch"><div class="av am" style="${AB}">😊</div><div class="fui"><div class="fname">BOSS YASU</div><div class="fsub">${d.date}&nbsp;<span class="fbadge bd">日記</span></div></div></div><div class="fcb"><div class="ftit" onclick="openDiarySheet('${esc(d.title)}')">${d.title}</div><div class="ftxt">${d.excerpt.slice(0,70)}…</div></div><div class="fcf"><div class="fbtn" onclick="likeThis(this)">👍 ${d.good}</div><div class="fbtn" onclick="openDiarySheet('${esc(d.title)}')">💬 ${d.comments}件</div><div class="fbtn">↗️ シェア</div></div></div>`;});
+  allV.slice(0,4).forEach(v=>{h+=`<div class="fc"><div class="fch"><div class="av am" style="${AB}" onclick="openUserSheet('${esc(v.u)}','${v.e}')">${v.e}</div><div class="fui"><div class="fname">${v.u}</div><div class="fsub">${v.tm}&nbsp;<span class="fbadge bv">つぶやき</span></div></div></div><div class="fcb"><div class="ftxt" style="padding-bottom:2px;">${v.t}</div></div><div class="fcf"><div class="fbtn" onclick="likeThis(this)">👍 いいね</div><div class="fbtn">💬 返信</div><div class="fbtn">↗️ シェア</div></div></div>`;});
+  document.getElementById('tlfeed').innerHTML=h;
+}
+function renderStories(){document.getElementById('strow-inner').innerHTML=FP.slice(0,8).map(u=>`<div class="sit" onclick="openUserSheet('${esc(u.n)}','${u.e}')"><div class="sring"><div class="sinn">${u.e}</div></div><div class="snm">${u.n}</div><div class="stm">${u.t}</div></div>`).join('');}
+function renderMxRow(){document.getElementById('mxrow-inner').innerHTML=USERS.map(u=>`<div class="mxi" onclick="openUserSheet('${esc(u.n)}','${u.e}')"><div class="av am" style="${AB};position:relative;">${u.e}${u.on?'<div class="odot"></div>':''}</div><div class="mn">${u.n}</div></div>`).join('');}
+function renderDiary(){const all=[...ld('od'),...DI];document.getElementById('dlist').innerHTML=all.map(d=>`<div class="dc"><div class="dct"></div><div class="dcb"><div class="dctit" onclick="openDiarySheet('${esc(d.title)}')">${d.title}</div><div class="dcm">📅 ${d.date}&nbsp;👤 BOSS YASU</div><div class="dcex">${d.excerpt}</div></div><div class="dcf"><div class="dcfb" onclick="openDiarySheet('${esc(d.title)}')">💬 ${d.comments||0}件</div><div class="dcfb">👍 ${d.good||0}</div></div></div>`).join('');}
+function renderVoice(){const all=[...ld('ov'),...VC];document.getElementById('vfeed').innerHTML=all.map(v=>`<div class="fc"><div class="fch"><div class="av am" style="${AB}" onclick="openUserSheet('${esc(v.u)}','${v.e}')">${v.e}</div><div class="fui"><div class="fname">${v.u}</div><div class="fsub">${v.tm}</div></div></div><div class="fcb"><div class="ftxt" style="padding-bottom:2px;">${v.t}</div></div><div class="fcf"><div class="fbtn" onclick="likeThis(this)">👍 いいね</div><div class="fbtn">💬 返信</div><div class="fbtn">↗️ シェア</div></div></div>`).join('');}
+function renderWanmik(){document.getElementById('mxgrid').innerHTML=USERS.map(u=>`<div style="display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;padding:12px 4px;background:#fff;border-radius:12px;box-shadow:var(--shadow);" onclick="openUserSheet('${esc(u.n)}','${u.e}')"><div style="position:relative;"><div class="av al" style="${AB};border-radius:18px;">${u.e}</div>${u.on?'<div style="position:absolute;bottom:2px;right:2px;width:12px;height:12px;background:#33cc44;border-radius:50%;border:2px solid #fff;"></div>':''}</div><div style="font-size:12px;font-weight:700;color:var(--text2);text-align:center;">${u.n}</div></div>`).join('');}
+function renderFP(){document.getElementById('fplist').innerHTML=FP.map(u=>`<div style="display:flex;gap:12px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--og-pale);cursor:pointer;" onclick="openUserSheet('${esc(u.n)}','${u.e}')"><div class="sring" style="width:50px;height:50px;flex-shrink:0;"><div class="sinn" style="font-size:24px;">${u.e}</div></div><div style="flex:1;"><div style="font-size:14px;font-weight:700;">${u.n}</div><div style="font-size:12px;color:var(--text3);">訪問 ${u.t}</div></div><button class="bos" onclick="event.stopPropagation();">プロフィール</button></div>`).join('');}
+function renderCM(){const mk=(list,id)=>{document.getElementById(id).innerHTML=list.map(c=>`<div class="cmi" onclick="openCmSheet('${esc(c.n)}')"><div class="cmico">${c.e}</div><div><div class="cn">${c.n}</div><div class="cc">👥 ${c.cnt.toLocaleString()}人参加</div></div><div style="color:var(--og);font-size:18px;">›</div></div>`).join('');};mk(CM,'cmjoined');mk(RCM,'cmrec');}
+function renderMsgs(){document.getElementById('msglist').innerHTML=MSG.map(m=>`<div class="mlit ${m.u?'unrd':''}" onclick="openMsgSheet('${esc(m.f)}','${m.e}','${esc(m.t)}')"><div class="av as" style="${AB}">${m.e}</div><div style="flex:1;min-width:0;"><div class="mlfrom">${m.f}</div><div class="mlprev">${m.t}</div></div><div class="mldate">${m.d}</div></div>`).join('');}
+function renderNT(id,list){const el=document.getElementById(id);if(!el)return;el.innerHTML=list.map(n=>`<div class="nti"><div class="ntd ${n.type||'old'}"></div><div><div class="ntt">${n.t}</div><div class="ntm">${n.tm}</div></div></div>`).join('');}
+function renderMpDiary(){const all=[...ld('od'),...DI];document.getElementById('mpdiary').innerHTML=all.slice(0,4).map(d=>`<div style="padding:8px 0;border-bottom:1px solid var(--og-pale);cursor:pointer;" onclick="openDiarySheet('${esc(d.title)}')"><div style="font-size:13px;font-weight:700;color:var(--og3);">${d.title}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${d.date}&nbsp;💬${d.comments||0}&nbsp;👍${d.good||0}</div></div>`).join('');}
+function renderCal(){const y=2024,m=2,first=new Date(y,m,1).getDay(),last=new Date(y,m+1,0).getDate(),tod=15,ev=[8,10,15,22];let h=`<div class="calhd"><button>◀</button><span class="calt">${y}年${m+1}月</span><button>▶</button></div><div class="calg">`;['日','月','火','水','木','金','土'].forEach(d=>{h+=`<div class="cdow">${d}</div>`;});for(let i=0;i<first;i++)h+=`<div class="cd oth"></div>`;for(let d=1;d<=last;d++){const c=d===tod?'tod':ev.includes(d)?'hev':'';h+=`<div class="cd ${c}">${d}</div>`;}h+='</div>';document.getElementById('calel').innerHTML=h;}
+function renderSide(){
+  const sfp=document.getElementById('sfp');
+  if(sfp)sfp.innerHTML=FP.slice(0,10).map(u=>`<div style="text-align:center;cursor:pointer;" onclick="openUserSheet('${esc(u.n)}','${u.e}')"><div style="width:36px;height:36px;border-radius:8px;${AB};display:flex;align-items:center;justify-content:center;font-size:20px;border:1.5px solid var(--og-border);margin:0 auto 2px;">${u.e}</div><div style="font-size:9px;color:var(--text3);">${u.n}</div></div>`).join('');
+  const smx=document.getElementById('smx');
+  if(smx)smx.innerHTML=USERS.slice(0,8).map(u=>`<div style="text-align:center;cursor:pointer;" onclick="openUserSheet('${esc(u.n)}','${u.e}')"><div style="width:44px;height:44px;border-radius:10px;${AB};display:flex;align-items:center;justify-content:center;font-size:24px;border:1.5px solid var(--og-border);margin:0 auto 3px;position:relative;">${u.e}${u.on?'<div style="position:absolute;bottom:1px;right:1px;width:9px;height:9px;background:#33cc44;border-radius:50%;border:1.5px solid #fff;"></div>':''}</div><div style="font-size:10px;color:var(--text2);font-weight:600;">${u.n}</div></div>`).join('');
+  renderNT('snt',NT.slice(0,5));
+}
+
+/* ══════════ NAV ══════════ */
+let cur='home';
+function nav(name,el){
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  const pg=document.getElementById('pg-'+name);if(pg)pg.classList.add('on');
+  cur=name;
+  document.querySelectorAll('.bi').forEach(b=>b.classList.remove('on'));
+  const bmap={home:'bn-home',wanmik:'bn-wanmik',invite:'bn-invite',message:'bn-message',mypage:'bn-mypage'};
+  if(bmap[name])document.getElementById(bmap[name]).classList.add('on');
+  if(el&&el.classList&&el.classList.contains('bi'))el.classList.add('on');
+  document.querySelectorAll('.dn').forEach(d=>d.classList.remove('on'));
+  if(el&&el.classList&&el.classList.contains('dn'))el.classList.add('on');
+  else document.querySelectorAll('.dn').forEach(d=>{if(d.getAttribute('onclick')&&d.getAttribute('onclick').includes("'"+name+"'"))d.classList.add('on');});
+  if(name==='diary')renderDiary();
+  if(name==='voice')renderVoice();
+  if(name==='wanmik')renderWanmik();
+  if(name==='footprint')renderFP();
+  if(name==='community')renderCM();
+  if(name==='message')renderMsgs();
+  if(name==='notice')renderNT('ntlist',NT);
+  if(name==='mypage')renderMpDiary();
+  if(name==='invite')renderInvitePage();
+  window.scrollTo(0,0);
+}
+
+/* ══════════ ACTIONS ══════════ */
+function postDiary(){const ttl=document.getElementById('ws-ttl').value.trim();const bdy=document.getElementById('ws-bdy').value.trim();if(!ttl&&!bdy){toast('タイトルか本文を入力してください');return;}const t=ttl||bdy.slice(0,20)+'…';const now=new Date();const ds=`${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 ${pad(now.getHours())}:${pad(now.getMinutes())}`;const s=ld('od');s.unshift({title:t,date:ds,excerpt:bdy||'（本文なし）',comments:0,good:0});sv('od',s);closeSheet();toast('📔 日記を投稿しました！');renderTL();}
+function postVoice(text){const t=text||document.getElementById('ws-vc')?.value.trim();if(!t){toast('テキストを入力してください');return;}const s=ld('ov');s.unshift({u:'BOSS YASU',e:'😊',t,tm:'たった今'});sv('ov',s);closeSheet();toast('💬 つぶやきを投稿しました！');if(cur==='voice')renderVoice();renderTL();}
+function postVoiceInline(){const el=document.getElementById('vcin');const t=el.value.trim();if(!t){toast('テキストを入力してください');return;}const s=ld('ov');s.unshift({u:'BOSS YASU',e:'😊',t,tm:'たった今'});sv('ov',s);el.value='';toast('💬 つぶやきを投稿しました！');renderVoice();renderTL();}
+function likeThis(el){el.classList.toggle('lk');toast(el.classList.contains('lk')?'👍 いいねしました！':'いいねを取り消しました');}
+
+/* ══════════ SHEETS ══════════ */
+function openSheet(type){if(type==='diary'){showSheet('日記を書く',`<div><input id="ws-ttl" class="wt" type="text" placeholder="タイトル"><textarea id="ws-bdy" class="wb" placeholder="今日はどんな1日でしたか？"></textarea><select class="wps"><option>全体に公開</option><option>ワンミクのみ</option><option>自分のみ</option></select><div class="wf"><button class="bo" style="flex:1;" onclick="postDiary()">投稿する</button><button class="bg" onclick="closeSheet()">キャンセル</button></div></div>`);}else if(type==='voice'){showSheet('つぶやく',`<div><textarea id="ws-vc" class="wb" placeholder="今なにしてる？" style="min-height:90px;"></textarea><div class="wf"><button class="bo" style="flex:1;" onclick="postVoice()">つぶやく</button><button class="bg" onclick="closeSheet()">キャンセル</button></div></div>`);}else{showSheet('フォトを投稿',`<div style="padding:20px;text-align:center;"><div style="font-size:60px;margin-bottom:12px;">📷</div><p style="color:var(--text2);margin-bottom:16px;">写真を選んで投稿しよう</p><button class="bo" onclick="toast('📷 写真投稿機能は近日公開！');closeSheet()">写真を選ぶ</button></div>`);}}
+function openDiarySheet(title){const all=[...ld('od'),...DI];const d=all.find(x=>x.title===title)||{title,excerpt:'',comments:0,good:0,date:''};showSheet(d.title,`<div><div style="font-size:11px;color:var(--text3);margin-bottom:10px;">📅 ${d.date||'---'}&nbsp;👤 BOSS YASU</div><div style="font-size:14px;color:var(--text);line-height:1.8;margin-bottom:16px;">${d.excerpt}</div><div style="background:var(--og-pale);border-radius:12px;padding:14px;"><div style="font-weight:700;color:var(--og3);margin-bottom:10px;font-size:13px;">💬 コメント（${d.comments}件）</div>${d.comments>0?`<div style="display:flex;gap:10px;margin-bottom:10px;"><div class="av as" style="${AB}">🌸</div><div style="flex:1;background:#fff;border-radius:10px;padding:10px;"><div style="font-size:12px;font-weight:700;color:var(--og3);">さくらんぼ</div><div style="font-size:13px;color:var(--text);margin-top:3px;">素敵な内容ですね！参考になりました😊</div></div></div>`:'<div style="font-size:13px;color:var(--text3);margin-bottom:10px;">まだコメントはありません</div>'}<div style="display:flex;gap:8px;"><div class="av ax" style="${AB}">😊</div><textarea style="flex:1;background:#fff;border:1.5px solid var(--og-border);border-radius:10px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none;resize:none;height:60px;" placeholder="コメントを書く..."></textarea></div><div style="display:flex;justify-content:flex-end;margin-top:8px;"><button class="bos" onclick="toast('💬 コメントしました！')">送信</button></div></div></div>`);}
+function openUserSheet(name,emoji){showSheet(name+'さん',`<div style="text-align:center;padding:14px 0;"><div style="width:80px;height:80px;border-radius:20px;${AB};display:flex;align-items:center;justify-content:center;font-size:46px;margin:0 auto 10px;border:3px solid var(--og-border);">${emoji}</div><div style="font-size:20px;font-weight:700;color:var(--og3);margin-bottom:4px;">${name}</div><div style="font-size:12px;color:var(--text3);margin-bottom:16px;">ワンミク 🤝</div><div style="display:flex;gap:10px;justify-content:center;"><button class="bo" onclick="openComposeMsg('${name}')">💌 メッセージ</button><button class="bg" onclick="closeSheet()">閉じる</button></div></div>`);}
+function openCmSheet(name){const c=[...CM,...RCM].find(x=>x.n===name)||{n:name,e:'🏘️',cnt:100};showSheet(c.e+' '+name,`<div><div style="font-size:13px;color:var(--text3);margin-bottom:10px;">👥 ${c.cnt.toLocaleString()}人が参加中</div><div style="margin-bottom:8px;font-weight:700;font-size:13px;color:var(--og3);">📌 最新トピック</div>${['【質問】初心者におすすめのツールは？ (23件)','【報告】先月の成果報告スレッド (41件)'].map(t=>`<div style="background:var(--og-pale);border-radius:10px;padding:12px;font-size:13px;margin-bottom:6px;cursor:pointer;">${t}</div>`).join('')}<div style="margin-top:14px;"><button class="bo" style="width:100%;" onclick="toast('コミュニティに参加申請しました！');closeSheet()">参加する</button></div></div>`);}
+function openMsgSheet(from,emoji,text){showSheet(from+'さんのメッセージ',`<div><div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;"><div class="av am" style="${AB}">${emoji}</div><div><div style="font-weight:700;color:var(--og3);">${from}</div><div style="font-size:11px;color:var(--text3);">ワンミク</div></div></div><div style="background:var(--og-pale);border-radius:12px;padding:14px;font-size:14px;color:var(--text);line-height:1.7;margin-bottom:16px;">${text}</div><textarea style="width:100%;background:var(--og-pale);border:1.5px solid var(--og-border);border-radius:12px;padding:12px;font-size:14px;font-family:inherit;outline:none;resize:none;height:90px;margin-bottom:10px;" placeholder="返信を入力..."></textarea><button class="bo" style="width:100%;" onclick="toast('返信を送信しました！');closeSheet()">送信する</button></div>`);}
+function openComposeMsg(to){showSheet('新しいメッセージ',`<div><div class="er"><label class="el">宛先</label><input class="ei" type="text" value="${to||''}" placeholder="ニックネームを入力"></div><div class="er"><label class="el">件名</label><input class="ei" type="text" placeholder="件名を入力"></div><div class="er"><label class="el">本文</label><textarea class="eta" placeholder="メッセージを入力してください..."></textarea></div><button class="bo" style="width:100%;" onclick="toast('メッセージを送信しました！');closeSheet()">送信する</button></div>`);}
+function openEditProfile(){const nick=document.getElementById('pvnick').textContent;const loc=document.getElementById('pvloc').textContent;const job=document.getElementById('pvjob').textContent;const status=document.getElementById('mpstatus').textContent;showSheet('プロフィールを編集',`<div><div class="er"><label class="el">ニックネーム</label><input id="ep-nick" class="ei" type="text" value="${nick}"></div><div class="er"><label class="el">ひとこと</label><input id="ep-st" class="ei" type="text" value="${status}"></div><div class="er"><label class="el">居住地</label><input id="ep-loc" class="ei" type="text" value="${loc}"></div><div class="er"><label class="el">職業</label><input id="ep-job" class="ei" type="text" value="${job}"></div><button class="bo" style="width:100%;" onclick="saveProfile()">保存する</button></div>`);}
+function openEditBio(){const cur=document.getElementById('pvbio').innerText;showSheet('自己紹介を編集',`<div><div class="er"><label class="el">自己紹介文</label><textarea id="ep-bio" class="eta" style="min-height:150px;">${cur}</textarea></div><button class="bo" style="width:100%;" onclick="saveBio()">保存する</button></div>`);}
+function saveProfile(){const nick=document.getElementById('ep-nick').value;const st=document.getElementById('ep-st').value;const loc=document.getElementById('ep-loc').value;const job=document.getElementById('ep-job').value;document.getElementById('pvnick').textContent=nick;document.getElementById('pvloc').textContent=loc;document.getElementById('pvjob').textContent=job;document.getElementById('mpname').textContent=nick;document.getElementById('mpstatus').textContent=st;closeSheet();toast('✅ プロフィールを保存しました');}
+function saveBio(){const bio=document.getElementById('ep-bio').value;document.getElementById('pvbio').innerHTML=bio.replace(/\n/g,'<br>');closeSheet();toast('✅ 自己紹介を保存しました');}
+
+function showSheet(title,html){document.getElementById('shtit').textContent=title;document.getElementById('shbody').innerHTML=html;document.getElementById('sbg').classList.add('show');requestAnimationFrame(()=>document.getElementById('sh').classList.add('open'));}
+function closeSheet(){document.getElementById('sh').classList.remove('open');document.getElementById('sbg').classList.remove('show');}
+
+function openSearch(){document.getElementById('sov').classList.add('show');setTimeout(()=>document.getElementById('soin').focus(),200);}
+function closeSearch(){document.getElementById('sov').classList.remove('show');}
+document.getElementById('soin').addEventListener('input',function(){const q=this.value.trim();const bd=document.getElementById('sobd');if(!q){bd.innerHTML='<div class="sohi">🔍<br><br>キーワードを入力してください</div>';return;}const res=DI.filter(d=>d.title.includes(q)||d.excerpt.includes(q));if(!res.length){bd.innerHTML=`<div class="sohi">「${q}」の結果はありません</div>`;return;}bd.innerHTML=res.map(d=>`<div style="padding:12px 0;border-bottom:1px solid var(--og-pale);cursor:pointer;" onclick="closeSearch();openDiarySheet('${esc(d.title)}')"><div style="font-size:14px;font-weight:700;color:var(--og3);">${d.title}</div><div style="font-size:12px;color:var(--text3);margin-top:3px;">${d.date}</div></div>`).join('');});
+
+/* ══════════ INTEREST TAG SYSTEM ══════════ */
+
+const INTEREST_CATEGORIES = [
+  {
+    id:'biz', label:'💼 ビジネス・経営', tags:[
+      'IT経営','起業・スタートアップ','事業承継','フランチャイズ','M&A','経営戦略',
+      'BtoB営業','法人営業','財務・会計','資金調達','IPO・上場','コンサルティング',
+      'プロジェクト管理','リーダーシップ','組織マネジメント','採用・HR','副業・複業',
+      'フリーランス','ノマドワーク'
+    ]
+  },
+  {
+    id:'mkt', label:'📣 マーケティング・PR', tags:[
+      'SNSマーケティング','コンテンツマーケティング','インフルエンサー','動画マーケティング',
+      'SEO・MEO','リスティング広告','メールマーケティング','LINEマーケティング',
+      'YouTube運用','Instagram運用','X（Twitter）運用','TikTok運用','ブランディング',
+      'プレスリリース','ファンマーケティング','D2C・EC運営','アフィリエイト',
+      '個人ブランディング','オウンドメディア'
+    ]
+  },
+  {
+    id:'tech', label:'💻 テクノロジー・IT', tags:[
+      'AI・機械学習','ChatGPT活用','ノーコード・ローコード','DX推進','Web開発',
+      'アプリ開発','クラウド（AWS/GCP/Azure）','サイバーセキュリティ','ブロックチェーン',
+      'IoT','メタバース','VR・AR','自動化・RPA','データ分析','Python','ビジネス自動化',
+      'SaaS活用','プロダクト開発','UIデザイン','UXデザイン'
+    ]
+  },
+  {
+    id:'invest', label:'💰 投資・資産形成', tags:[
+      '株式投資','投資信託・インデックス','不動産投資','FX','仮想通貨・Web3',
+      'NISA・iDeCo','米国株','配当投資','節税・税務','保険','相続・遺産',
+      'ビジネス投資','エンジェル投資','クラウドファンディング'
+    ]
+  },
+  {
+    id:'life', label:'🌿 ライフスタイル・健康', tags:[
+      '健康・ウェルネス','筋トレ・フィットネス','ヨガ・瞑想','マインドフルネス',
+      'ランニング','ゴルフ','テニス','サッカー','野球','スキー・スノーボード',
+      'ダイエット','栄養・食事管理','睡眠改善','温泉・サウナ','アウトドア・キャンプ',
+      'サーフィン','ボルダリング','マラソン'
+    ]
+  },
+  {
+    id:'food', label:'🍽️ グルメ・食', tags:[
+      '名古屋グルメ','日本料理','イタリアン','フレンチ','焼肉・BBQ','寿司・海鮮',
+      'ラーメン','カフェ巡り','スイーツ','ワイン','日本酒・クラフトビール','ウイスキー',
+      '料理・レシピ','パン作り','燻製・発酵','食育'
+    ]
+  },
+  {
+    id:'travel', label:'✈️ 旅行・地域', tags:[
+      '国内旅行','海外旅行','東南アジア','ヨーロッパ','アメリカ・カナダ','中東・アフリカ',
+      'バックパッカー','ラグジュアリー旅行','ビジネス渡航','ホテル・宿泊施設',
+      '名古屋・東海','東京','大阪・関西','北海道','沖縄','移住・二拠点生活'
+    ]
+  },
+  {
+    id:'learn', label:'📚 学習・自己啓発', tags:[
+      'ビジネス書','自己啓発','語学学習（英語）','語学学習（中国語）','MBAスキル',
+      'コーチング・メンタリング','読書','オンライン学習','資格取得','速読',
+      '哲学・思想','心理学','歴史','科学・宇宙'
+    ]
+  },
+  {
+    id:'creative', label:'🎨 クリエイティブ・エンタメ', tags:[
+      '写真撮影','映像制作・動画編集','音楽','ライブ・フェス','映画・ドラマ','アニメ・漫画',
+      'ゲーム','デザイン','イラスト','ファッション','インテリア','DIY・ハンドメイド',
+      '小説・ライティング','ポッドキャスト'
+    ]
+  },
+  {
+    id:'social', label:'🤝 社会・コミュニティ', tags:[
+      'NPO・ボランティア','SDGs・社会課題','地方創生','教育支援','子育て・育児',
+      'ペット・動物','コミュニティ運営','勉強会・交流会','メンター活動',
+      '宗教・スピリチュアル','政治・経済ニュース','環境・エコ'
+    ]
+  },
+];
+
+// 全タグをフラット配列で取得
+const ALL_TAGS = INTEREST_CATEGORIES.flatMap(c => c.tags);
+
+// デフォルト選択タグ（BOSS YASUの場合）
+const DEFAULT_SELECTED = ['SNSマーケティング','IT経営','旅行','ビジネス自動化','AI活用','名古屋グルメ','個人ブランディング','LINEマーケティング','自動化・RPA','起業・スタートアップ'];
+
+function loadSelectedTags() {
+  const saved = localStorage.getItem('ones_interests');
+  return saved ? JSON.parse(saved) : DEFAULT_SELECTED;
+}
+
+function saveSelectedTags(tags) {
+  localStorage.setItem('ones_interests', JSON.stringify(tags));
+}
+
+function renderSelectedTags() {
+  const selected = loadSelectedTags();
+  const el = document.getElementById('selected-tags-display');
+  const countEl = document.getElementById('selected-count-label');
+  if(!el) return;
+  if(selected.length === 0) {
+    el.innerHTML = '<span style="font-size:13px;color:var(--text3);">タグを選択してください</span>';
+    if(countEl) countEl.textContent = '';
+    return;
+  }
+  el.innerHTML = selected.map(t =>
+    `<span class="tg">${t}</span>`
+  ).join('');
+  if(countEl) countEl.textContent = `${selected.length}個のタグを設定中`;
+}
+
+function openInterestEditor() {
+  const selected = loadSelectedTags();
+  let tempSelected = [...selected];
+
+  function buildEditorHTML() {
+    return `
+    <div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:12px;">タップして選択・解除。最大20個まで選べます。</div>
+
+      <!-- 選択中プレビュー -->
+      <div style="background:var(--og-pale);border-radius:10px;padding:10px 12px;margin-bottom:14px;min-height:44px;">
+        <div style="font-size:11px;font-weight:700;color:var(--og3);margin-bottom:6px;">選択中 <span id="ie-count">${tempSelected.length}</span>/20</div>
+        <div id="ie-selected-preview" style="display:flex;flex-wrap:wrap;gap:5px;">
+          ${tempSelected.length ? tempSelected.map(t=>`<span style="background:#3a9e5f;color:#fff;padding:3px 10px;border-radius:14px;font-size:12px;font-weight:600;">${t}</span>`).join('') : '<span style="font-size:12px;color:var(--text3);">まだ選択されていません</span>'}
+        </div>
+      </div>
+
+      <!-- カテゴリー別タグ一覧 -->
+      ${INTEREST_CATEGORIES.map(cat => `
+        <div style="margin-bottom:16px;">
+          <div style="font-size:13px;font-weight:700;color:var(--og3);margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--og-border);">${cat.label}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;">
+            ${cat.tags.map(t => {
+              const isSel = tempSelected.includes(t);
+              return `<span
+                class="ie-tag"
+                data-tag="${t}"
+                style="padding:6px 13px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid ${isSel?'#3a9e5f':'#9dd4b0'};background:${isSel?'#3a9e5f':'#fff'};color:${isSel?'#fff':'#2a5e3c'};transition:all .15s;"
+                onclick="ieToggle(this,'${t.replace(/'/g,"\\'")}')">
+                ${isSel?'✓ ':''}${t}
+              </span>`;
+            }).join('')}
+          </div>
+        </div>
+      `).join('')}
+
+      <div style="height:8px;"></div>
+      <button class="bo" style="width:100%;" onclick="ieSave()">✅ 保存する</button>
+    </div>`;
+  }
+
+  showSheet('🎯 興味・関心を編集', buildEditorHTML());
+
+  // グローバルにtempを保持
+  window._ieTempSelected = tempSelected;
+}
+
+function ieToggle(el, tag) {
+  const sel = window._ieTempSelected;
+  const idx = sel.indexOf(tag);
+  if(idx > -1) {
+    sel.splice(idx, 1);
+    el.style.background = '#fff';
+    el.style.color = '#2a5e3c';
+    el.style.borderColor = '#9dd4b0';
+    el.textContent = tag;
+  } else {
+    if(sel.length >= 20) { toast('最大20個まで選択できます'); return; }
+    sel.push(tag);
+    el.style.background = '#3a9e5f';
+    el.style.color = '#fff';
+    el.style.borderColor = '#3a9e5f';
+    el.textContent = '✓ ' + tag;
+  }
+  // Update count
+  const countEl = document.getElementById('ie-count');
+  if(countEl) countEl.textContent = sel.length;
+  // Update preview
+  const prev = document.getElementById('ie-selected-preview');
+  if(prev) {
+    prev.innerHTML = sel.length
+      ? sel.map(t=>`<span style="background:#3a9e5f;color:#fff;padding:3px 10px;border-radius:14px;font-size:12px;font-weight:600;">${t}</span>`).join('')
+      : '<span style="font-size:12px;color:var(--text3);">まだ選択されていません</span>';
+  }
+}
+
+function ieSave() {
+  saveSelectedTags(window._ieTempSelected || []);
+  renderSelectedTags();
+  closeSheet();
+  toast(`🎯 ${(window._ieTempSelected||[]).length}個のタグを保存しました！`);
+}
+
+/* ══════════ INIT (updated) ══════════ */
+function initApp(){
+  renderTL();renderStories();renderMxRow();renderNT('ntlist',NT);renderMpDiary();renderSide();renderCal();
+  renderSelectedTags();
+}
+
+// Check if logged in (demo: auto-login for preview)
+// In production: remove devLogin() and rely on checkSession()
+checkSession();
+if(document.getElementById('invite-screen')&&!document.getElementById('invite-screen').classList.contains('hidden')){
+  // Add quick demo login button for preview
+  const demo=document.createElement('div');
+  demo.style.cssText='position:fixed;bottom:20px;right:20px;z-index:2000;';
+  demo.innerHTML=`<button onclick="devLogin()" style="background:#fff;color:#1e6e3a;border:2px solid #9dd4b0;padding:8px 16px;border-radius:20px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.2);">🔧 デモログイン</button>`;
+  document.body.appendChild(demo);
+}
+</script>
+</body>
+</html>
