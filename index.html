@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -107,6 +108,23 @@ body{font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN','Meiryo',sans-serif;
 a{color:var(--link);text-decoration:none;}
 button{cursor:pointer;font-family:inherit;border:none;outline:none;background:none;}
 ::-webkit-scrollbar{width:4px;}
+
+/* ── CALENDAR PAGE ── */
+.ev-item{display:flex;gap:10px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--og-pale);}
+.ev-item:last-child{border-bottom:none;}
+.ev-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:5px;}
+.ev-dot.mine{background:var(--og);}
+.ev-dot.shared{background:#5b9bd5;}
+.ev-dot.wanmik{background:#e67e22;}
+.ev-title{font-size:14px;font-weight:700;color:var(--text);}
+.ev-meta{font-size:11px;color:var(--text3);margin-top:2px;}
+.ev-share{font-size:10px;background:var(--og-pale);color:var(--og);padding:2px 8px;border-radius:10px;font-weight:600;margin-top:4px;display:inline-block;}
+.ev-wanmik-badge{font-size:10px;background:#e3f0ff;color:#2563eb;padding:2px 8px;border-radius:10px;font-weight:600;margin-top:4px;display:inline-block;}
+.cal-day-sel{background:var(--og)!important;color:#fff!important;font-weight:700;}
+.cal-day-has{position:relative;}
+.cal-day-has::after{content:'';position:absolute;bottom:1px;left:50%;transform:translateX(-50%);width:4px;height:4px;background:var(--og);border-radius:50%;}
+.cal-day-wanmik::after{background:#e67e22;}
+
 ::-webkit-scrollbar-thumb{background:#9dd4b0;border-radius:4px;}
 
 /* ── HEADER ── */
@@ -608,6 +626,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
     <div class="dn" onclick="nav('footprint',this)">足あと</div>
     <div class="dn" onclick="nav('community',this)">コミュニティ</div>
     <div class="dn" onclick="nav('invite',this)">招待</div>
+    <div class="dn" onclick="nav('calendar',this)">📅 カレンダー</div>
   </nav>
   <button class="hd-icon" onclick="openSearch()" style="margin-left:auto;">🔍</button>
   <button class="hd-icon" onclick="nav('notice',null)">🔔<div class="hb">7</div></button>
@@ -796,6 +815,43 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
 
     </div>
 
+
+    <!-- CALENDAR PAGE -->
+    <div class="pg" id="pg-calendar">
+      <div class="sh" style="padding-top:14px;">
+        📅 カレンダー・予定
+        <a href="#" onclick="openAddEvent();return false;">＋ 追加</a>
+      </div>
+
+      <!-- 月カレンダー -->
+      <div class="card" style="margin:0 12px 10px;">
+        <div style="padding:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <button onclick="calPrev()" style="width:36px;height:36px;border-radius:50%;background:var(--og-pale);color:var(--og);font-size:18px;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;">‹</button>
+            <div id="cal-month-title" style="font-size:16px;font-weight:700;color:var(--og3);"></div>
+            <button onclick="calNext()" style="width:36px;height:36px;border-radius:50%;background:var(--og-pale);color:var(--og);font-size:18px;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;">›</button>
+          </div>
+          <div class="calg" style="margin-bottom:8px;">
+            <div class="cdow">日</div><div class="cdow">月</div><div class="cdow">火</div>
+            <div class="cdow">水</div><div class="cdow">木</div><div class="cdow">金</div><div class="cdow">土</div>
+          </div>
+          <div class="calg" id="cal-days-grid"></div>
+        </div>
+      </div>
+
+      <!-- 選択日の予定 -->
+      <div class="sh" id="cal-selected-label">今月の予定</div>
+      <div class="card" style="margin:0 12px 10px;">
+        <div style="padding:0 14px;" id="cal-events-list"></div>
+      </div>
+
+      <!-- ワンミクの予定 -->
+      <div class="sh">ワンミクの予定</div>
+      <div class="card" style="margin:0 12px 10px;">
+        <div style="padding:0 14px;" id="cal-wanmik-events"></div>
+      </div>
+    </div>
+
     <!-- NOTICE -->
     <div class="pg" id="pg-notice">
       <div class="sh" style="padding-top:14px;">お知らせ</div>
@@ -817,7 +873,10 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
         <svg width="20" height="20" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><circle cx="16" cy="16" r="15" fill="rgba(255,255,255,.25)"/><circle cx="16" cy="16" r="11" fill="none" stroke="white" stroke-width="2" opacity=".4"/><ellipse cx="12.5" cy="13" rx="3.5" ry="6" fill="white" opacity=".4" transform="rotate(-35 12.5 13)"/><ellipse cx="19.5" cy="19" rx="3" ry="5.5" fill="#c8f7d4" opacity=".5" transform="rotate(-35 19.5 19)"/><text x="16" y="21" font-family="Arial,sans-serif" font-size="10" fill="white" text-anchor="middle" font-weight="900" font-style="italic">ONEs</text></svg>
         BOSS YASU</div>
       <div class="scb" style="text-align:center;padding:14px;">
-        <div style="width:70px;height:70px;border-radius:18px;background:linear-gradient(135deg,#a8ddb8,#3fa865);display:flex;align-items:center;justify-content:center;font-size:40px;margin:0 auto 8px;border:2px solid var(--og-border);cursor:pointer;" onclick="nav('mypage',null)">😊</div>
+        <div id="side-av" style="width:70px;height:70px;border-radius:18px;background:linear-gradient(135deg,#a8ddb8,#3fa865);display:flex;align-items:center;justify-content:center;font-size:40px;margin:0 auto 8px;border:2px solid var(--og-border);cursor:pointer;overflow:hidden;" onclick="nav('mypage',null)">
+          <img id="side-av-img" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:18px;">
+          <span id="side-av-emoji">😊</span>
+        </div>
         <div style="font-weight:700;color:var(--og3);margin-bottom:6px;">BOSS YASU</div>
         <div class="inv-badge" style="margin-bottom:8px;">🌱 創設メンバー</div>
         <div style="font-size:11px;color:var(--text3);line-height:2.1;">ワンミク <strong>12</strong>人<br>招待数 <strong>5</strong>人<br>日記 <strong>47</strong>件</div>
@@ -858,7 +917,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
   <text x="12" y="16" font-family="Arial,sans-serif" font-size="7" fill="currentColor" text-anchor="middle" font-weight="900" font-style="italic">ONEs</text>
 </svg></div><span>ホーム</span></div>
   <div class="bi" onclick="nav('wanmik',this)" id="bn-wanmik"><div class="ic">👥</div><span>ワンミク</span></div>
-  <div class="bi" onclick="nav('invite',this)" id="bn-invite"><div class="ic">🎟️</div><span>招待</span></div>
+  <div class="bi" onclick="nav('calendar',this)" id="bn-calendar"><div class="ic">📅</div><span>カレンダー</span></div>
   <div class="bi" onclick="nav('message',this)" id="bn-message"><div class="ic">💌</div><span>メッセージ</span><div class="bn-badge">3</div></div>
   <div class="bi" onclick="nav('mypage',this)" id="bn-mypage"><div class="ic">😊</div><span>マイページ</span></div>
 </nav>
@@ -909,8 +968,15 @@ const USERS=[{n:'さくらんぼ',e:'🌸',on:true},{n:'たけし君',e:'😎',o
 const FP=[{n:'みき',e:'🌷',t:'3分前'},{n:'タロウ',e:'🐯',t:'15分前'},{n:'あかり',e:'🌙',t:'1時間前'},{n:'けい',e:'🎵',t:'2時間前'},{n:'ふじこ',e:'🌻',t:'3時間前'},{n:'なおき',e:'🚀',t:'昨日'},{n:'ともみ',e:'🍎',t:'昨日'},{n:'まさや',e:'🎷',t:'2日前'},{n:'えみ',e:'🌈',t:'3日前'},{n:'ゆうた',e:'⚡',t:'3日前'}];
 const DI=[{title:'名古屋でビジネス交流会に参加してきた',date:'2024年3月15日 22:30',excerpt:'今日は名古屋市内で開催されたビジネス交流会に参加してきました。IT経営者が50名以上集まって、情報交換が盛り上がりました。',comments:8,good:23},{title:'クアラルンプール旅行 ３日目レポート',date:'2024年3月10日 18:45',excerpt:'KLタワーからの夜景が最高でした！現地でビジネスパートナーと会食もできて充実した1日。',comments:15,good:41},{title:'ProLineを使ったマーケティング自動化の成果',date:'2024年3月8日 09:00',excerpt:'LINE公式アカウントとProLineを組み合わせた自動配信システムを3ヶ月運用した結果をまとめました。',comments:22,good:67}];
 const VC=[{u:'さくらんぼ',e:'🌸',t:'やっと春になってきた～🌸 お花見楽しみ！',tm:'5分前'},{u:'たけし君',e:'😎',t:'今日のランチはラーメン。旨かった！',tm:'23分前'},{u:'BOSS YASU',e:'😊',t:'新しいプロジェクト始動！楽しみ🔥',tm:'1時間前'},{u:'みほりん',e:'🌺',t:'コミュニティのオフ会楽しかった〜！',tm:'3時間前'}];
-const CM=[{n:'IT経営者交流会',e:'💻',cnt:1842},{n:'SNSマーケティング研究',e:'📱',cnt:3204},{n:'名古屋グルメ探索隊',e:'🍜',cnt:5610}];
-const RCM=[{n:'AI副業研究会',e:'🤖',cnt:2341},{n:'名古屋IT勉強会',e:'⚙️',cnt:876}];
+const CM=[
+  {n:'IT経営者交流会',e:'💻',cnt:1842,owner:'BOSS YASU',ownerEmoji:'😊',since:'2020年4月',desc:'名古屋を中心としたIT経営者が集まるコミュニティ。月1回のオフ会も開催中。'},
+  {n:'SNSマーケティング研究',e:'📱',cnt:3204,owner:'BOSS YASU',ownerEmoji:'😊',since:'2021年1月',desc:'SNSを活用したマーケティング手法を研究・共有するコミュニティ。'},
+  {n:'名古屋グルメ探索隊',e:'🍜',cnt:5610,owner:'BOSS YASU',ownerEmoji:'😊',since:'2019年8月',desc:'名古屋の美味しいお店を探索・共有するコミュニティ。食べ歩き好き集まれ！'},
+];
+const RCM=[
+  {n:'AI副業研究会',e:'🤖',cnt:2341,owner:'さくらんぼ',ownerEmoji:'🌸',since:'2023年6月',desc:'AIツールを活用した副業・収益化について研究するコミュニティ。'},
+  {n:'名古屋IT勉強会',e:'⚙️',cnt:876,owner:'たけし君',ownerEmoji:'😎',since:'2022年3月',desc:'名古屋エリアのITエンジニア・経営者が集まる勉強会コミュニティ。'},
+];
 const NT=[{type:'new',t:'さくらんぼさんが日記にコメントしました',tm:'3分前'},{type:'new',t:'田中さんが参加申請しました',tm:'20分前'},{type:'new',t:'みほりんさんが日記を更新しました',tm:'1時間前'},{type:'info',t:'招待コード ONES-JU3Z が使用されました',tm:'2時間前'},{type:'info',t:'あかりさんが足あとを踏みました',tm:'3時間前'},{type:'',t:'ONEs公式：新機能リリースのお知らせ',tm:'昨日'}];
 const MSG=[{f:'さくらんぼ',e:'🌸',t:'こんにちは！先日の交流会ぶりです。また機会があれば...',d:'3月15日',u:true},{f:'みほりん',e:'🌺',t:'オフ会の写真送りますね！楽しかったです😊',d:'3月12日',u:true},{f:'けんじ',e:'🏄',t:'先日はありがとうございました！また連絡します',d:'3月10日',u:true},{f:'ゆきちゃん',e:'⛄',t:'お久しぶりです！元気ですか？',d:'3月5日',u:false}];
 
@@ -1212,16 +1278,31 @@ function copyInviteCode(){
 }
 
 /* ══════════ APP RENDERS ══════════ */
+function myAvHtml(size='am') {
+  const photo = localStorage.getItem('ones_profile_photo');
+  if (photo) {
+    return `<div class="av ${size}" style="overflow:hidden;"><img src="${photo}" style="width:100%;height:100%;object-fit:cover;border-radius:${size==='am'?'10px':'50%'};"></div>`;
+  }
+  return `<div class="av ${size}" style="${AB}">😊</div>`;
+}
+
 function renderTL(){
   const allD=[...ld('od'),...DI];const allV=[...ld('ov'),...VC];
   let h='';
-  allD.slice(0,2).forEach(d=>{h+=`<div class="fc"><div class="fch"><div class="av am" style="${AB}">😊</div><div class="fui"><div class="fname">BOSS YASU</div><div class="fsub">${d.date}&nbsp;<span class="fbadge bd">日記</span></div></div></div><div class="fcb"><div class="ftit" onclick="openDiarySheet('${esc(d.title)}')">${d.title}</div><div class="ftxt">${d.excerpt.slice(0,70)}…</div></div><div class="fcf"><div class="fbtn" onclick="likeThis(this)">👍 ${d.good}</div><div class="fbtn" onclick="openDiarySheet('${esc(d.title)}')">💬 ${d.comments}件</div><div class="fbtn">↗️ シェア</div></div></div>`;});
-  allV.slice(0,4).forEach(v=>{h+=`<div class="fc"><div class="fch"><div class="av am" style="${AB}" onclick="openUserSheet('${esc(v.u)}','${v.e}')">${v.e}</div><div class="fui"><div class="fname">${v.u}</div><div class="fsub">${v.tm}&nbsp;<span class="fbadge bv">つぶやき</span></div></div></div><div class="fcb"><div class="ftxt" style="padding-bottom:2px;">${v.t}</div></div><div class="fcf"><div class="fbtn" onclick="likeThis(this)">👍 いいね</div><div class="fbtn">💬 返信</div><div class="fbtn">↗️ シェア</div></div></div>`;});
+  allD.slice(0,2).forEach(d=>{h+=`<div class="fc"><div class="fch">${myAvHtml('am')}<div class="fui"><div class="fname">BOSS YASU</div><div class="fsub">${d.date}&nbsp;<span class="fbadge bd">日記</span></div></div></div><div class="fcb"><div class="ftit" onclick="openDiarySheet('${esc(d.title)}')">${d.title}</div><div class="ftxt">${d.excerpt.slice(0,70)}…</div></div><div class="fcf"><div class="fbtn" onclick="likeThis(this)">👍 ${d.good}</div><div class="fbtn" onclick="openDiarySheet('${esc(d.title)}')">💬 ${d.comments}件</div><div class="fbtn">↗️ シェア</div></div></div>`;});
+  allV.slice(0,4).forEach(v=>{
+    const isMe = v.u==='BOSS YASU';
+    const avHtml = isMe ? myAvHtml('am') : `<div class="av am" style="${AB}" onclick="openUserSheet('${esc(v.u)}','${v.e}')">${v.e}</div>`;
+    h+=`<div class="fc"><div class="fch">${avHtml}<div class="fui"><div class="fname">${v.u}</div><div class="fsub">${v.tm}&nbsp;<span class="fbadge bv">つぶやき</span></div></div></div><div class="fcb"><div class="ftxt" style="padding-bottom:2px;">${v.t}</div></div><div class="fcf"><div class="fbtn" onclick="likeThis(this)">👍 いいね</div><div class="fbtn">💬 返信</div><div class="fbtn">↗️ シェア</div></div></div>`;
+  });
   document.getElementById('tlfeed').innerHTML=h;
 }
 function renderStories(){document.getElementById('strow-inner').innerHTML=FP.slice(0,8).map(u=>`<div class="sit" onclick="openUserSheet('${esc(u.n)}','${u.e}')"><div class="sring"><div class="sinn">${u.e}</div></div><div class="snm">${u.n}</div><div class="stm">${u.t}</div></div>`).join('');}
 function renderMxRow(){document.getElementById('mxrow-inner').innerHTML=USERS.map(u=>`<div class="mxi" onclick="openUserSheet('${esc(u.n)}','${u.e}')"><div class="av am" style="${AB};position:relative;">${u.e}${u.on?'<div class="odot"></div>':''}</div><div class="mn">${u.n}</div></div>`).join('');}
-function renderDiary(){const all=[...ld('od'),...DI];document.getElementById('dlist').innerHTML=all.map(d=>`<div class="dc"><div class="dct"></div><div class="dcb"><div class="dctit" onclick="openDiarySheet('${esc(d.title)}')">${d.title}</div><div class="dcm">📅 ${d.date}&nbsp;👤 BOSS YASU</div><div class="dcex">${d.excerpt}</div></div><div class="dcf"><div class="dcfb" onclick="openDiarySheet('${esc(d.title)}')">💬 ${d.comments||0}件</div><div class="dcfb">👍 ${d.good||0}</div></div></div>`).join('');}
+function renderDiary(){
+  const all=[...ld('od'),...DI];
+  document.getElementById('dlist').innerHTML=all.map(d=>`<div class="dc"><div class="dct"></div><div class="dcb"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">${myAvHtml('as')}<div><div class="fname" style="font-size:12px;">BOSS YASU</div><div class="dcm" style="margin-bottom:0;">📅 ${d.date}</div></div></div><div class="dctit" onclick="openDiarySheet('${esc(d.title)}')">${d.title}</div><div class="dcex">${d.excerpt}</div></div><div class="dcf"><div class="dcfb" onclick="openDiarySheet('${esc(d.title)}')">💬 ${d.comments||0}件</div><div class="dcfb">👍 ${d.good||0}</div></div></div>`).join('');
+}
 function renderVoice(){const all=[...ld('ov'),...VC];document.getElementById('vfeed').innerHTML=all.map(v=>`<div class="fc"><div class="fch"><div class="av am" style="${AB}" onclick="openUserSheet('${esc(v.u)}','${v.e}')">${v.e}</div><div class="fui"><div class="fname">${v.u}</div><div class="fsub">${v.tm}</div></div></div><div class="fcb"><div class="ftxt" style="padding-bottom:2px;">${v.t}</div></div><div class="fcf"><div class="fbtn" onclick="likeThis(this)">👍 いいね</div><div class="fbtn">💬 返信</div><div class="fbtn">↗️ シェア</div></div></div>`).join('');}
 function renderWanmik(){document.getElementById('mxgrid').innerHTML=USERS.map(u=>`<div style="display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;padding:12px 4px;background:#fff;border-radius:12px;box-shadow:var(--shadow);" onclick="openUserSheet('${esc(u.n)}','${u.e}')"><div style="position:relative;"><div class="av al" style="${AB};border-radius:18px;">${u.e}</div>${u.on?'<div style="position:absolute;bottom:2px;right:2px;width:12px;height:12px;background:#33cc44;border-radius:50%;border:2px solid #fff;"></div>':''}</div><div style="font-size:12px;font-weight:700;color:var(--text2);text-align:center;">${u.n}</div></div>`).join('');}
 function renderFP(){document.getElementById('fplist').innerHTML=FP.map(u=>`<div style="display:flex;gap:12px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--og-pale);cursor:pointer;" onclick="openUserSheet('${esc(u.n)}','${u.e}')"><div class="sring" style="width:50px;height:50px;flex-shrink:0;"><div class="sinn" style="font-size:24px;">${u.e}</div></div><div style="flex:1;"><div style="font-size:14px;font-weight:700;">${u.n}</div><div style="font-size:12px;color:var(--text3);">訪問 ${u.t}</div></div><button class="bos" onclick="event.stopPropagation();">プロフィール</button></div>`).join('');}
@@ -1245,7 +1326,7 @@ function nav(name,el){
   const pg=document.getElementById('pg-'+name);if(pg)pg.classList.add('on');
   cur=name;
   document.querySelectorAll('.bi').forEach(b=>b.classList.remove('on'));
-  const bmap={home:'bn-home',wanmik:'bn-wanmik',invite:'bn-invite',message:'bn-message',mypage:'bn-mypage'};
+  const bmap={home:'bn-home',wanmik:'bn-wanmik',calendar:'bn-calendar',invite:'bn-invite',message:'bn-message',mypage:'bn-mypage'};
   if(bmap[name])document.getElementById(bmap[name]).classList.add('on');
   if(el&&el.classList&&el.classList.contains('bi'))el.classList.add('on');
   document.querySelectorAll('.dn').forEach(d=>d.classList.remove('on'));
@@ -1260,6 +1341,7 @@ function nav(name,el){
   if(name==='notice')renderNT('ntlist',NT);
   if(name==='mypage')renderMpDiary();
   if(name==='invite')renderInvitePage();
+  if(name==='calendar')renderCalendarPage();
   window.scrollTo(0,0);
 }
 
@@ -1273,7 +1355,32 @@ function likeThis(el){el.classList.toggle('lk');toast(el.classList.contains('lk'
 function openSheet(type){if(type==='diary'){showSheet('日記を書く',`<div><input id="ws-ttl" class="wt" type="text" placeholder="タイトル"><textarea id="ws-bdy" class="wb" placeholder="今日はどんな1日でしたか？"></textarea><select class="wps"><option>全体に公開</option><option>ワンミクのみ</option><option>自分のみ</option></select><div class="wf"><button class="bo" style="flex:1;" onclick="postDiary()">投稿する</button><button class="bg" onclick="closeSheet()">キャンセル</button></div></div>`);}else if(type==='voice'){showSheet('つぶやく',`<div><textarea id="ws-vc" class="wb" placeholder="今なにしてる？" style="min-height:90px;"></textarea><div class="wf"><button class="bo" style="flex:1;" onclick="postVoice()">つぶやく</button><button class="bg" onclick="closeSheet()">キャンセル</button></div></div>`);}else{showSheet('フォトを投稿',`<div style="padding:20px;text-align:center;"><div style="font-size:60px;margin-bottom:12px;">📷</div><p style="color:var(--text2);margin-bottom:16px;">写真を選んで投稿しよう</p><button class="bo" onclick="toast('📷 写真投稿機能は近日公開！');closeSheet()">写真を選ぶ</button></div>`);}}
 function openDiarySheet(title){const all=[...ld('od'),...DI];const d=all.find(x=>x.title===title)||{title,excerpt:'',comments:0,good:0,date:''};showSheet(d.title,`<div><div style="font-size:11px;color:var(--text3);margin-bottom:10px;">📅 ${d.date||'---'}&nbsp;👤 BOSS YASU</div><div style="font-size:14px;color:var(--text);line-height:1.8;margin-bottom:16px;">${d.excerpt}</div><div style="background:var(--og-pale);border-radius:12px;padding:14px;"><div style="font-weight:700;color:var(--og3);margin-bottom:10px;font-size:13px;">💬 コメント（${d.comments}件）</div>${d.comments>0?`<div style="display:flex;gap:10px;margin-bottom:10px;"><div class="av as" style="${AB}">🌸</div><div style="flex:1;background:#fff;border-radius:10px;padding:10px;"><div style="font-size:12px;font-weight:700;color:var(--og3);">さくらんぼ</div><div style="font-size:13px;color:var(--text);margin-top:3px;">素敵な内容ですね！参考になりました😊</div></div></div>`:'<div style="font-size:13px;color:var(--text3);margin-bottom:10px;">まだコメントはありません</div>'}<div style="display:flex;gap:8px;"><div class="av ax" style="${AB}">😊</div><textarea style="flex:1;background:#fff;border:1.5px solid var(--og-border);border-radius:10px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none;resize:none;height:60px;" placeholder="コメントを書く..."></textarea></div><div style="display:flex;justify-content:flex-end;margin-top:8px;"><button class="bos" onclick="toast('💬 コメントしました！')">送信</button></div></div></div>`);}
 function openUserSheet(name,emoji){showSheet(name+'さん',`<div style="text-align:center;padding:14px 0;"><div style="width:80px;height:80px;border-radius:20px;${AB};display:flex;align-items:center;justify-content:center;font-size:46px;margin:0 auto 10px;border:3px solid var(--og-border);">${emoji}</div><div style="font-size:20px;font-weight:700;color:var(--og3);margin-bottom:4px;">${name}</div><div style="font-size:12px;color:var(--text3);margin-bottom:16px;">ワンミク 🤝</div><div style="display:flex;gap:10px;justify-content:center;"><button class="bo" onclick="openComposeMsg('${name}')">💌 メッセージ</button><button class="bg" onclick="closeSheet()">閉じる</button></div></div>`);}
-function openCmSheet(name){const c=[...CM,...RCM].find(x=>x.n===name)||{n:name,e:'🏘️',cnt:100};showSheet(c.e+' '+name,`<div><div style="font-size:13px;color:var(--text3);margin-bottom:10px;">👥 ${c.cnt.toLocaleString()}人が参加中</div><div style="margin-bottom:8px;font-weight:700;font-size:13px;color:var(--og3);">📌 最新トピック</div>${['【質問】初心者におすすめのツールは？ (23件)','【報告】先月の成果報告スレッド (41件)'].map(t=>`<div style="background:var(--og-pale);border-radius:10px;padding:12px;font-size:13px;margin-bottom:6px;cursor:pointer;">${t}</div>`).join('')}<div style="margin-top:14px;"><button class="bo" style="width:100%;" onclick="toast('コミュニティに参加申請しました！');closeSheet()">参加する</button></div></div>`);}
+function openCmSheet(name){
+  const c=[...CM,...RCM].find(x=>x.n===name)||{n:name,e:'🏘️',cnt:100,owner:'不明',ownerEmoji:'👤',since:'-',desc:''};
+  showSheet(c.e+' '+name,`
+    <div>
+      <!-- 主催者情報 -->
+      <div style="display:flex;align-items:center;gap:10px;background:var(--og-pale);border-radius:12px;padding:12px;margin-bottom:14px;">
+        <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#a8ddb8,#3fa865);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">${c.ownerEmoji||'👤'}</div>
+        <div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:2px;">🎯 主催者</div>
+          <div style="font-size:14px;font-weight:700;color:var(--og3);">${c.owner||'不明'}</div>
+          <div style="font-size:11px;color:var(--text3);">📅 ${c.since||'-'} 設立</div>
+        </div>
+      </div>
+      <!-- 概要 -->
+      <div style="font-size:13px;color:var(--text);line-height:1.7;margin-bottom:10px;">${c.desc||name+'についての情報交換コミュニティです。'}</div>
+      <!-- 参加人数 -->
+      <div style="font-size:13px;color:var(--text3);margin-bottom:14px;">👥 ${c.cnt.toLocaleString()}人が参加中</div>
+      <!-- トピック -->
+      <div style="font-weight:700;font-size:13px;color:var(--og3);margin-bottom:8px;">📌 最新トピック</div>
+      ${['【質問】初心者におすすめのツールは？ (23件)','【報告】先月の成果報告スレッド (41件)','【情報共有】便利なリソースまとめ (15件)'].map(t=>`
+        <div style="background:var(--og-pale);border-radius:10px;padding:12px;font-size:13px;margin-bottom:6px;cursor:pointer;" onclick="toast('トピックを開きました')">${t}</div>`).join('')}
+      <div style="margin-top:14px;">
+        <button class="bo" style="width:100%;" onclick="toast('コミュニティに参加申請しました！');closeSheet()">参加する</button>
+      </div>
+    </div>`);
+}
 function openMsgSheet(from,emoji,text){showSheet(from+'さんのメッセージ',`<div><div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;"><div class="av am" style="${AB}">${emoji}</div><div><div style="font-weight:700;color:var(--og3);">${from}</div><div style="font-size:11px;color:var(--text3);">ワンミク</div></div></div><div style="background:var(--og-pale);border-radius:12px;padding:14px;font-size:14px;color:var(--text);line-height:1.7;margin-bottom:16px;">${text}</div><textarea style="width:100%;background:var(--og-pale);border:1.5px solid var(--og-border);border-radius:12px;padding:12px;font-size:14px;font-family:inherit;outline:none;resize:none;height:90px;margin-bottom:10px;" placeholder="返信を入力..."></textarea><button class="bo" style="width:100%;" onclick="toast('返信を送信しました！');closeSheet()">送信する</button></div>`);}
 function openComposeMsg(to){showSheet('新しいメッセージ',`<div><div class="er"><label class="el">宛先</label><input class="ei" type="text" value="${to||''}" placeholder="ニックネームを入力"></div><div class="er"><label class="el">件名</label><input class="ei" type="text" placeholder="件名を入力"></div><div class="er"><label class="el">本文</label><textarea class="eta" placeholder="メッセージを入力してください..."></textarea></div><button class="bo" style="width:100%;" onclick="toast('メッセージを送信しました！');closeSheet()">送信する</button></div>`);}
 function openEditProfile(){const nick=document.getElementById('pvnick').textContent;const loc=document.getElementById('pvloc').textContent;const job=document.getElementById('pvjob').textContent;const status=document.getElementById('mpstatus').textContent;showSheet('プロフィールを編集',`<div><div class="er"><label class="el">ニックネーム</label><input id="ep-nick" class="ei" type="text" value="${nick}"></div><div class="er"><label class="el">ひとこと</label><input id="ep-st" class="ei" type="text" value="${status}"></div><div class="er"><label class="el">居住地</label><input id="ep-loc" class="ei" type="text" value="${loc}"></div><div class="er"><label class="el">職業</label><input id="ep-job" class="ei" type="text" value="${job}"></div><button class="bo" style="width:100%;" onclick="saveProfile()">保存する</button></div>`);}
@@ -1349,11 +1456,257 @@ function applyProfilePhoto(dataUrl) {
     homeImg.style.display = 'block';
     homeEmoji.style.display = 'none';
   }
+
+  // サイドバーのアバター
+  const sideImg = document.getElementById('side-av-img');
+  const sideEmoji = document.getElementById('side-av-emoji');
+  if (sideImg && sideEmoji) {
+    sideImg.src = dataUrl;
+    sideImg.style.display = 'block';
+    sideEmoji.style.display = 'none';
+  }
+
+  // タイムラインを再描画（投稿アイコンを更新）
+  renderTL();
+  if(cur==='voice') renderVoice();
+  if(cur==='diary') renderDiary();
 }
 
 function loadProfilePhoto() {
   const saved = localStorage.getItem('ones_profile_photo');
   if (saved) applyProfilePhoto(saved);
+}
+
+
+/* ══════════ CALENDAR SYSTEM ══════════ */
+
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+let calSelectedDay = new Date().getDate();
+
+// サンプルワンミク予定
+const WANMIK_EVENTS = [
+  {user:'さくらんぼ',emoji:'🌸',title:'お花見🌸',date:'2026-04-27',time:'12:00',shared:true},
+  {user:'たけし君',emoji:'😎',title:'ランチ会',date:'2026-04-28',time:'12:30',shared:true},
+  {user:'みほりん',emoji:'🌺',title:'IT勉強会',date:'2026-05-03',time:'14:00',shared:true},
+  {user:'けんじ',emoji:'🏄',title:'BBQ🔥',date:'2026-05-05',time:'11:00',shared:true},
+];
+
+function loadEvents() {
+  return JSON.parse(localStorage.getItem('ones_events') || '[]');
+}
+function saveEvents(evs) {
+  localStorage.setItem('ones_events', JSON.stringify(evs));
+}
+
+function getEventsForMonth(y, m) {
+  const all = [...loadEvents(), ...WANMIK_EVENTS];
+  return all.filter(e => {
+    const d = new Date(e.date);
+    return d.getFullYear() === y && d.getMonth() === m;
+  });
+}
+
+function getEventsForDay(y, m, d) {
+  const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  const all = [...loadEvents(), ...WANMIK_EVENTS];
+  return all.filter(e => e.date === dateStr);
+}
+
+function renderCalendarPage() {
+  renderCalGrid();
+  renderEventsList();
+  renderWanmikEvents();
+}
+
+function renderCalGrid() {
+  const months = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  const titleEl = document.getElementById('cal-month-title');
+  if(titleEl) titleEl.textContent = calYear + '年 ' + months[calMonth];
+
+  const grid = document.getElementById('cal-days-grid');
+  if(!grid) return;
+
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const lastDate = new Date(calYear, calMonth+1, 0).getDate();
+  const today = new Date();
+  const monthEvents = getEventsForMonth(calYear, calMonth);
+  const myEvents = loadEvents();
+
+  let h = '';
+  // 空白
+  for(let i=0; i<firstDay; i++) h += `<div></div>`;
+  // 日付
+  for(let d=1; d<=lastDate; d++) {
+    const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday = today.getFullYear()===calYear && today.getMonth()===calMonth && today.getDate()===d;
+    const isSel = calSelectedDay === d;
+    const hasMyEv = myEvents.some(e => e.date === dateStr);
+    const hasWanmikEv = WANMIK_EVENTS.some(e => e.date === dateStr);
+
+    let cls = 'cd';
+    if(isToday) cls += ' tod';
+    if(isSel && !isToday) cls += ' cal-day-sel';
+    if(hasMyEv) cls += ' cal-day-has';
+    if(hasWanmikEv && !hasMyEv) cls += ' cal-day-wanmik cal-day-has';
+
+    h += `<div class="${cls}" onclick="calSelectDay(${d})" style="position:relative;">${d}</div>`;
+  }
+  grid.innerHTML = h;
+}
+
+function calSelectDay(d) {
+  calSelectedDay = d;
+  renderCalGrid();
+  const months = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  const lbl = document.getElementById('cal-selected-label');
+  if(lbl) lbl.textContent = calYear+'年'+months[calMonth]+d+'日の予定';
+  renderEventsList(d);
+}
+
+function calPrev() {
+  calMonth--;
+  if(calMonth < 0) { calMonth = 11; calYear--; }
+  calSelectedDay = null;
+  renderCalGrid();
+  const lbl = document.getElementById('cal-selected-label');
+  const months = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  if(lbl) lbl.textContent = calYear+'年'+months[calMonth]+'の予定';
+  renderEventsList();
+}
+
+function calNext() {
+  calMonth++;
+  if(calMonth > 11) { calMonth = 0; calYear++; }
+  calSelectedDay = null;
+  renderCalGrid();
+  const lbl = document.getElementById('cal-selected-label');
+  const months = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  if(lbl) lbl.textContent = calYear+'年'+months[calMonth]+'の予定';
+  renderEventsList();
+}
+
+function renderEventsList(day) {
+  const el = document.getElementById('cal-events-list');
+  if(!el) return;
+
+  let events;
+  if(day) {
+    events = getEventsForDay(calYear, calMonth, day);
+  } else {
+    events = getEventsForMonth(calYear, calMonth).filter(e => !WANMIK_EVENTS.includes(e));
+  }
+
+  const myEvents = loadEvents();
+  const myEventsFiltered = day
+    ? myEvents.filter(e => e.date === `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`)
+    : myEvents.filter(e => { const d=new Date(e.date); return d.getFullYear()===calYear&&d.getMonth()===calMonth; });
+
+  if(!myEventsFiltered.length) {
+    el.innerHTML = `<div style="padding:16px;text-align:center;color:var(--text3);">予定がありません<br><button class="bos" style="margin-top:10px;" onclick="openAddEvent()">＋ 予定を追加</button></div>`;
+    return;
+  }
+
+  el.innerHTML = myEventsFiltered.map(e => `
+    <div class="ev-item">
+      <div class="ev-dot mine"></div>
+      <div style="flex:1;">
+        <div class="ev-title">${e.title}</div>
+        <div class="ev-meta">📅 ${e.date} ${e.time||''} ${e.place?'📍'+e.place:''}</div>
+        ${e.shared ? '<span class="ev-share">👥 ワンミクに公開</span>' : '<span style="font-size:10px;color:var(--text3);">🔒 非公開</span>'}
+      </div>
+      <div onclick="deleteEvent('${e.id}')" style="color:var(--text3);font-size:18px;cursor:pointer;padding:4px;">×</div>
+    </div>`).join('');
+}
+
+function renderWanmikEvents() {
+  const el = document.getElementById('cal-wanmik-events');
+  if(!el) return;
+
+  // 今月以降のワンミク予定
+  const now = new Date(calYear, calMonth, 1);
+  const future = WANMIK_EVENTS.filter(e => new Date(e.date) >= now)
+    .sort((a,b) => a.date.localeCompare(b.date))
+    .slice(0,5);
+
+  if(!future.length) {
+    el.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text3);">ワンミクの予定はありません</div>';
+    return;
+  }
+
+  el.innerHTML = future.map(e => `
+    <div class="ev-item">
+      <div class="ev-dot wanmik"></div>
+      <div style="flex:1;">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
+          <div style="width:24px;height:24px;border-radius:6px;background:linear-gradient(135deg,#a8ddb8,#3fa865);display:flex;align-items:center;justify-content:center;font-size:14px;">${e.emoji}</div>
+          <span style="font-size:11px;font-weight:700;color:var(--og3);">${e.user}</span>
+        </div>
+        <div class="ev-title">${e.title}</div>
+        <div class="ev-meta">📅 ${e.date} ${e.time||''}</div>
+        <span class="ev-wanmik-badge">参加する</span>
+      </div>
+    </div>`).join('');
+}
+
+function openAddEvent() {
+  const today = new Date();
+  const dateStr = calSelectedDay
+    ? `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(calSelectedDay).padStart(2,'0')}`
+    : `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+
+  showSheet('📅 予定を追加', `
+    <div>
+      <div class="er"><label class="el">タイトル</label><input id="ev-title" class="ei" type="text" placeholder="例：名古屋交流会、ランチ会"></div>
+      <div class="er"><label class="el">日付</label><input id="ev-date" class="ei" type="date" value="${dateStr}"></div>
+      <div class="er"><label class="el">時間</label><input id="ev-time" class="ei" type="time" value="12:00"></div>
+      <div class="er"><label class="el">場所（任意）</label><input id="ev-place" class="ei" type="text" placeholder="例：名古屋駅周辺"></div>
+      <div class="er"><label class="el">メモ（任意）</label><textarea id="ev-memo" class="eta" style="min-height:70px;" placeholder="詳細を入力..."></textarea></div>
+      <div class="er">
+        <label class="el">公開設定</label>
+        <div style="display:flex;gap:10px;">
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+            <input type="radio" name="ev-vis" value="shared" checked style="accent-color:var(--og);"> 👥 ワンミクに公開
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+            <input type="radio" name="ev-vis" value="private"> 🔒 自分だけ
+          </label>
+        </div>
+      </div>
+      <button class="bo" style="width:100%;" onclick="saveEvent()">予定を登録する</button>
+    </div>`);
+}
+
+function saveEvent() {
+  const title = document.getElementById('ev-title').value.trim();
+  const date = document.getElementById('ev-date').value;
+  const time = document.getElementById('ev-time').value;
+  const place = document.getElementById('ev-place').value.trim();
+  const memo = document.getElementById('ev-memo').value.trim();
+  const vis = document.querySelector('input[name="ev-vis"]:checked').value;
+
+  if(!title) { toast('タイトルを入力してください'); return; }
+  if(!date) { toast('日付を選択してください'); return; }
+
+  const events = loadEvents();
+  events.push({
+    id: Date.now().toString(),
+    title, date, time, place, memo,
+    shared: vis === 'shared',
+    author: 'BOSS YASU'
+  });
+  saveEvents(events);
+  closeSheet();
+  toast('📅 予定を登録しました！');
+  renderCalendarPage();
+}
+
+function deleteEvent(id) {
+  if(!confirm('この予定を削除しますか？')) return;
+  const events = loadEvents().filter(e => e.id !== id);
+  saveEvents(events);
+  toast('予定を削除しました');
+  renderCalendarPage();
 }
 
 /* ══════════ INTEREST TAG SYSTEM ══════════ */
