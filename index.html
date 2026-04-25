@@ -1412,14 +1412,71 @@ function joinWithCode(){
   if(!raw){errEl.textContent='招待コードを入力してください';return;}
   if(!name){errEl.textContent='ニックネームを入力してください';return;}
 
+  // ===== ロックチェック =====
+  const lockKey = 'ones_join_lock_'+raw;
+  const lockUntil = parseInt(localStorage.getItem(lockKey) || '0');
+  if(lockUntil && Date.now() < lockUntil) {
+    const minutes = Math.ceil((lockUntil - Date.now()) / 60000);
+    errEl.innerHTML = '🔒 ログインがロックされています<br>あと約 '+minutes+' 分後に再試行できます';
+    return;
+  }
+
   const codes = getCodes();
   const code = codes.find(c=>c.code===raw);
 
   if(!code){errEl.textContent='❌ 招待コードが無効です。コードをご確認ください。';return;}
-  if(code.status==='used'){errEl.textContent='このコードは既に使用されています。';return;}
+
+  // ===== 既にコードが使用済み = 既存メンバーのログイン =====
+  if(code.status === 'used') {
+    // 該当メンバーを検索
+    const members = getMembers();
+    const existingMember = members.find(m => m.name === name && (m.invitedById === code.issuedById || code.usedBy === name));
+
+    // ニックネームが一致しない場合
+    if(!existingMember) {
+      // 試行回数を増やす
+      const attemptKey = 'ones_join_attempts_'+raw;
+      const attempts = parseInt(localStorage.getItem(attemptKey) || '0') + 1;
+      localStorage.setItem(attemptKey, attempts.toString());
+
+      if(attempts >= 5) {
+        // 15分ロック
+        const lockTime = Date.now() + 15 * 60 * 1000;
+        localStorage.setItem(lockKey, lockTime.toString());
+        localStorage.setItem(attemptKey, '0');
+        errEl.innerHTML = '🔒 5回間違えたためロックされました<br>15分後に再試行できます';
+      } else {
+        const remaining = 5 - attempts;
+        errEl.innerHTML = '❌ ニックネームが一致しません。<br>正しいニックネームで入力してください。<br><span style="font-size:11px;color:rgba(255,200,200,0.9);">残り試行回数：'+remaining+'回</span>';
+      }
+      return;
+    }
+
+    // 一致したら試行回数をリセット
+    localStorage.removeItem('ones_join_attempts_'+raw);
+
+    // 既存メンバーとして再ログイン
+    currentUser = {
+      id: existingMember.id,
+      name: existingMember.name,
+      emoji: existingMember.emoji || '🙋',
+      role: existingMember.role || 'member',
+      code: existingMember.code,
+      invitedBy: existingMember.invitedBy,
+      joinDate: existingMember.joinDate
+    };
+    localStorage.setItem('ones_session', JSON.stringify(currentUser));
+    localStorage.setItem('ones_my_invite_code', raw);
+    localStorage.setItem('ones_my_nickname', name);
+    localStorage.setItem('ones_my_member_id', existingMember.id);
+    enterApp();
+    setTimeout(()=>toast('👋 おかえりなさい、'+name+'さん！'), 300);
+    return;
+  }
+
   if(code.status==='pending'){errEl.textContent='このコードは申請処理中です。';return;}
 
-  // Find referrer
+  // ===== 新規参加処理 =====
   const members = getMembers();
   const referrer = members.find(m=>m.id===code.issuedById);
 
@@ -1442,8 +1499,13 @@ function joinWithCode(){
   saveCodes(codes);
 
   // 自動ログイン
-  currentUser = {id:newId, name, emoji:'🎉', role:'member'};
+  currentUser = {id:newId, name, emoji:'🎉', role:'member', code: newCode, invitedBy: referrer?referrer.name:null, joinDate: new Date().toISOString().slice(0,10)};
   localStorage.setItem('ones_session', JSON.stringify(currentUser));
+
+  // 2回目以降のログイン用に招待コードとニックネームを保存
+  localStorage.setItem('ones_my_invite_code', raw);
+  localStorage.setItem('ones_my_nickname', name);
+  localStorage.setItem('ones_my_member_id', newId);
 
   // 参加完了画面を表示してからアプリへ
   document.getElementById('invite-screen').innerHTML=`
@@ -2969,7 +3031,48 @@ checkSession();
         toast('✅ 招待コードを読み込みました！\nニックネームを入力してください');
       }, 500);
     }
+    return;
   }
+
+  // 招待画面が表示されていて、過去に参加していた場合は自動入力
+  setTimeout(()=>{
+    const invScreen = document.getElementById('invite-screen');
+    const isInviteShowing = invScreen && invScreen.style.display !== 'none' && !invScreen.classList.contains('hidden');
+
+    if(isInviteShowing) {
+      const savedCode = localStorage.getItem('ones_my_invite_code');
+      const savedName = localStorage.getItem('ones_my_nickname');
+
+      if(savedCode && savedName) {
+        const codeInput = document.getElementById('inv-code-input');
+        const nameInput = document.getElementById('inv-name-input');
+
+        if(codeInput) {
+          codeInput.value = savedCode;
+          codeInput.style.borderColor = '#3a9e5f';
+          codeInput.style.background = '#edf8f1';
+        }
+        if(nameInput) {
+          nameInput.value = savedName;
+          nameInput.style.borderColor = '#3a9e5f';
+          nameInput.style.background = '#edf8f1';
+        }
+
+        // ログイン用の表示を変更
+        const inviteCard = document.querySelector('.inv-card');
+        const heading = inviteCard?.querySelector('h2');
+        if(heading) heading.innerHTML = '👋 おかえりなさい！';
+
+        const desc = inviteCard?.querySelector('p');
+        if(desc) desc.innerHTML = '<strong style="color:#1e6e3a;">'+savedName+'</strong> さん、また会えて嬉しいです！<br>ボタンを押してONEsに入りましょう。';
+
+        const submitBtn = inviteCard?.querySelector('.inv-btn');
+        if(submitBtn) submitBtn.textContent = 'ログインする →';
+
+        toast('👋 おかえりなさい、'+savedName+'さん！');
+      }
+    }
+  }, 100);
 })();
 </script>
 </body>
