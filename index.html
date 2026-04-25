@@ -495,6 +495,16 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
 </head>
 <body>
 
+<!-- 最優先実行: セッション確認 -->
+<script>
+(function(){
+  // URL に code パラメータがある場合は強制的にセッションをクリア
+  if(window.location.search.includes('code=')) {
+    try { localStorage.removeItem('ones_session'); } catch(e) {}
+  }
+})();
+</script>
+
 <!-- ══════════════════════════════
      INVITE / LANDING SCREEN
 ══════════════════════════════ -->
@@ -1800,7 +1810,8 @@ function shareInviteQR() {
 
 /* ══════════ APP RENDERS ══════════ */
 function myAvHtml(size='am') {
-  const photo = localStorage.getItem('ones_profile_photo');
+  const photoKey = currentUser && currentUser.id ? 'ones_profile_photo_'+currentUser.id : 'ones_profile_photo';
+  const photo = localStorage.getItem(photoKey);
   if (photo) {
     return `<div class="av ${size}" style="overflow:hidden;"><img src="${photo}" style="width:100%;height:100%;object-fit:cover;border-radius:${size==='am'?'10px':'50%'};"></div>`;
   }
@@ -1963,8 +1974,45 @@ function openMsgSheet(from,emoji,text){showSheet(from+'さんのメッセージ'
 function openComposeMsg(to){showSheet('新しいメッセージ',`<div><div class="er"><label class="el">宛先</label><input class="ei" type="text" value="${to||''}" placeholder="ニックネームを入力"></div><div class="er"><label class="el">件名</label><input class="ei" type="text" placeholder="件名を入力"></div><div class="er"><label class="el">本文</label><textarea class="eta" placeholder="メッセージを入力してください..."></textarea></div><button class="bo" style="width:100%;" onclick="toast('メッセージを送信しました！');closeSheet()">送信する</button></div>`);}
 function openEditProfile(){const nick=document.getElementById('pvnick').textContent;const loc=document.getElementById('pvloc').textContent;const job=document.getElementById('pvjob').textContent;const status=document.getElementById('mpstatus').textContent;showSheet('プロフィールを編集',`<div><div class="er"><label class="el">ニックネーム</label><input id="ep-nick" class="ei" type="text" value="${nick}"></div><div class="er"><label class="el">ひとこと</label><input id="ep-st" class="ei" type="text" value="${status}"></div><div class="er"><label class="el">居住地</label><input id="ep-loc" class="ei" type="text" value="${loc}"></div><div class="er"><label class="el">職業</label><input id="ep-job" class="ei" type="text" value="${job}"></div><button class="bo" style="width:100%;" onclick="saveProfile()">保存する</button></div>`);}
 function openEditBio(){const cur=document.getElementById('pvbio').innerText;showSheet('自己紹介を編集',`<div><div class="er"><label class="el">自己紹介文</label><textarea id="ep-bio" class="eta" style="min-height:150px;">${cur}</textarea></div><button class="bo" style="width:100%;" onclick="saveBio()">保存する</button></div>`);}
-function saveProfile(){const nick=document.getElementById('ep-nick').value;const st=document.getElementById('ep-st').value;const loc=document.getElementById('ep-loc').value;const job=document.getElementById('ep-job').value;document.getElementById('pvnick').textContent=nick;document.getElementById('pvloc').textContent=loc;document.getElementById('pvjob').textContent=job;document.getElementById('mpname').textContent=nick;document.getElementById('mpstatus').textContent=st;closeSheet();toast('✅ プロフィールを保存しました');}
-function saveBio(){const bio=document.getElementById('ep-bio').value;document.getElementById('pvbio').innerHTML=bio.replace(/\n/g,'<br>');closeSheet();toast('✅ 自己紹介を保存しました');}
+function saveProfile(){
+  const nick=document.getElementById('ep-nick').value;
+  const st=document.getElementById('ep-st').value;
+  const loc=document.getElementById('ep-loc').value;
+  const job=document.getElementById('ep-job').value;
+
+  document.getElementById('pvnick').textContent=nick;
+  document.getElementById('pvloc').textContent=loc;
+  document.getElementById('pvjob').textContent=job;
+  document.getElementById('mpname').textContent=nick;
+  document.getElementById('mpstatus').textContent=st;
+
+  // ユーザーごとにプロフィールを保存
+  if(currentUser && currentUser.id) {
+    const profile = { nick, status: st, loc, job };
+    const existing = JSON.parse(localStorage.getItem('ones_profile_'+currentUser.id) || '{}');
+    localStorage.setItem('ones_profile_'+currentUser.id, JSON.stringify({...existing, ...profile}));
+    // currentUserのnameも更新
+    currentUser.name = nick;
+    localStorage.setItem('ones_session', JSON.stringify(currentUser));
+  }
+
+  closeSheet();
+  toast('✅ プロフィールを保存しました');
+}
+function saveBio(){
+  const bio=document.getElementById('ep-bio').value;
+  document.getElementById('pvbio').innerHTML=bio.replace(/\n/g,'<br>');
+
+  // ユーザーごとに保存
+  if(currentUser && currentUser.id) {
+    const existing = JSON.parse(localStorage.getItem('ones_profile_'+currentUser.id) || '{}');
+    existing.bio = bio.replace(/\n/g,'<br>');
+    localStorage.setItem('ones_profile_'+currentUser.id, JSON.stringify(existing));
+  }
+
+  closeSheet();
+  toast('✅ 自己紹介を保存しました');
+}
 
 function showSheet(title,html){document.getElementById('shtit').textContent=title;document.getElementById('shbody').innerHTML=html;document.getElementById('sbg').classList.add('show');requestAnimationFrame(()=>document.getElementById('sh').classList.add('open'));}
 function closeSheet(){document.getElementById('sh').classList.remove('open');document.getElementById('sbg').classList.remove('show');}
@@ -1995,7 +2043,8 @@ function handlePhotoUpload(event) {
     const dataUrl = e.target.result;
 
     // LocalStorageに保存
-    localStorage.setItem('ones_profile_photo', dataUrl);
+    const photoKey = currentUser && currentUser.id ? 'ones_profile_photo_'+currentUser.id : 'ones_profile_photo';
+    localStorage.setItem(photoKey, dataUrl);
 
     // 全アバターに反映
     applyProfilePhoto(dataUrl);
@@ -2051,7 +2100,8 @@ function applyProfilePhoto(dataUrl) {
 }
 
 function loadProfilePhoto() {
-  const saved = localStorage.getItem('ones_profile_photo');
+  const photoKey = currentUser && currentUser.id ? 'ones_profile_photo_'+currentUser.id : 'ones_profile_photo';
+  const saved = localStorage.getItem(photoKey);
   if (saved) applyProfilePhoto(saved);
 }
 
@@ -2562,7 +2612,7 @@ const INTEREST_CATEGORIES = [
     id:'mkt', label:'📣 マーケティング・PR', tags:[
       'SNSマーケティング','コンテンツマーケティング','インフルエンサー','動画マーケティング',
       'SEO・MEO','リスティング広告','メールマーケティング','LINEマーケティング',
-      'YouTube運用','Instagram運用','X（Twitter）運用','TikTok運用','ブランディング',
+      'YouTube運用','Instagram運用','X(Twitter)運用','TikTok運用','ブランディング',
       'プレスリリース','ファンマーケティング','D2C・EC運営','アフィリエイト',
       '個人ブランディング','オウンドメディア'
     ]
@@ -2570,7 +2620,7 @@ const INTEREST_CATEGORIES = [
   {
     id:'tech', label:'💻 テクノロジー・IT', tags:[
       'AI・機械学習','ChatGPT活用','ノーコード・ローコード','DX推進','Web開発',
-      'アプリ開発','クラウド（AWS/GCP/Azure）','サイバーセキュリティ','ブロックチェーン',
+      'アプリ開発','クラウド(AWS/GCP/Azure)','サイバーセキュリティ','ブロックチェーン',
       'IoT','メタバース','VR・AR','自動化・RPA','データ分析','Python','ビジネス自動化',
       'SaaS活用','プロダクト開発','UIデザイン','UXデザイン'
     ]
@@ -2579,7 +2629,51 @@ const INTEREST_CATEGORIES = [
     id:'invest', label:'💰 投資・資産形成', tags:[
       '株式投資','投資信託・インデックス','不動産投資','FX','仮想通貨・Web3',
       'NISA・iDeCo','米国株','配当投資','節税・税務','保険','相続・遺産',
-      'ビジネス投資','エンジェル投資','クラウドファンディング'
+      'ビジネス投資','エンジェル投資','クラウドファンディング','家計管理','貯金・節約'
+    ]
+  },
+  {
+    id:'home', label:'🏠 主婦・暮らし', tags:[
+      '家事の時短術','整理収納・断捨離','ミニマリスト','収納アイデア','100均活用',
+      'お弁当作り','作り置き・常備菜','時短料理','節約レシピ','献立計画',
+      '食材保存術','冷凍保存','家計簿','ふるさと納税','ポイ活','クーポン活用',
+      'まとめ買い','ネットスーパー','スマート家電','家事代行','掃除・洗濯のコツ',
+      'プチプラ生活','メルカリ・フリマ','家族の健康管理','旦那の悩み','嫁姑問題',
+      'ご近所付き合い','PTA・地域活動'
+    ]
+  },
+  {
+    id:'parenting', label:'👶 子育て・教育', tags:[
+      '妊娠・出産','新生児・乳児','離乳食','イヤイヤ期','幼児教育','保育園・幼稚園',
+      'モンテッソーリ','英才教育','早期教育','知育玩具','絵本','読み聞かせ',
+      '小学校受験','中学校受験','習い事','英会話・英語教育','ピアノ','スイミング',
+      'プログラミング教育','子供の食育','トイレトレーニング','寝かしつけ',
+      '反抗期','思春期','PTA活動','ママ友','パパ育児','ワンオペ育児',
+      '共働き育児','ワーママ','子供の病気','子供のメンタルケア','発達障害',
+      '不登校','受験勉強','大学受験','奨学金','子供の貯金','キッズマネー教育'
+    ]
+  },
+  {
+    id:'beauty', label:'💄 美容・ファッション', tags:[
+      'スキンケア','メイク・コスメ','プチプラコスメ','デパコス','韓国コスメ',
+      'アンチエイジング','エイジングケア','美白ケア','毛穴ケア','ニキビケア',
+      '敏感肌ケア','乾燥肌ケア','美容医療','美容鍼','エステ','脱毛',
+      'まつエク','ネイル','ヘアケア','ヘアスタイル','白髪ケア','ヘアカラー',
+      'ダイエット美容','骨格診断','パーソナルカラー','顔タイプ診断','プチ整形',
+      'ファッション','プチプラファッション','韓国ファッション','大人カジュアル',
+      'オフィスカジュアル','ママファッション','着回しコーデ','アクセサリー',
+      'バッグ・財布','靴','下着・ランジェリー','香水・フレグランス'
+    ]
+  },
+  {
+    id:'pet', label:'🐾 ペット・動物', tags:[
+      '犬','大型犬','中型犬','小型犬','トイプードル','チワワ','柴犬','ゴールデン',
+      '猫','子猫','保護猫','スコティッシュフォールド','マンチカン','ノルウェージャン',
+      'うさぎ','ハムスター','モルモット','フェレット','インコ','文鳥','オウム',
+      '熱帯魚','金魚','メダカ','アクアリウム','爬虫類','カメ','ヤモリ',
+      'ペットの食事','ペットの健康','ペット保険','ペットホテル','トリミング',
+      'ドッグラン','ペット可カフェ','ペット可宿泊','しつけ・トレーニング',
+      'ペットロス','保護活動','里親探し','繁殖・ブリーディング','獣医・動物病院'
     ]
   },
   {
@@ -2587,42 +2681,48 @@ const INTEREST_CATEGORIES = [
       '健康・ウェルネス','筋トレ・フィットネス','ヨガ・瞑想','マインドフルネス',
       'ランニング','ゴルフ','テニス','サッカー','野球','スキー・スノーボード',
       'ダイエット','栄養・食事管理','睡眠改善','温泉・サウナ','アウトドア・キャンプ',
-      'サーフィン','ボルダリング','マラソン'
+      'サーフィン','ボルダリング','マラソン','ピラティス','ホットヨガ',
+      '漢方・東洋医学','ファスティング','腸活','妊活','更年期ケア'
     ]
   },
   {
     id:'food', label:'🍽️ グルメ・食', tags:[
       '名古屋グルメ','日本料理','イタリアン','フレンチ','焼肉・BBQ','寿司・海鮮',
       'ラーメン','カフェ巡り','スイーツ','ワイン','日本酒・クラフトビール','ウイスキー',
-      '料理・レシピ','パン作り','燻製・発酵','食育'
+      '料理・レシピ','パン作り','燻製・発酵','食育','お菓子作り','薬膳料理',
+      'ヴィーガン・ベジタリアン','グルテンフリー','オーガニック'
     ]
   },
   {
     id:'travel', label:'✈️ 旅行・地域', tags:[
       '国内旅行','海外旅行','東南アジア','ヨーロッパ','アメリカ・カナダ','中東・アフリカ',
       'バックパッカー','ラグジュアリー旅行','ビジネス渡航','ホテル・宿泊施設',
-      '名古屋・東海','東京','大阪・関西','北海道','沖縄','移住・二拠点生活'
+      '名古屋・東海','東京','大阪・関西','北海道','沖縄','移住・二拠点生活',
+      '家族旅行','子連れ旅行','女子旅','一人旅','温泉旅行','グルメ旅'
     ]
   },
   {
     id:'learn', label:'📚 学習・自己啓発', tags:[
-      'ビジネス書','自己啓発','語学学習（英語）','語学学習（中国語）','MBAスキル',
-      'コーチング・メンタリング','読書','オンライン学習','資格取得','速読',
-      '哲学・思想','心理学','歴史','科学・宇宙'
+      'ビジネス書','自己啓発','語学学習(英語)','語学学習(中国語)','語学学習(韓国語)',
+      'MBAスキル','コーチング・メンタリング','読書','オンライン学習','資格取得',
+      '速読','哲学・思想','心理学','歴史','科学・宇宙','カウンセリング',
+      '夫婦カウンセリング','親子関係'
     ]
   },
   {
     id:'creative', label:'🎨 クリエイティブ・エンタメ', tags:[
       '写真撮影','映像制作・動画編集','音楽','ライブ・フェス','映画・ドラマ','アニメ・漫画',
-      'ゲーム','デザイン','イラスト','ファッション','インテリア','DIY・ハンドメイド',
-      '小説・ライティング','ポッドキャスト'
+      'ゲーム','デザイン','イラスト','インテリア','DIY・ハンドメイド',
+      '小説・ライティング','ポッドキャスト','ガーデニング','家庭菜園','刺繍・編み物',
+      '書道','茶道・華道','陶芸'
     ]
   },
   {
     id:'social', label:'🤝 社会・コミュニティ', tags:[
-      'NPO・ボランティア','SDGs・社会課題','地方創生','教育支援','子育て・育児',
-      'ペット・動物','コミュニティ運営','勉強会・交流会','メンター活動',
-      '宗教・スピリチュアル','政治・経済ニュース','環境・エコ'
+      'NPO・ボランティア','SDGs・社会課題','地方創生','教育支援',
+      'コミュニティ運営','勉強会・交流会','メンター活動',
+      '宗教・スピリチュアル','政治・経済ニュース','環境・エコ','ジェンダー平等',
+      'シングルマザー支援','介護','終活'
     ]
   },
 ];
@@ -2634,12 +2734,17 @@ const ALL_TAGS = INTEREST_CATEGORIES.flatMap(c => c.tags);
 const DEFAULT_SELECTED = ['SNSマーケティング','IT経営','旅行','ビジネス自動化','AI活用','名古屋グルメ','個人ブランディング','LINEマーケティング','自動化・RPA','起業・スタートアップ'];
 
 function loadSelectedTags() {
-  const saved = localStorage.getItem('ones_interests');
-  return saved ? JSON.parse(saved) : DEFAULT_SELECTED;
+  // BOSS YASU の場合のみデフォルトタグ、それ以外は空からスタート
+  const isBossYasu = currentUser && currentUser.id === 'm001';
+  const userKey = currentUser && currentUser.id ? 'ones_interests_'+currentUser.id : 'ones_interests';
+  const saved = localStorage.getItem(userKey);
+  if(saved) return JSON.parse(saved);
+  return isBossYasu ? DEFAULT_SELECTED : [];
 }
 
 function saveSelectedTags(tags) {
-  localStorage.setItem('ones_interests', JSON.stringify(tags));
+  const userKey = currentUser && currentUser.id ? 'ones_interests_'+currentUser.id : 'ones_interests';
+  localStorage.setItem(userKey, JSON.stringify(tags));
 }
 
 function renderSelectedTags() {
@@ -2745,6 +2850,9 @@ function ieSave() {
 function initApp(){
   // currentUser のプロフィール情報を画面に反映
   if(currentUser) {
+    const isAdmin = currentUser.role === 'admin';
+    const isBossYasu = currentUser.id === 'm001';
+
     const mpname = document.getElementById('mpname');
     const pvnick = document.getElementById('pvnick');
     const sideName = document.querySelectorAll('.scn');
@@ -2765,6 +2873,61 @@ function initApp(){
     if(profileEmoji) profileEmoji.textContent = currentUser.emoji || '🙋';
     if(homeEmoji) homeEmoji.textContent = currentUser.emoji || '🙋';
     if(hdEmoji) hdEmoji.textContent = currentUser.emoji || '🙋';
+
+    // 新規メンバー（BOSS YASU以外）はプロフィールを初期化
+    if(!isBossYasu) {
+      // 保存済みプロフィールがあれば読み込み、なければ空欄
+      const savedProf = JSON.parse(localStorage.getItem('ones_profile_'+currentUser.id) || '{}');
+
+      const pvloc = document.getElementById('pvloc');
+      const pvjob = document.getElementById('pvjob');
+      const pvbio = document.getElementById('pvbio');
+      const mpstatus = document.getElementById('mpstatus');
+
+      if(pvloc) pvloc.textContent = savedProf.loc || '未設定';
+      if(pvjob) pvjob.textContent = savedProf.job || '未設定';
+      if(pvbio) pvbio.innerHTML = savedProf.bio || '<span style="color:var(--text3);">プロフィールを編集して自己紹介を書きましょう ✏️</span>';
+      if(mpstatus) mpstatus.textContent = savedProf.status || 'よろしくお願いします！';
+
+      // 性別を未設定に
+      const genderRow = document.querySelector('.pr:nth-child(2) .pv');
+      if(genderRow && !genderRow.id) genderRow.textContent = '未設定';
+
+      // 招待者情報
+      const invRow = document.querySelectorAll('.pr');
+      invRow.forEach(row => {
+        const k = row.querySelector('.pk');
+        if(k && k.textContent === '招待者') {
+          const v = row.querySelector('.pv');
+          if(v) v.textContent = '🤝 ' + (currentUser.invitedBy || 'メンバー');
+        }
+        if(k && k.textContent === '登録日') {
+          const v = row.querySelector('.pv');
+          if(v) v.textContent = currentUser.joinDate || new Date().toISOString().slice(0,10);
+        }
+      });
+
+      // 統計を初期化
+      const stats = document.querySelectorAll('.mps .n');
+      if(stats.length >= 4) {
+        stats[0].textContent = '0';  // ワンミク
+        stats[1].textContent = '0';  // 日記
+        stats[2].textContent = '0';  // 足あと
+        stats[3].textContent = '1';  // 招待数（自分自身が入った時の1コード）
+      }
+
+      // 招待コードを表示
+      const inviteCodeEl = document.getElementById('my-invite-code');
+      if(inviteCodeEl && currentUser.code) {
+        inviteCodeEl.textContent = currentUser.code;
+      }
+
+      // フォトサンプルを消す
+      const photoGrid = document.querySelector('.pgr');
+      if(photoGrid) {
+        photoGrid.innerHTML = '<div class="pth ptadd" style="grid-column:span 3;height:80px;">＋ 写真を追加</div>';
+      }
+    }
   }
 
   renderTL();renderStories();renderMxRow();renderNT('ntlist',NT);renderMpDiary();renderSide();renderCal();
