@@ -2868,7 +2868,86 @@ async function renderVoice(){
     }).join('');
   } catch(e) { console.error('[ONEs] renderVoice:', e); }
 }
-function renderWanmik(){document.getElementById('mxgrid').innerHTML=USERS.map(u=>`<div style="display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;padding:12px 4px;background:#fff;border-radius:12px;box-shadow:var(--shadow);" onclick="openUserSheet('${esc(u.n)}','${u.e}')"><div style="position:relative;"><div class="av al" style="${AB};border-radius:18px;">${u.e}</div>${u.on?'<div style="position:absolute;bottom:2px;right:2px;width:12px;height:12px;background:#33cc44;border-radius:50%;border:2px solid #fff;"></div>':''}</div><div style="font-size:12px;font-weight:700;color:var(--text2);text-align:center;">${u.n}</div></div>`).join('');}
+async function renderWanmik(){
+  var grid = document.getElementById('mxgrid');
+  if(!grid) return;
+  grid.innerHTML = '<div style="padding:20px;color:var(--text3);text-align:center;">読み込み中...</div>';
+
+  // 自分のワンミク一覧をSupabaseから取得
+  var wanmiks = [];
+  if(dbReady() && currentUser && currentUser.id){
+    try {
+      var r1 = await sb.from('wanmik').select('*').eq('from_id', currentUser.id).eq('status', 'accepted');
+      var r2 = await sb.from('wanmik').select('*').eq('to_id', currentUser.id).eq('status', 'accepted');
+      wanmiks = [].concat(r1.data || [], r2.data || []);
+    } catch(e){ console.error('[ONEs] renderWanmik accepted:', e); }
+  }
+
+  // 申請中リストも取得して表示
+  var pending = [];
+  if(dbReady() && currentUser && currentUser.id){
+    try {
+      var rp = await sb.from('wanmik').select('*').eq('from_id', currentUser.id).eq('status', 'pending');
+      pending = rp.data || [];
+    } catch(e){ console.error('[ONEs] renderWanmik pending:', e); }
+  }
+
+  if(wanmiks.length === 0 && pending.length === 0){
+    grid.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3);grid-column:1/-1;">まだワンミクがいません</div>';
+    return;
+  }
+
+  // 相手のメンバー情報をまとめて取得
+  var otherIds = [];
+  wanmiks.forEach(function(w){
+    var oid = (w.from_id === currentUser.id) ? w.to_id : w.from_id;
+    if(oid) otherIds.push(oid);
+  });
+  pending.forEach(function(w){
+    if(w.to_id) otherIds.push(w.to_id);
+  });
+  otherIds = Array.from(new Set(otherIds));
+
+  var memberMap = {};
+  if(dbReady() && otherIds.length){
+    try {
+      var mr = await sb.from('members').select('id,name,emoji').in('id', otherIds);
+      (mr.data || []).forEach(function(m){ memberMap[m.id] = m; });
+    } catch(e){ console.error('[ONEs] renderWanmik members:', e); }
+  }
+
+  var cards = [];
+
+  wanmiks.forEach(function(w){
+    var oid = (w.from_id === currentUser.id) ? w.to_id : w.from_id;
+    var fallbackName = (w.from_id === currentUser.id) ? (w.to_name || 'メンバー') : (w.from_name || 'メンバー');
+    var fallbackEmoji = (w.from_id === currentUser.id) ? (w.to_emoji || '🙋') : (w.from_emoji || '🙋');
+    var m = memberMap[oid] || {};
+    var name = m.name || fallbackName || 'メンバー';
+    var emoji = m.emoji || fallbackEmoji || '🙋';
+    cards.push(
+      '<div style="display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;padding:12px 4px;background:#fff;border-radius:12px;box-shadow:var(--shadow);" onclick="openUserSheet(\''+esc(name)+'\',\''+emoji+'\')">'+
+      '<div style="position:relative;"><div class="av al" style="'+AB+';border-radius:18px;">'+emoji+'</div><div style="position:absolute;bottom:2px;right:2px;width:12px;height:12px;background:#33cc44;border-radius:50%;border:2px solid #fff;"></div></div>'+
+      '<div style="font-size:12px;font-weight:700;color:var(--text2);text-align:center;">'+escHtml(name)+'</div>'+
+      '</div>'
+    );
+  });
+
+  pending.forEach(function(w){
+    var m = memberMap[w.to_id] || {};
+    var name = m.name || w.to_name || 'メンバー';
+    var emoji = m.emoji || w.to_emoji || '🙋';
+    cards.push(
+      '<div style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 4px;background:#fff8ee;border-radius:12px;box-shadow:var(--shadow);">'+
+      '<div style="position:relative;"><div class="av al" style="'+AB+';border-radius:18px;">'+emoji+'</div></div>'+
+      '<div style="font-size:12px;font-weight:700;color:var(--text2);text-align:center;">'+escHtml(name)+'</div>'+
+      '<div style="font-size:10px;color:#e67e22;font-weight:700;">申請中</div>'+
+      '</div>'
+    );
+  });
+
+  grid.innerHTML = cards.join('');
+}
 function renderFP(){document.getElementById('fplist').innerHTML=FP.map(u=>`<div style="display:flex;gap:12px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--og-pale);cursor:pointer;" onclick="openUserSheet('${esc(u.n)}','${u.e}')"><div class="sring" style="width:50px;height:50px;flex-shrink:0;"><div class="sinn" style="font-size:24px;">${u.e}</div></div><div style="flex:1;"><div style="font-size:14px;font-weight:700;">${u.n}</div><div style="font-size:12px;color:var(--text3);">訪問 ${u.t}</div></div><button class="bos" onclick="event.stopPropagation();">プロフィール</button></div>`).join('');}
 async function renderCM(){
   try {
@@ -3478,22 +3557,72 @@ async function openUserSheet(name, emoji) {
 }
 
 // ワンミク申請
-function requestWanmik(name) {
+async function requestWanmik(name) {
   try {
-    var requestKey = 'ones_wanmik_request_' + (currentUser ? currentUser.id : 'guest');
-    var requests = [];
-    try { requests = JSON.parse(localStorage.getItem(requestKey) || '[]'); } catch(e) {}
-
-    if(requests.indexOf(name) !== -1) {
-      toast('すでに申請済みです');
+    if(!currentUser || !currentUser.id) {
+      toast('❌ ログイン情報がありません');
+      return;
+    }
+    if(!dbReady()) {
+      toast('❌ 接続できません');
       return;
     }
 
-    requests.push(name);
-    try { localStorage.setItem(requestKey, JSON.stringify(requests)); } catch(e) {}
+    // 申請先ユーザーを取得
+    var toRes = await sb.from('members').select('id,name,emoji').eq('name', name).maybeSingle();
+    if(toRes.error || !toRes.data) {
+      toast('❌ 申請先ユーザーが見つかりません');
+      return;
+    }
+    var target = toRes.data;
+
+    if(target.id === currentUser.id) {
+      toast('自分には申請できません');
+      return;
+    }
+
+    // 既存レコード重複チェック（順不同）
+    var ex1 = await sb.from('wanmik').select('id,status').eq('from_id', currentUser.id).eq('to_id', target.id).maybeSingle();
+    var ex2 = await sb.from('wanmik').select('id,status').eq('from_id', target.id).eq('to_id', currentUser.id).maybeSingle();
+    var exists = ex1.data || ex2.data;
+    if(exists) {
+      if(exists.status === 'accepted') toast('すでにワンミクです');
+      else toast('すでに申請済みです');
+      closeSheet();
+      if(cur === 'wanmik') renderWanmik();
+      return;
+    }
+
+    // Supabaseに保存
+    var ins = await sb.from('wanmik').insert({
+      from_id: currentUser.id,
+      from_name: currentUser.name || 'メンバー',
+      from_emoji: currentUser.emoji || '🙋',
+      to_id: target.id,
+      to_name: target.name || name,
+      to_emoji: target.emoji || '🙋',
+      status: 'pending'
+    });
+    if(ins.error) {
+      console.error('[ONEs] requestWanmik insert:', ins.error);
+      toast('❌ 送信に失敗しました');
+      return;
+    }
+
+    // 既存のローカル保存も互換維持
+    var requestKey = 'ones_wanmik_request_' + currentUser.id;
+    var requests = [];
+    try { requests = JSON.parse(localStorage.getItem(requestKey) || '[]'); } catch(e) {}
+    if(requests.indexOf(name) === -1) {
+      requests.push(name);
+      try { localStorage.setItem(requestKey, JSON.stringify(requests)); } catch(e) {}
+    }
 
     closeSheet();
     toast('🤝 '+name+'さんにワンミク申請を送りました！');
+
+    // 申請後に再描画
+    if(cur === 'wanmik') await renderWanmik();
   } catch(e) {
     console.error('[ONEs] requestWanmik:', e);
     toast('❌ 送信に失敗しました');
