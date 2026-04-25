@@ -2914,22 +2914,53 @@ async function renderWanmik(){
   grid.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text3);grid-column:1/-1;">読み込み中...</div>';
 
   var accepted = [], pending_sent = [], pending_recv = [];
+  var wanmikQuerySuccess = false;
 
   if(dbReady() && currentUser && currentUser.id){
     try {
-      // 承認済み（双方向）
       var r1 = await sb.from('wanmik').select('*').eq('from_id',currentUser.id).eq('status','accepted');
+      if(!r1.error) {
+        accepted = [...accepted, ...(r1.data||[])];
+        wanmikQuerySuccess = true;
+      } else {
+        console.warn('[ONEs] wanmik r1 error:', r1.error);
+      }
+    } catch(e){ console.warn('[ONEs] wanmik r1:', e); }
+
+    try {
       var r2 = await sb.from('wanmik').select('*').eq('to_id',currentUser.id).eq('status','accepted');
-      accepted = [...(r1.data||[]), ...(r2.data||[])];
+      if(!r2.error) {
+        accepted = [...accepted, ...(r2.data||[])];
+        wanmikQuerySuccess = true;
+      } else {
+        console.warn('[ONEs] wanmik r2 error:', r2.error);
+      }
+    } catch(e){ console.warn('[ONEs] wanmik r2:', e); }
 
-      // 申請中（自分が送った）
+    try {
       var rps = await sb.from('wanmik').select('*').eq('from_id',currentUser.id).eq('status','pending');
-      pending_sent = rps.data || [];
+      if(!rps.error) {
+        pending_sent = rps.data || [];
+        wanmikQuerySuccess = true;
+      } else {
+        console.warn('[ONEs] wanmik rps error:', rps.error);
+      }
+    } catch(e){ console.warn('[ONEs] wanmik rps:', e); }
 
-      // 申請中（自分が受け取った）
+    try {
       var rpr = await sb.from('wanmik').select('*').eq('to_id',currentUser.id).eq('status','pending');
-      pending_recv = rpr.data || [];
-    } catch(e){ console.error('[ONEs] renderWanmik:',e); }
+      if(!rpr.error) {
+        pending_recv = rpr.data || [];
+        wanmikQuerySuccess = true;
+      } else {
+        console.warn('[ONEs] wanmik rpr error:', rpr.error);
+      }
+    } catch(e){ console.warn('[ONEs] wanmik rpr:', e); }
+  }
+
+  if(dbReady() && currentUser && currentUser.id && !wanmikQuerySuccess){
+    grid.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3);grid-column:1/-1;">ワンミク機能は準備中です</div>';
+    return;
   }
 
   var html = '';
@@ -5027,22 +5058,35 @@ function openAddEvent() {
 }
 
 function saveEvent() {
-  const title = document.getElementById('ev-title').value.trim();
-  const date = document.getElementById('ev-date').value;
-  const time = document.getElementById('ev-time').value;
-  const place = document.getElementById('ev-place').value.trim();
-  const memo = document.getElementById('ev-memo').value.trim();
-  const vis = document.querySelector('input[name="ev-vis"]:checked').value;
+  var titleEl = document.getElementById('ev-title');
+  var dateEl  = document.getElementById('ev-date');
+  var timeEl  = document.getElementById('ev-time');
+  var placeEl = document.getElementById('ev-place');
+  var memoEl  = document.getElementById('ev-memo');
+  var visEl   = document.querySelector('input[name="ev-vis"]:checked');
+
+  if(!titleEl || !dateEl) { toast('フォームの読み込みエラー'); return; }
+
+  var title = titleEl.value.trim();
+  var date  = dateEl.value;
+  var time  = timeEl ? timeEl.value : '12:00';
+  var place = placeEl ? placeEl.value.trim() : '';
+  var memo  = memoEl ? memoEl.value.trim() : '';
+  var vis   = visEl ? visEl.value : 'private';
 
   if(!title) { toast('タイトルを入力してください'); return; }
-  if(!date) { toast('日付を選択してください'); return; }
+  if(!date)  { toast('日付を選択してください'); return; }
 
-  const events = loadEvents();
+  var events = loadEvents();
   events.push({
     id: Date.now().toString(),
-    title, date, time, place, memo,
+    title: title,
+    date: date,
+    time: time,
+    place: place,
+    memo: memo,
     shared: vis === 'shared',
-    author: 'BOSS YASU'
+    author: currentUser ? currentUser.name : 'メンバー'
   });
   saveEvents(events);
   closeSheet();
