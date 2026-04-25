@@ -537,27 +537,6 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
 .cd.oth{color:#c0ddc8;}
 .cd.hev:not(.tod)::after{content:'';display:block;width:4px;height:4px;background:var(--og);border-radius:50%;margin:1px auto 0;}
 
-/* ── CHARACTER DESIGN ACCENT ── */
-.chr-card{margin:0 12px 10px;border-radius:14px;overflow:hidden;box-shadow:var(--shadow);border:1.5px solid var(--og-border);background:linear-gradient(135deg,#0f2a3c,#1f4d6d);}
-.chr-wrap{position:relative;display:flex;align-items:stretch;min-height:112px;}
-.chr-main{flex:1;padding:12px 12px 12px 14px;color:#fff;}
-.chr-kicker{font-size:10px;letter-spacing:.06em;font-weight:700;opacity:.85;margin-bottom:4px;}
-.chr-title{font-size:15px;font-weight:900;line-height:1.3;margin-bottom:3px;}
-.chr-sub{font-size:11px;opacity:.92;line-height:1.45;}
-.chr-art{width:98px;flex-shrink:0;position:relative;background:radial-gradient(circle at 70% 20%,rgba(255,255,255,.28),rgba(255,255,255,0));}
-.chr-art img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;display:block;}
-.chr-fallback{position:absolute;inset:0;display:none;align-items:center;justify-content:center;font-size:28px;color:#fff;background:linear-gradient(135deg,#2b6287,#1a3f5a);}
-
-/* ── CHRONO MIO PRESENCE ── */
-#mio-presence{position:fixed;right:10px;bottom:calc(var(--nav-h) + var(--sb) + 12px);z-index:2005;display:flex;flex-direction:column;align-items:flex-end;gap:6px;pointer-events:auto;}
-#mio-line{max-width:min(72vw,240px);background:rgba(255,255,255,.96);border:1.5px solid var(--og-border);color:var(--og3);font-size:11px;font-weight:700;line-height:1.45;border-radius:12px;padding:8px 10px;box-shadow:0 4px 14px rgba(20,70,50,.14);pointer-events:auto;}
-#mio-chip{width:74px;height:92px;border-radius:16px;overflow:hidden;border:2px solid #fff;box-shadow:0 8px 18px rgba(0,0,0,.22);background:linear-gradient(135deg,#12324a,#244f6f);pointer-events:auto;cursor:pointer;}
-#mio-chip img{width:100%;height:100%;object-fit:cover;object-position:center top;display:block;}
-#mio-chip-fallback{width:100%;height:100%;display:none;align-items:center;justify-content:center;color:#fff;font-size:26px;}
-@media (min-width:1180px){
-  #mio-presence{right:calc((100vw - 1100px)/2 + 12px);}
-}
-
 /* ── BUTTONS ── */
 .bo{background:linear-gradient(135deg,#4cb87a 0%,#218a4a 100%);color:#fff;border:none;padding:12px 24px;border-radius:24px;font-size:14px;font-weight:700;font-family:inherit;box-shadow:0 3px 12px rgba(30,110,58,.3);transition:all .2s;cursor:pointer;}
 .bo:active{transform:scale(.97);}
@@ -943,19 +922,6 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
 
     <!-- HOME -->
     <div class="pg on" id="pg-home">
-      <div class="chr-card" aria-label="クロノ・ミオ ビジュアル">
-        <div class="chr-wrap">
-          <div class="chr-main">
-            <div class="chr-kicker">NEW CHARACTER</div>
-            <div class="chr-title">クロノ・ミオ</div>
-            <div class="chr-sub">日常の失敗をちょっと修正。<br>ONEsの体験をそっとナビゲートします。</div>
-          </div>
-          <div class="chr-art">
-            <img src="/Users/yasuse3boss/.cursor/projects/Users-yasuse3boss-Desktop-ones-sns/assets/20251229_010621119_iOS-6f5823d2-d218-44cc-86fc-45683621fc37.png" alt="クロノ・ミオ" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-            <div class="chr-fallback">⏱️</div>
-          </div>
-        </div>
-      </div>
       <div id="strow">
         <div class="sh">最近の足あと <a href="#" onclick="nav('footprint',null);return false;">全部見る</a></div>
         <div class="srow" id="strow-inner"></div>
@@ -1459,14 +1425,6 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
 </nav>
 
 <button id="fab" style="display:none;" onclick="openSheet('diary')">＋</button>
-<div id="mio-presence">
-  <div id="mio-line">はじめまして、クロノ・ミオです。</div>
-  <div id="mio-chip" onclick="openMioCharacter()">
-    <img src="/Users/yasuse3boss/.cursor/projects/Users-yasuse3boss-Desktop-ones-sns/assets/20251229_010621119_iOS-6f5823d2-d218-44cc-86fc-45683621fc37.png" alt="クロノ・ミオ" loading="lazy" onerror="this.style.display='none';document.getElementById('mio-chip-fallback').style.display='flex';">
-    <div id="mio-chip-fallback">⏱️</div>
-  </div>
-</div>
-<div id="mio-debug" style="position:fixed;top:8px;left:8px;z-index:2006;background:#111;color:#fff;padding:4px 8px;border-radius:8px;font-size:10px;opacity:.88;">MIO ON</div>
 <div id="sov"><div class="sovhd"><input id="soin" type="search" placeholder="日記・コミュニティ・ひとを検索" autocomplete="off"><span class="socan" onclick="closeSearch()">キャンセル</span></div><div class="sobd" id="sobd"><div class="sohi">🔍<br><br>キーワードを入力</div></div></div>
 <div id="sbg" onclick="closeSheet()"></div>
 <div id="sh"><div class="shdl"></div><div class="shhd"><div class="shtit" id="shtit">タイトル</div><button class="shx" onclick="closeSheet()">✕</button></div><div id="shbody"></div></div>
@@ -1574,35 +1532,6 @@ function sv(k,v){
   try { localStorage.setItem(k,JSON.stringify(v)); } catch(e) { console.error(e); }
 }
 function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(function(){t.remove();},2200);}
-function setMioLine(page){
-  var el = document.getElementById('mio-line');
-  if(!el) return;
-  var map = {
-    home:'今日の一歩、いっしょに進めよう。',
-    mypage:'あなたらしさ、ちゃんと伝わってるよ。',
-    diary:'日記は短くても大丈夫。まず1行から。',
-    voice:'ひとことでも、立派な発信だよ。',
-    wanmik:'ご縁は、ひとつの申請から始まるよ。',
-    calendar:'予定を1つ入れるだけで、流れが変わるよ。',
-    invite:'つながりは、あなたから広がる。',
-    message:'やさしい一言が、いちばん届く。',
-    notice:'大事なお知らせ、見逃さないでね。'
-  };
-  el.textContent = map[page] || '必要なときは、いつでも呼んでね。';
-}
-function openMioCharacter(){
-  showSheet('クロノ・ミオ', '<div>'+
-    '<div style="display:flex;gap:12px;align-items:center;margin-bottom:12px;">'+
-      '<div style="width:78px;height:98px;border-radius:14px;overflow:hidden;border:2px solid var(--og-border);flex-shrink:0;background:linear-gradient(135deg,#12324a,#244f6f);">'+
-        '<img src="/Users/yasuse3boss/.cursor/projects/Users-yasuse3boss-Desktop-ones-sns/assets/20251229_010621119_iOS-6f5823d2-d218-44cc-86fc-45683621fc37.png" style="width:100%;height:100%;object-fit:cover;object-position:center top;" onerror="this.style.display=\'none\'">'+
-      '</div>'+
-      '<div><div style="font-size:16px;font-weight:900;color:var(--og3);line-height:1.2;">クロノ・ミオ</div><div style="font-size:12px;color:var(--text3);margin-top:4px;">日常の失敗を、ちょっと修正。</div></div>'+
-    '</div>'+
-    '<div style="font-size:13px;color:var(--text);line-height:1.8;background:var(--og-pale);border-radius:10px;padding:12px;">'+
-      'ホームや投稿、予定管理など、場面ごとにミオの一言が切り替わります。<br>右下のミオからいつでもアクセスできます。'+
-    '</div>'+
-  '</div>');
-}
 
 /* ══════════ セキュリティ ══════════ */
 
@@ -3237,7 +3166,6 @@ function renderSide(){
 let cur='home';
 function nav(name,el){
   try {
-    setMioLine(name);
     document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
     const pg=document.getElementById('pg-'+name);
     if(pg) pg.classList.add('on');
@@ -5602,7 +5530,6 @@ function initApp(){
   try { loadProfilePhoto(); } catch(e) { console.error('[ONEs] loadProfilePhoto:', e); }
 
   // 各レンダリングを個別に try-catch で保護
-  try { setMioLine('home'); } catch(e) {}
   try { renderTL(); } catch(e) { console.error('[ONEs] renderTL:', e); }
   try { renderStories(); } catch(e) { console.error('[ONEs] renderStories:', e); }
   try { renderMxRow(); } catch(e) { console.error('[ONEs] renderMxRow:', e); }
