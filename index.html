@@ -1808,7 +1808,7 @@ function renderTL(){
   let h='';
   allD.slice(0,2).forEach(d=>{h+=`<div class="fc"><div class="fch">${myAvHtml('am')}<div class="fui"><div class="fname">BOSS YASU</div><div class="fsub">${d.date}&nbsp;<span class="fbadge bd">日記</span></div></div></div><div class="fcb"><div class="ftit" onclick="openDiarySheet('${esc(d.title)}')">${d.title}</div><div class="ftxt">${d.excerpt.slice(0,70)}…</div></div><div class="fcf"><div class="fbtn" onclick="likeThis(this)">👍 ${d.good}</div><div class="fbtn" onclick="openDiarySheet('${esc(d.title)}')">💬 ${d.comments}件</div><div class="fbtn">↗️ シェア</div></div></div>`;});
   allV.slice(0,4).forEach(v=>{
-    const isMe = v.u==='BOSS YASU';
+    const isMe = v.u===(currentUser?.name||'BOSS YASU');
     const avHtml = isMe ? myAvHtml('am') : `<div class="av am" style="${AB}" onclick="openUserSheet('${esc(v.u)}','${v.e}')">${v.e}</div>`;
     h+=`<div class="fc"><div class="fch">${avHtml}<div class="fui"><div class="fname">${v.u}</div><div class="fsub">${v.tm}&nbsp;<span class="fbadge bv">つぶやき</span></div></div></div><div class="fcb"><div class="ftxt" style="padding-bottom:2px;">${v.t}</div></div><div class="fcf"><div class="fbtn" onclick="likeThis(this)">👍 いいね</div><div class="fbtn">💬 返信</div><div class="fbtn">↗️ シェア</div></div></div>`;
   });
@@ -1823,7 +1823,7 @@ function renderDiary(){
 function renderVoice(){
   const all=[...ld('ov'),...VC];
   document.getElementById('vfeed').innerHTML=all.map(v=>{
-    const isMe = v.u==='BOSS YASU';
+    const isMe = v.u===(currentUser?.name||'BOSS YASU');
     const avHtml = isMe
       ? myAvHtml('am')
       : `<div class="av am" style="${AB}" onclick="openUserSheet('${esc(v.u)}','${v.e}')">${v.e}</div>`;
@@ -1896,8 +1896,33 @@ function nav(name,el){
 
 /* ══════════ ACTIONS ══════════ */
 function postDiary(){const ttl=document.getElementById('ws-ttl').value.trim();const bdy=document.getElementById('ws-bdy').value.trim();if(!ttl&&!bdy){toast('タイトルか本文を入力してください');return;}const t=ttl||bdy.slice(0,20)+'…';const now=new Date();const ds=`${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 ${pad(now.getHours())}:${pad(now.getMinutes())}`;const s=ld('od');s.unshift({title:t,date:ds,excerpt:bdy||'（本文なし）',comments:0,good:0});sv('od',s);closeSheet();toast('📔 日記を投稿しました！');renderTL();}
-function postVoice(text){const t=text||document.getElementById('ws-vc')?.value.trim();if(!t){toast('テキストを入力してください');return;}const s=ld('ov');s.unshift({u:'BOSS YASU',e:'😊',t,tm:'たった今'});sv('ov',s);closeSheet();toast('💬 つぶやきを投稿しました！');if(cur==='voice')renderVoice();renderTL();}
-function postVoiceInline(){const el=document.getElementById('vcin');const t=el.value.trim();if(!t){toast('テキストを入力してください');return;}const s=ld('ov');s.unshift({u:'BOSS YASU',e:'😊',t,tm:'たった今'});sv('ov',s);el.value='';toast('💬 つぶやきを投稿しました！');renderVoice();renderTL();}
+function postVoice(text){
+  const t=text||document.getElementById('ws-vc')?.value.trim();
+  if(!t){toast('テキストを入力してください');return;}
+  const s=ld('ov');
+  const u = currentUser?.name || 'ゲスト';
+  const e = currentUser?.emoji || '🙋';
+  s.unshift({u, e, t, tm:'たった今'});
+  sv('ov',s);
+  closeSheet();
+  toast('💬 つぶやきを投稿しました！');
+  if(cur==='voice')renderVoice();
+  renderTL();
+}
+function postVoiceInline(){
+  const el=document.getElementById('vcin');
+  const t=el.value.trim();
+  if(!t){toast('テキストを入力してください');return;}
+  const s=ld('ov');
+  const u = currentUser?.name || 'ゲスト';
+  const e = currentUser?.emoji || '🙋';
+  s.unshift({u, e, t, tm:'たった今'});
+  sv('ov',s);
+  el.value='';
+  toast('💬 つぶやきを投稿しました！');
+  renderVoice();
+  renderTL();
+}
 function likeThis(el){el.classList.toggle('lk');toast(el.classList.contains('lk')?'👍 いいねしました！':'いいねを取り消しました');}
 
 /* ══════════ SHEETS ══════════ */
@@ -2714,6 +2739,30 @@ function ieSave() {
 
 /* ══════════ INIT (updated) ══════════ */
 function initApp(){
+  // currentUser のプロフィール情報を画面に反映
+  if(currentUser) {
+    const mpname = document.getElementById('mpname');
+    const pvnick = document.getElementById('pvnick');
+    const sideName = document.querySelectorAll('.scn');
+    if(mpname) mpname.textContent = currentUser.name;
+    if(pvnick) pvnick.textContent = currentUser.name;
+    sideName.forEach(el => { if(el) el.textContent = currentUser.name; });
+
+    // ヘッダー右上のBOSS YASU表示も更新
+    const sideHdName = document.querySelector('.sd-card-name');
+    if(sideHdName) sideHdName.textContent = currentUser.name;
+
+    // emojiも反映
+    const sideAvEmoji = document.getElementById('side-av-emoji');
+    const profileEmoji = document.getElementById('profile-photo-emoji');
+    const homeEmoji = document.getElementById('home-av-emoji');
+    const hdEmoji = document.getElementById('hd-av-emoji');
+    if(sideAvEmoji) sideAvEmoji.textContent = currentUser.emoji || '🙋';
+    if(profileEmoji) profileEmoji.textContent = currentUser.emoji || '🙋';
+    if(homeEmoji) homeEmoji.textContent = currentUser.emoji || '🙋';
+    if(hdEmoji) hdEmoji.textContent = currentUser.emoji || '🙋';
+  }
+
   renderTL();renderStories();renderMxRow();renderNT('ntlist',NT);renderMpDiary();renderSide();renderCal();
   renderSelectedTags();
   loadProfilePhoto();
