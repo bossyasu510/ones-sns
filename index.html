@@ -591,6 +591,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
 .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 20px;border-radius:24px;font-size:13px;font-weight:600;z-index:999;box-shadow:0 4px 16px rgba(0,0,0,.3);white-space:nowrap;animation:tin .25s ease,tout .3s ease 1.9s forwards;pointer-events:none;}
 @keyframes tin{from{opacity:0;transform:translateX(-50%) translateY(10px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
 @keyframes tout{to{opacity:0;transform:translateX(-50%) translateY(10px);}}
+@keyframes gearSpin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
 
 /* ══════════════════════════════
    ── INVITE SYSTEM STYLES ──
@@ -757,40 +758,218 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
      INVITE / LANDING SCREEN
 ══════════════════════════════ -->
 <div id="invite-screen" style="display:none;">
-  <svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" style="display:block;margin:0 auto 8px;">
-  <circle cx="60" cy="60" r="58" fill="rgba(255,255,255,0.12)"/>
-  <circle cx="60" cy="60" r="46" fill="rgba(255,255,255,0.18)"/>
-  <circle cx="60" cy="60" r="34" fill="rgba(255,255,255,0.22)"/>
-  <ellipse cx="47" cy="50" rx="11" ry="19" fill="white" opacity=".28" transform="rotate(-35 47 50)"/>
-  <ellipse cx="73" cy="70" rx="10" ry="17" fill="#c8f7d4" opacity=".32" transform="rotate(-35 73 70)"/>
-  <ellipse cx="60" cy="60" rx="6" ry="20" fill="white" opacity=".15" transform="rotate(15 60 60)"/>
-  <circle cx="60" cy="14" r="5" fill="#c8f7d4" opacity=".8"/>
-  <circle cx="106" cy="60" r="4" fill="#9dd4b0" opacity=".6"/>
-  <circle cx="14" cy="60" r="4" fill="#9dd4b0" opacity=".6"/>
-  <circle cx="93" cy="27" r="3" fill="#c8f7d4" opacity=".5"/>
-  <circle cx="27" cy="93" r="3" fill="#c8f7d4" opacity=".5"/>
-  <text x="60" y="70" font-family="'Helvetica Neue',Arial,sans-serif" font-size="30" fill="white" text-anchor="middle" font-weight="900" font-style="italic" opacity=".95">ONEs</text>
-</svg>
-  <div class="inv-tagline">つながりを、ひとつに。<br>招待制クローズドSNS</div>
-  <div class="inv-card">
-    <h2>🔐 招待コードで参加</h2>
-    <p>ONEsは紹介制のプライベートSNSです。<br>招待コードをお持ちの方のみ参加できます。</p>
-    <input id="inv-code-input" class="inv-input" type="text" placeholder="招待コードを入力（例：ONES-XXXX）" autocomplete="off">
-    <div class="inv-error" id="inv-error"></div>
-    <input id="inv-name-input" class="inv-input" type="text" placeholder="ニックネームを入力" autocomplete="off" style="letter-spacing:0;font-size:14px;margin-top:2px;">
-    <div style="height:8px;"></div>
-    <button class="inv-join-btn" onclick="joinWithCode()">参加する →</button>
-    <div class="inv-note">
-      招待コードは既存メンバーから受け取ってください。<br>
-      <span style="cursor:pointer;text-decoration:underline;" onclick="showPolicyFromInvite('privacy')">プライバシーポリシー</span>
-      &nbsp;|&nbsp;
-      <span style="cursor:pointer;text-decoration:underline;" onclick="showPolicyFromInvite('terms')">利用規約</span>
+
+  <!-- 背景：深黒グラデーション + 歯車SVGアニメ -->
+  <div style="
+    position:fixed;inset:0;z-index:0;
+    background:linear-gradient(160deg,#0a0a0a 0%,#1a1208 60%,#0d1a0f 100%);
+    overflow:hidden;
+  ">
+    <!-- 回転する歯車（背景装飾） -->
+    <svg style="position:absolute;top:-80px;right:-80px;opacity:.06;animation:gearSpin 30s linear infinite;"
+      width="400" height="400" viewBox="0 0 100 100">
+      <path fill="#c9a84c" d="M50 10 L54 20 L64 16 L66 27 L76 28 L72 38 L80 45 L72 52 L76 62 L66 63 L64 74 L54 70 L50 80 L46 70 L36 74 L34 63 L24 62 L28 52 L20 45 L28 38 L24 28 L34 27 L36 16 L46 20 Z"/>
+      <circle fill="none" stroke="#c9a84c" stroke-width="2" cx="50" cy="50" r="15"/>
+    </svg>
+    <svg style="position:absolute;bottom:-60px;left:-60px;opacity:.04;animation:gearSpin 20s linear infinite reverse;"
+      width="300" height="300" viewBox="0 0 100 100">
+      <path fill="#c9a84c" d="M50 10 L54 20 L64 16 L66 27 L76 28 L72 38 L80 45 L72 52 L76 62 L66 63 L64 74 L54 70 L50 80 L46 70 L36 74 L34 63 L24 62 L28 52 L20 45 L28 38 L24 28 L34 27 L36 16 L46 20 Z"/>
+      <circle fill="none" stroke="#c9a84c" stroke-width="2" cx="50" cy="50" r="15"/>
+    </svg>
+    <!-- 光のライン装飾 -->
+    <div style="position:absolute;top:0;left:50%;width:1px;height:100%;
+      background:linear-gradient(to bottom,transparent,#c9a84c22,transparent);"></div>
+  </div>
+
+  <!-- メインコンテンツ -->
+  <div style="
+    position:relative;z-index:1;
+    min-height:100vh;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;padding:32px 24px;
+  ">
+
+    <!-- ブランドロゴエリア -->
+    <div style="text-align:center;margin-bottom:48px;">
+      <div style="
+        font-family:'Italiana','Georgia',serif;
+        font-size:11px;letter-spacing:.6em;
+        color:#c9a84c;margin-bottom:12px;opacity:.8;
+      ">PRIVATE MEMBERSHIP</div>
+
+      <!-- ONEsロゴ -->
+      <div style="
+        font-family:'Helvetica Neue',Arial,sans-serif;
+        font-size:52px;font-weight:100;letter-spacing:.2em;
+        color:#e8e8e8;line-height:1;margin-bottom:8px;
+      ">ON<span style="color:#c9a84c;">Es</span></div>
+
+      <!-- ゴールドライン -->
+      <div style="width:60px;height:1px;background:#c9a84c;margin:16px auto;opacity:.6;"></div>
+
+      <div style="
+        font-family:'Italiana','Georgia',serif;
+        font-size:12px;letter-spacing:.4em;
+        color:#e8e8e888;
+      ">つながりを、ひとつに。</div>
     </div>
 
-    <!-- 隠し管理者リンク（左下） -->
-    <div style="position:fixed;bottom:12px;left:12px;z-index:999;">
-      <span onclick="showAdminLogin()" style="font-size:10px;color:rgba(255,255,255,.15);cursor:pointer;user-select:none;">©ONEs</span>
+    <!-- クロノミオ キャラクターカード -->
+    <div style="
+      position:relative;margin-bottom:40px;
+      width:100%;max-width:340px;
+    ">
+      <!-- カード背景 -->
+      <div style="
+        background:linear-gradient(135deg,#1a1208,#0d0d0d);
+        border:1px solid #c9a84c44;
+        border-radius:2px;
+        padding:24px 20px 16px;
+        text-align:center;
+        box-shadow:0 0 60px #c9a84c11;
+        position:relative;overflow:hidden;
+      ">
+        <!-- 四隅のゴールドコーナー装飾 -->
+        <div style="position:absolute;top:0;left:0;width:20px;height:20px;
+          border-top:1px solid #c9a84c;border-left:1px solid #c9a84c;"></div>
+        <div style="position:absolute;top:0;right:0;width:20px;height:20px;
+          border-top:1px solid #c9a84c;border-right:1px solid #c9a84c;"></div>
+        <div style="position:absolute;bottom:0;left:0;width:20px;height:20px;
+          border-bottom:1px solid #c9a84c;border-left:1px solid #c9a84c;"></div>
+        <div style="position:absolute;bottom:0;right:0;width:20px;height:20px;
+          border-bottom:1px solid #c9a84c;border-right:1px solid #c9a84c;"></div>
+
+        <!-- キャラクター画像（GitHubにchrono_mio1.pngをアップロード後に使用） -->
+        <img src="chrono_mio1.png"
+          onerror="this.style.display='none';document.getElementById('mio-fallback').style.display='block';"
+          style="
+            width:160px;height:auto;
+            filter:drop-shadow(0 0 20px #c9a84c44);
+            margin-bottom:12px;
+          ">
+        <!-- 画像が読めない場合のフォールバック -->
+        <div id="mio-fallback" style="display:none;font-size:64px;margin-bottom:12px;">⏱️</div>
+
+        <!-- キャラクター名 -->
+        <div style="
+          font-family:'Helvetica Neue',Arial,sans-serif;
+          font-size:9px;letter-spacing:.5em;
+          color:#c9a84c88;margin-bottom:4px;
+        ">CHARACTER</div>
+        <div style="
+          font-family:'Italiana','Georgia',serif;
+          font-size:22px;letter-spacing:.15em;
+          color:#e8e8e8;margin-bottom:4px;
+        ">CHRONO MIO</div>
+        <div style="
+          font-size:10px;letter-spacing:.2em;
+          color:#c9a84c66;
+        ">REWIND & RETRY</div>
+      </div>
     </div>
+
+    <!-- 招待フォームカード -->
+    <div style="
+      width:100%;max-width:340px;
+      background:rgba(255,255,255,.03);
+      border:1px solid #e8e8e822;
+      border-radius:2px;
+      padding:28px 24px;
+      backdrop-filter:blur(10px);
+    ">
+      <div style="
+        font-size:10px;letter-spacing:.4em;
+        color:#c9a84c;text-align:center;
+        margin-bottom:20px;
+      ">INVITATION CODE</div>
+
+      <input id="inv-code-input"
+        type="text"
+        placeholder="ONES-XXXX"
+        autocomplete="off"
+        style="
+          width:100%;background:transparent;
+          border:none;border-bottom:1px solid #c9a84c44;
+          padding:12px 0;font-size:18px;
+          font-family:'Helvetica Neue',Arial,sans-serif;
+          letter-spacing:.2em;text-align:center;
+          color:#e8e8e8;outline:none;
+          margin-bottom:20px;
+          transition:border-color .3s;
+        "
+        onfocus="this.style.borderBottomColor='#c9a84c'"
+        onblur="this.style.borderBottomColor='#c9a84c44'">
+
+      <div class="inv-error" id="inv-error"
+        style="color:#e8a84c;font-size:11px;text-align:center;
+          margin-top:-14px;margin-bottom:14px;min-height:16px;letter-spacing:.05em;">
+      </div>
+
+      <input id="inv-name-input"
+        type="text"
+        placeholder="NICKNAME"
+        autocomplete="off"
+        style="
+          width:100%;background:transparent;
+          border:none;border-bottom:1px solid #e8e8e822;
+          padding:12px 0;font-size:14px;
+          font-family:'Helvetica Neue',Arial,sans-serif;
+          letter-spacing:.2em;text-align:center;
+          color:#e8e8e8;outline:none;
+          margin-bottom:28px;
+          transition:border-color .3s;
+        "
+        onfocus="this.style.borderBottomColor='#e8e8e8'"
+        onblur="this.style.borderBottomColor='#e8e8e822'">
+
+      <!-- 参加ボタン -->
+      <button onclick="joinWithCode()" style="
+        width:100%;background:transparent;
+        border:1px solid #c9a84c;
+        color:#c9a84c;
+        padding:16px;
+        font-size:11px;letter-spacing:.5em;
+        font-family:'Helvetica Neue',Arial,sans-serif;
+        cursor:pointer;
+        transition:all .3s;
+        margin-bottom:16px;
+      "
+        onmouseover="this.style.background='#c9a84c';this.style.color='#0a0a0a'"
+        onmouseout="this.style.background='transparent';this.style.color='#c9a84c'"
+      >ENTER →</button>
+
+      <!-- ポリシーリンク -->
+      <div style="text-align:center;font-size:9px;letter-spacing:.2em;color:#e8e8e844;">
+        <span onclick="showPolicyFromInvite('privacy')"
+          style="cursor:pointer;border-bottom:1px solid #e8e8e822;padding-bottom:1px;">
+          PRIVACY
+        </span>
+        <span style="margin:0 8px;opacity:.3;">|</span>
+        <span onclick="showPolicyFromInvite('terms')"
+          style="cursor:pointer;border-bottom:1px solid #e8e8e822;padding-bottom:1px;">
+          TERMS
+        </span>
+      </div>
+    </div>
+
+    <!-- シルエット画像エリア（夕陽シルエット） -->
+    <div style="
+      width:100%;max-width:400px;margin-top:40px;
+      opacity:.25;
+      mask-image:linear-gradient(to bottom,transparent,black 30%,black 70%,transparent);
+      -webkit-mask-image:linear-gradient(to bottom,transparent,black 30%,black 70%,transparent);
+    ">
+      <img src="AdobeStock_328036344.jpeg"
+        onerror="this.style.display='none'"
+        style="width:100%;height:auto;filter:sepia(1) hue-rotate(20deg) saturate(.5);">
+    </div>
+
+    <!-- 管理者ログイン（隠し） -->
+    <div style="position:fixed;bottom:12px;left:12px;z-index:999;">
+      <span onclick="showAdminLogin()"
+        style="font-size:10px;color:rgba(255,255,255,.08);cursor:pointer;
+          letter-spacing:.1em;">©ONEs</span>
+    </div>
+
   </div>
 </div>
 
