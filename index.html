@@ -529,7 +529,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
     <p>ONEsは紹介制のプライベートSNSです。<br>招待コードをお持ちの方のみ参加できます。</p>
     <input id="inv-code-input" class="inv-input" type="text" placeholder="招待コードを入力（例：ONES-XXXX）" autocomplete="off">
     <div class="inv-error" id="inv-error"></div>
-    <input id="inv-name-input" class="inv-input" type="text" placeholder="ニックネームを入力" style="letter-spacing:0;font-size:14px;margin-top:2px;">
+    <input id="inv-name-input" class="inv-input" type="text" placeholder="ニックネームを入力" autocomplete="off" style="letter-spacing:0;font-size:14px;margin-top:2px;">
     <div style="height:8px;"></div>
     <button class="inv-join-btn" onclick="joinWithCode()">参加する →</button>
     <div class="inv-note">
@@ -1465,8 +1465,19 @@ async function showBossYasuLogin() {
 }
 
 function logoutApp(){
-  if(!confirm('ログアウトしますか？')) return;
-  localStorage.removeItem('ones_session');
+  if(!confirm('ログアウトしますか？\n（次回は招待コードを手動で入力する必要があります）')) return;
+
+  // セッションと認証情報を完全に削除
+  try { localStorage.removeItem('ones_session'); } catch(e) {}
+  try { localStorage.removeItem('ones_my_invite_code'); } catch(e) {}
+  try { localStorage.removeItem('ones_my_nickname'); } catch(e) {}
+  try { localStorage.removeItem('ones_my_member_id'); } catch(e) {}
+  try { localStorage.removeItem('ones_admin_unlocked_at'); } catch(e) {}
+  try { localStorage.removeItem('ones_current_photo'); } catch(e) {}
+
+  // 写真は member データに残るので、emoji/IDキャッシュなど揮発系のみ削除
+  console.log('[ONEs] ログアウト完了 - 認証情報をすべて削除しました');
+
   location.reload();
 }
 
@@ -3947,45 +3958,8 @@ checkSession();
     return;
   }
 
-  // 招待画面が表示されていて、過去に参加していた場合は自動入力
-  setTimeout(()=>{
-    const invScreen = document.getElementById('invite-screen');
-    const isInviteShowing = invScreen && invScreen.style.display !== 'none' && !invScreen.classList.contains('hidden');
-
-    if(isInviteShowing) {
-      const savedCode = localStorage.getItem('ones_my_invite_code');
-      const savedName = localStorage.getItem('ones_my_nickname');
-
-      if(savedCode && savedName) {
-        const codeInput = document.getElementById('inv-code-input');
-        const nameInput = document.getElementById('inv-name-input');
-
-        if(codeInput) {
-          codeInput.value = savedCode;
-          codeInput.style.borderColor = '#3a9e5f';
-          codeInput.style.background = '#edf8f1';
-        }
-        if(nameInput) {
-          nameInput.value = savedName;
-          nameInput.style.borderColor = '#3a9e5f';
-          nameInput.style.background = '#edf8f1';
-        }
-
-        // ログイン用の表示を変更
-        const inviteCard = document.querySelector('.inv-card');
-        const heading = inviteCard ? inviteCard.querySelector('h2') : null;
-        if(heading) heading.innerHTML = '👋 おかえりなさい！';
-
-        const desc = inviteCard ? inviteCard.querySelector('p') : null;
-        if(desc) desc.innerHTML = '<strong style="color:#1e6e3a;">'+savedName+'</strong> さん、また会えて嬉しいです！<br>ボタンを押してONEsに入りましょう。';
-
-        const submitBtn = inviteCard ? inviteCard.querySelector('.inv-btn') : null;
-        if(submitBtn) submitBtn.textContent = 'ログインする →';
-
-        toast('👋 おかえりなさい、'+savedName+'さん！');
-      }
-    }
-  }, 100);
+  // 自動入力機能は無効化（セキュリティ対策）
+  // ログアウト後は毎回手動で招待コードとニックネームを入力する
 })();
 </script>
 </body>
