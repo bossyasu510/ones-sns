@@ -2565,7 +2565,9 @@ async function openMypagePhoto(photoId) {
     var ts = p.created_at ? new Date(p.created_at).getTime() : Date.now();
 
     showSheet('📷 写真', '<div>'+
-      '<img src="'+url+'" style="width:100%;border-radius:12px;margin-bottom:12px;">'+
+      '<div style="text-align:center;margin-bottom:12px;background:#000;border-radius:12px;overflow:hidden;">'+
+        '<img src="'+url+'" style="max-width:100%;max-height:50vh;width:auto;height:auto;display:block;margin:0 auto;">'+
+      '</div>'+
       (p.caption ? '<div style="background:var(--og-pale);border-radius:10px;padding:12px;font-size:14px;line-height:1.6;margin-bottom:12px;">'+escHtml(p.caption)+'</div>' : '')+
       '<div style="font-size:12px;color:var(--text3);margin-bottom:14px;">投稿日時：'+timeAgoStr(ts)+'</div>'+
       '<button class="bg" style="width:100%;color:#e53e3e;border-color:#e53e3e;" onclick="deleteMypagePhoto(\''+p.id+'\')">🗑️ この写真を削除</button>'+
