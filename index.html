@@ -985,9 +985,9 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
         <div class="psh"><span class="t">👤 基本情報</span><a href="#" onclick="openEditProfile();return false;">編集</a></div>
         <div class="psb">
           <div class="pr"><div class="pk">ニックネーム</div><div class="pv" id="pvnick">BOSS YASU</div></div>
-          <div class="pr"><div class="pk">性別</div><div class="pv">男性</div></div>
-          <div class="pr"><div class="pk">居住地</div><div class="pv" id="pvloc">愛知県 名古屋市</div></div>
-          <div class="pr"><div class="pk">職業</div><div class="pv" id="pvjob">IT会社経営</div></div>
+          <div class="pr"><div class="pk">性別</div><div class="pv" id="pvgender">未設定</div></div>
+          <div class="pr"><div class="pk">居住地</div><div class="pv" id="pvloc">未設定</div></div>
+          <div class="pr"><div class="pk">職業</div><div class="pv" id="pvjob">未設定</div></div>
           <div class="pr"><div class="pk">招待者</div><div class="pv">🌱 創設メンバー（管理者）</div></div>
           <div class="pr"><div class="pk">登録日</div><div class="pv">2005年4月3日</div></div>
         </div>
@@ -3791,27 +3791,46 @@ function escHtml(str) {
 }
 function openMsgSheet(from,emoji,text){showSheet(from+'さんのメッセージ',`<div><div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;"><div class="av am" style="${AB}">${emoji}</div><div><div style="font-weight:700;color:var(--og3);">${from}</div><div style="font-size:11px;color:var(--text3);">ワンミク</div></div></div><div style="background:var(--og-pale);border-radius:12px;padding:14px;font-size:14px;color:var(--text);line-height:1.7;margin-bottom:16px;">${text}</div><textarea style="width:100%;background:var(--og-pale);border:1.5px solid var(--og-border);border-radius:12px;padding:12px;font-size:14px;font-family:inherit;outline:none;resize:none;height:90px;margin-bottom:10px;" placeholder="返信を入力..."></textarea><button class="bo" style="width:100%;" onclick="toast('返信を送信しました！');closeSheet()">送信する</button></div>`);}
 function openComposeMsg(to){showSheet('新しいメッセージ',`<div><div class="er"><label class="el">宛先</label><input class="ei" type="text" value="${to||''}" placeholder="ニックネームを入力"></div><div class="er"><label class="el">件名</label><input class="ei" type="text" placeholder="件名を入力"></div><div class="er"><label class="el">本文</label><textarea class="eta" placeholder="メッセージを入力してください..."></textarea></div><button class="bo" style="width:100%;" onclick="toast('メッセージを送信しました！');closeSheet()">送信する</button></div>`);}
-function openEditProfile(){const nick=document.getElementById('pvnick').textContent;const loc=document.getElementById('pvloc').textContent;const job=document.getElementById('pvjob').textContent;const status=document.getElementById('mpstatus').textContent;showSheet('プロフィールを編集',`<div><div class="er"><label class="el">ニックネーム</label><input id="ep-nick" class="ei" type="text" value="${nick}"></div><div class="er"><label class="el">ひとこと</label><input id="ep-st" class="ei" type="text" value="${status}"></div><div class="er"><label class="el">居住地</label><input id="ep-loc" class="ei" type="text" value="${loc}"></div><div class="er"><label class="el">職業</label><input id="ep-job" class="ei" type="text" value="${job}"></div><button class="bo" style="width:100%;" onclick="saveProfile()">保存する</button></div>`);}
+function openEditProfile(){
+  const nick = document.getElementById('pvnick').textContent;
+  const loc = document.getElementById('pvloc').textContent;
+  const job = document.getElementById('pvjob').textContent;
+  const gender = document.getElementById('pvgender').textContent;
+  const status = document.getElementById('mpstatus').textContent;
+  const gOpts = ['未設定','男性','女性','その他','回答しない'];
+  const gSel = gOpts.map(g=>`<option${g===gender?' selected':''}>${g}</option>`).join('');
+  showSheet('プロフィールを編集',`<div>
+    <div class="er"><label class="el">ニックネーム</label><input id="ep-nick" class="ei" type="text" value="${nick}"></div>
+    <div class="er"><label class="el">ひとこと</label><input id="ep-st" class="ei" type="text" value="${status}"></div>
+    <div class="er"><label class="el">性別</label><select id="ep-gender" class="ei">${gSel}</select></div>
+    <div class="er"><label class="el">居住地</label><input id="ep-loc" class="ei" type="text" placeholder="例：愛知県 名古屋市" value="${loc==='未設定'?'':loc}"></div>
+    <div class="er"><label class="el">職業</label><input id="ep-job" class="ei" type="text" placeholder="例：IT会社経営" value="${job==='未設定'?'':job}"></div>
+    <button class="bo" style="width:100%;" onclick="saveProfile()">保存する</button>
+  </div>`);
+}
 function openEditBio(){const cur=document.getElementById('pvbio').innerText;showSheet('自己紹介を編集',`<div><div class="er"><label class="el">自己紹介文</label><textarea id="ep-bio" class="eta" style="min-height:150px;">${cur}</textarea></div><button class="bo" style="width:100%;" onclick="saveBio()">保存する</button></div>`);}
 async function saveProfile(){
   try {
     const nick = document.getElementById('ep-nick').value.trim();
     const st = document.getElementById('ep-st').value.trim();
-    const loc = document.getElementById('ep-loc').value.trim();
-    const job = document.getElementById('ep-job').value.trim();
+    const gender = document.getElementById('ep-gender').value;
+    const loc = document.getElementById('ep-loc').value.trim() || '未設定';
+    const job = document.getElementById('ep-job').value.trim() || '未設定';
 
     if(!nick) { toast('ニックネームを入力してください'); return; }
-    if(/<|>|script|javascript:|on\w+=/i.test(nick + st + loc + job)) {
+    if(/<|>|script|javascript:|on\w+=/i.test(nick + st + gender + loc + job)) {
       toast('使用できない文字が含まれています'); return;
     }
 
     // 画面更新
     var pvnick = document.getElementById('pvnick');
+    var pvgender = document.getElementById('pvgender');
     var pvloc = document.getElementById('pvloc');
     var pvjob = document.getElementById('pvjob');
     var mpname = document.getElementById('mpname');
     var mpstatus = document.getElementById('mpstatus');
     if(pvnick) pvnick.textContent = nick;
+    if(pvgender) pvgender.textContent = gender;
     if(pvloc) pvloc.textContent = loc;
     if(pvjob) pvjob.textContent = job;
     if(mpname) mpname.textContent = nick;
@@ -3826,7 +3845,7 @@ async function saveProfile(){
     // LocalStorage にも保存（フォールバック）
     if(currentUser && currentUser.id) {
       var existing = JSON.parse(localStorage.getItem('ones_profile_'+currentUser.id) || '{}');
-      var profile = { nick: nick, status: st, loc: loc, job: job };
+      var profile = { nick: nick, status: st, gender: gender, loc: loc, job: job };
       localStorage.setItem('ones_profile_'+currentUser.id, JSON.stringify(Object.assign(existing, profile)));
     }
 
@@ -3835,6 +3854,7 @@ async function saveProfile(){
       var updateResult = await sb.from('members').update({
         name: nick,
         bio: st,
+        gender: gender,
         location: loc,
         job: job
       }).eq('id', currentUser.id);
@@ -5170,17 +5190,15 @@ function initApp(){
 
       const pvloc = document.getElementById('pvloc');
       const pvjob = document.getElementById('pvjob');
+      const pvgender = document.getElementById('pvgender');
       const pvbio = document.getElementById('pvbio');
       const mpstatus = document.getElementById('mpstatus');
 
+      if(pvgender) pvgender.textContent = savedProf.gender || '未設定';
       if(pvloc) pvloc.textContent = savedProf.loc || '未設定';
       if(pvjob) pvjob.textContent = savedProf.job || '未設定';
       if(pvbio) pvbio.innerHTML = savedProf.bio || '<span style="color:var(--text3);">プロフィールを編集して自己紹介を書きましょう ✏️</span>';
       if(mpstatus) mpstatus.textContent = savedProf.status || 'よろしくお願いします！';
-
-      // 性別を未設定に
-      const genderRow = document.querySelector('.pr:nth-child(2) .pv');
-      if(genderRow && !genderRow.id) genderRow.textContent = '未設定';
 
       // 招待者情報
       const invRow = document.querySelectorAll('.pr');
