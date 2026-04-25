@@ -508,7 +508,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
 <!-- ══════════════════════════════
      INVITE / LANDING SCREEN
 ══════════════════════════════ -->
-<div id="invite-screen">
+<div id="invite-screen" style="display:none;">
   <svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" style="display:block;margin:0 auto 8px;">
   <circle cx="60" cy="60" r="58" fill="rgba(255,255,255,0.12)"/>
   <circle cx="60" cy="60" r="46" fill="rgba(255,255,255,0.18)"/>
@@ -1770,6 +1770,9 @@ function checkSession(){
     }
   } else {
     console.log('[ONEs] セッションなし - ログイン画面を表示');
+    // セッションがない時だけログイン画面を表示
+    var inv = document.getElementById('invite-screen');
+    if(inv) inv.style.display = '';
   }
   console.log('[ONEs] === checkSession 終了 ===');
 }
@@ -4057,15 +4060,19 @@ checkSession();
   const code = params.get('code');
   if(code) {
     // 既存のセッションを強制クリア（QR経由の新規参加優先）
-    localStorage.removeItem('ones_session');
+    try { localStorage.removeItem('ones_session'); } catch(e) {}
+    try { sessionStorage.removeItem('ones_session'); } catch(e) {}
+    try { deleteCookie('ones_session'); } catch(e) {}
 
     // 招待画面を強制表示
     const inv = document.getElementById('invite-screen');
     const body = document.getElementById('body');
     const bnav = document.getElementById('bnav');
     const fab = document.getElementById('fab');
-    if(inv) inv.style.display = '';
-    if(inv) inv.classList.remove('hidden');
+    if(inv) {
+      inv.style.display = '';
+      inv.classList.remove('hidden');
+    }
     if(body) body.style.display = 'none';
     if(bnav) bnav.style.display = 'none';
     if(fab) fab.style.display = 'none';
