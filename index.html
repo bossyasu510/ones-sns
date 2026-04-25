@@ -1867,12 +1867,28 @@ function nav(name,el){
   if(name==='notice')renderNT('ntlist',NT);
   if(name==='mypage'){
     renderMpDiary();
-    setTimeout(()=>{
-      generateInviteQR('ONES-7X3K');
-      generateInviteQRSmall('ONES-7X3K');
-    }, 100);
+    const tryQR2 = (attempts) => {
+      if(typeof qrcode !== 'undefined') {
+        generateInviteQR('ONES-7X3K');
+        generateInviteQRSmall('ONES-7X3K');
+      } else if(attempts > 0) {
+        setTimeout(()=>tryQR2(attempts-1), 300);
+      }
+    };
+    setTimeout(()=>tryQR2(10), 200);
   }
-  if(name==='invite'){renderInvitePage(); setTimeout(()=>generateInviteQR('ONES-7X3K'), 100);}
+  if(name==='invite'){
+    renderInvitePage();
+    // QRライブラリ読み込み待ち
+    const tryQR = (attempts) => {
+      if(typeof qrcode !== 'undefined') {
+        generateInviteQR('ONES-7X3K');
+      } else if(attempts > 0) {
+        setTimeout(()=>tryQR(attempts-1), 300);
+      }
+    };
+    setTimeout(()=>tryQR(10), 200);
+  }
   if(name==='calendar')renderCalendarPage();
   if(name==='help')renderHelpPage();
   window.scrollTo(0,0);
