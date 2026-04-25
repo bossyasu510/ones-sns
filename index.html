@@ -3850,18 +3850,31 @@ function applyProfilePhoto(dataUrl) {
   if(cur==='diary') renderDiary();
 }
 
-function loadProfilePhoto() {
+async function loadProfilePhoto() {
   try {
     var saved = null;
     var src = '';
 
-    // 1. ユーザーIDで検索
-    if(currentUser && currentUser.id) {
-      saved = localStorage.getItem('ones_profile_photo_'+currentUser.id);
-      if(saved) src = 'userId';
+    // 1. Supabaseから取得（最優先）
+    if(dbReady() && currentUser && currentUser.id) {
+      try {
+        var memResult = await sb.from('members').select('photo').eq('id', currentUser.id).maybeSingle();
+        if(memResult.data && memResult.data.photo) {
+          saved = memResult.data.photo;
+          src = 'Supabase';
+          // キャッシュ
+          try { localStorage.setItem('ones_profile_photo_'+currentUser.id, saved); } catch(e){}
+        }
+      } catch(e) { console.warn('Supabase photo fetch:', e); }
     }
 
-    // 2. メンバーデータから検索（最優先永続データ）
+    // 2. ユーザーIDで検索（ローカルキャッシュ）
+    if(!saved && currentUser && currentUser.id) {
+      saved = localStorage.getItem('ones_profile_photo_'+currentUser.id);
+      if(saved) src = 'userId cache';
+    }
+
+    // 3. メンバーデータから検索
     if(!saved && currentUser && currentUser.id) {
       try {
         var members = JSON.parse(localStorage.getItem('ones_members') || '[]');
@@ -3869,13 +3882,12 @@ function loadProfilePhoto() {
         if(member && member.photo) {
           saved = member.photo;
           src = 'members data';
-          // キャッシュ
           try { localStorage.setItem('ones_profile_photo_'+currentUser.id, saved); } catch(e){}
         }
       } catch(e) {}
     }
 
-    // 3. ニックネームで検索
+    // 4. ニックネームで検索
     if(!saved && currentUser && currentUser.name) {
       saved = localStorage.getItem('ones_photo_by_name_'+currentUser.name);
       if(saved) {
@@ -3886,7 +3898,7 @@ function loadProfilePhoto() {
       }
     }
 
-    // 4. BOSS YASUの旧キー
+    // 5. BOSS YASUの旧キー
     if(!saved && currentUser && currentUser.id === 'm001') {
       saved = localStorage.getItem('ones_profile_photo');
       if(saved) {
@@ -3895,7 +3907,7 @@ function loadProfilePhoto() {
       }
     }
 
-    // 5. 現在セッション用
+    // 6. 現在セッション用
     if(!saved) {
       saved = localStorage.getItem('ones_current_photo');
       if(saved) src = 'current';
