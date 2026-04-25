@@ -1705,6 +1705,11 @@ function safeText(str) {
 }
 
 function checkSession(){
+  console.log('[ONEs] === checkSession 開始 ===');
+  console.log('[ONEs] LocalStorage ones_session:', localStorage.getItem('ones_session') ? '存在(' + (localStorage.getItem('ones_session') || '').substring(0, 50) + '...)' : 'なし');
+  console.log('[ONEs] SessionStorage ones_session:', sessionStorage.getItem('ones_session') ? '存在' : 'なし');
+  console.log('[ONEs] Cookie ones_session:', getCookie('ones_session') ? '存在' : 'なし');
+
   // 整合性チェック実行
   try { integrityCheck(); } catch(e) { console.error('Integrity check failed:', e); }
 
@@ -1763,7 +1768,10 @@ function checkSession(){
       console.error('[ONEs] セッション読み込みエラー:', e);
       // エラーの場合でもセッションは消さない（次回のリトライで成功する可能性）
     }
+  } else {
+    console.log('[ONEs] セッションなし - ログイン画面を表示');
   }
+  console.log('[ONEs] === checkSession 終了 ===');
 }
 
 function joinWithCode(){
