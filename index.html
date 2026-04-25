@@ -1014,10 +1014,9 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
         </div>
       </div>
       <div class="psec">
-        <div class="psh"><span class="t">📷 フォト</span><a href="#">管理</a></div>
-        <div class="pgr">
-          <div class="pth">🌏</div><div class="pth">🍜</div><div class="pth">✈️</div>
-          <div class="pth">🏢</div><div class="pth">🌸</div><div class="pth ptadd">＋</div>
+        <div class="psh"><span class="t">📷 フォト</span><a href="#" onclick="openSheet('photo');return false;">＋投稿</a></div>
+        <div class="pgr" id="mypage-photos">
+          <div class="pth ptadd" onclick="openSheet('photo')">＋</div>
         </div>
       </div>
 
@@ -2516,6 +2515,82 @@ function renderAdmPending(){
 }
 
 /* ══════════ INVITE PAGE ══════════ */
+// マイページのフォト一覧を表示
+async function renderMypagePhotos() {
+  try {
+    var grid = document.getElementById('mypage-photos');
+    if(!grid) return;
+    if(!dbReady() || !currentUser || !currentUser.id) {
+      grid.innerHTML = '<div class="pth ptadd" onclick="openSheet(\'photo\')">＋</div>';
+      return;
+    }
+
+    // 自分が投稿した写真を取得
+    var result = await sb.from('photos')
+      .select('*')
+      .eq('author_id', currentUser.id)
+      .order('created_at', {ascending: false})
+      .limit(11); // 11枚 + 追加ボタンで合計12個
+
+    var photos = result.data || [];
+
+    if(photos.length === 0) {
+      grid.innerHTML = '<div class="pth ptadd" onclick="openSheet(\'photo\')" style="grid-column:1/-1;padding:30px;font-size:14px;color:var(--text3);"><div style="font-size:28px;margin-bottom:6px;">＋</div><div>写真を追加</div></div>';
+      return;
+    }
+
+    var html = '';
+    photos.forEach(function(p){
+      var url = p.photo_url || '';
+      html += '<div class="pth" style="background-image:url(\''+url+'\');background-size:cover;background-position:center;cursor:pointer;" onclick="openMypagePhoto(\''+p.id+'\')"></div>';
+    });
+
+    // 最後に「+追加」ボタン
+    html += '<div class="pth ptadd" onclick="openSheet(\'photo\')">＋</div>';
+
+    grid.innerHTML = html;
+  } catch(e) {
+    console.error('[ONEs] renderMypagePhotos:', e);
+  }
+}
+
+// マイページの写真を拡大表示
+async function openMypagePhoto(photoId) {
+  try {
+    if(!dbReady()) return;
+    var result = await sb.from('photos').select('*').eq('id', photoId).maybeSingle();
+    if(!result.data) { toast('写真が見つかりません'); return; }
+    var p = result.data;
+    var url = p.photo_url || '';
+    var ts = p.created_at ? new Date(p.created_at).getTime() : Date.now();
+
+    showSheet('📷 写真', '<div>'+
+      '<img src="'+url+'" style="width:100%;border-radius:12px;margin-bottom:12px;">'+
+      (p.caption ? '<div style="background:var(--og-pale);border-radius:10px;padding:12px;font-size:14px;line-height:1.6;margin-bottom:12px;">'+escHtml(p.caption)+'</div>' : '')+
+      '<div style="font-size:12px;color:var(--text3);margin-bottom:14px;">投稿日時：'+timeAgoStr(ts)+'</div>'+
+      '<button class="bg" style="width:100%;color:#e53e3e;border-color:#e53e3e;" onclick="deleteMypagePhoto(\''+p.id+'\')">🗑️ この写真を削除</button>'+
+    '</div>');
+  } catch(e) {
+    console.error('[ONEs] openMypagePhoto:', e);
+  }
+}
+
+// 写真を削除
+async function deleteMypagePhoto(photoId) {
+  if(!confirm('この写真を削除しますか？\n（元に戻せません）')) return;
+  try {
+    if(!dbReady()) return;
+    await sb.from('photos').delete().eq('id', photoId);
+    toast('🗑️ 写真を削除しました');
+    closeSheet();
+    renderMypagePhotos();
+    try { renderTL(); } catch(e) {}
+  } catch(e) {
+    console.error('[ONEs] deletePhoto:', e);
+    toast('❌ 削除に失敗しました');
+  }
+}
+
 async function renderInvitePage(){
   try {
     var listEl = document.getElementById('my-invited-list');
@@ -2995,6 +3070,7 @@ function nav(name,el){
     try { if(name==='notice' && typeof renderNT === 'function') renderNT('ntlist',NT); } catch(e) { console.error(e); }
   if(name==='mypage'){
     renderMpDiary();
+    try { renderMypagePhotos(); } catch(e) { console.error(e); }
     const myCode = (currentUser && currentUser.code) ? currentUser.code : 'ONES-7X3K';
     const tryQR2 = (attempts) => {
       if(typeof qrcode !== 'undefined') {
@@ -3168,11 +3244,15 @@ function openSheet(type){
   } else if(type==='photo'){
     showSheet('📷 フォトを投稿',`
       <div>
-        <input type="file" id="ph-file" accept="image/*" capture="environment" style="display:none;" onchange="handlePhotoSelect(event)">
-        <div id="ph-preview-area" style="background:var(--og-pale);border-radius:12px;padding:20px;text-align:center;margin-bottom:14px;cursor:pointer;border:2px dashed var(--og-border);" onclick="document.getElementById('ph-file').click()">
+        <input type="file" id="ph-file" accept="image/*" style="display:none;" onchange="handlePhotoSelect(event)">
+        <input type="file" id="ph-file-camera" accept="image/*" capture="environment" style="display:none;" onchange="handlePhotoSelect(event)">
+        <div id="ph-preview-area" style="background:var(--og-pale);border-radius:12px;padding:20px;text-align:center;margin-bottom:14px;border:2px dashed var(--og-border);">
           <div style="font-size:48px;margin-bottom:8px;">📷</div>
-          <div style="font-size:14px;font-weight:700;color:var(--og3);margin-bottom:4px;">写真を選択</div>
-          <div style="font-size:11px;color:var(--text3);">タップしてカメラまたはアルバムから選択</div>
+          <div style="font-size:14px;font-weight:700;color:var(--og3);margin-bottom:12px;">写真を選択</div>
+          <div style="display:flex;gap:8px;">
+            <button class="bo" type="button" style="flex:1;padding:10px;font-size:13px;" onclick="document.getElementById('ph-file-camera').click()">📸 カメラで撮影</button>
+            <button class="bo" type="button" style="flex:1;padding:10px;font-size:13px;" onclick="document.getElementById('ph-file').click()">🖼️ アルバムから選ぶ</button>
+          </div>
         </div>
         <div id="ph-preview" style="display:none;margin-bottom:14px;">
           <img id="ph-preview-img" style="width:100%;max-height:300px;object-fit:cover;border-radius:12px;border:2px solid var(--og-border);">
@@ -3232,7 +3312,7 @@ function handlePhotoSelect(event) {
         if(previewImg) previewImg.src = dataUrl;
         if(previewArea) previewArea.style.display = '';
         if(selectArea) {
-          selectArea.innerHTML = '<div style="font-size:13px;color:var(--og3);font-weight:700;">📷 別の写真を選択</div>';
+          selectArea.innerHTML = '<div style="display:flex;gap:8px;"><button class="bos" type="button" style="flex:1;padding:8px;font-size:12px;" onclick="document.getElementById(\'ph-file-camera\').click()">📸 撮り直す</button><button class="bos" type="button" style="flex:1;padding:8px;font-size:12px;" onclick="document.getElementById(\'ph-file\').click()">🖼️ 別の写真</button></div>';
         }
         // データを保存
         window._selectedPhoto = dataUrl;
@@ -3339,6 +3419,7 @@ async function postPhoto() {
     closeSheet();
     toast('📷 写真を投稿しました！');
     try { if(typeof renderTL === 'function') renderTL(); } catch(err) {}
+    try { if(typeof renderMypagePhotos === 'function') renderMypagePhotos(); } catch(err) {}
     setTimeout(function(){ try { loadProfilePhoto(); } catch(e) {} }, 50);
   } catch(err) {
     console.error('[ONEs] postPhoto:', err);
