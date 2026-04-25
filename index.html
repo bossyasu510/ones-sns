@@ -2123,13 +2123,30 @@ function shareInviteQR() {
 }
 
 /* ══════════ APP RENDERS ══════════ */
-function myAvHtml(size='am') {
-  const photoKey = currentUser && currentUser.id ? 'ones_profile_photo_'+currentUser.id : 'ones_profile_photo';
-  const photo = localStorage.getItem(photoKey);
-  if (photo) {
-    return `<div class="av ${size}" style="overflow:hidden;"><img src="${photo}" style="width:100%;height:100%;object-fit:cover;border-radius:${size==='am'?'10px':'50%'};"></div>`;
+function myAvHtml(size){
+  size = size || 'am';
+  var photo = null;
+  try {
+    if(currentUser && currentUser.id) {
+      photo = localStorage.getItem('ones_profile_photo_'+currentUser.id);
+    }
+    if(!photo && currentUser && currentUser.name) {
+      photo = localStorage.getItem('ones_photo_by_name_'+currentUser.name);
+    }
+    if(!photo) {
+      photo = localStorage.getItem('ones_current_photo');
+    }
+    if(!photo && currentUser && currentUser.id === 'm001') {
+      photo = localStorage.getItem('ones_profile_photo');
+    }
+  } catch(e) {}
+
+  if(photo) {
+    var radius = (size === 'am') ? '10px' : '50%';
+    return '<div class="av ' + size + '" style="overflow:hidden;"><img src="' + photo + '" style="width:100%;height:100%;object-fit:cover;border-radius:' + radius + ';"></div>';
   }
-  return `<div class="av ${size}" style="${AB}">😊</div>`;
+  var userEmoji = (currentUser && currentUser.emoji) ? currentUser.emoji : '😊';
+  return '<div class="av ' + size + '" style="' + AB + '">' + userEmoji + '</div>';
 }
 
 function renderTL(){
@@ -2848,17 +2865,27 @@ function handlePhotoUpload(event) {
       const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
 
       try {
-        // LocalStorageに保存
-        const photoKey = currentUser && currentUser.id ? 'ones_profile_photo_'+currentUser.id : 'ones_profile_photo';
-        localStorage.setItem(photoKey, compressedDataUrl);
+        // LocalStorageに保存（ユーザー別と現在セッション用の両方に保存）
+        var userId = (currentUser && currentUser.id) ? currentUser.id : 'm001';
+        var photoKey = 'ones_profile_photo_'+userId;
+
+        try { localStorage.setItem(photoKey, compressedDataUrl); } catch(e) { console.error('save user photo:', e); }
+        // 現在セッション用にも保存（ログイン状態でロード時にすぐ表示できる）
+        try { localStorage.setItem('ones_current_photo', compressedDataUrl); } catch(e) {}
 
         // 全アバターに反映
         applyProfilePhoto(compressedDataUrl);
 
+        // 念のためサインインしているニックネーム別にも保存（互換性のため）
+        if(currentUser && currentUser.name) {
+          try { localStorage.setItem('ones_photo_by_name_'+currentUser.name, compressedDataUrl); } catch(e) {}
+        }
+
         toast('📷 プロフィール写真を更新しました！');
+        console.log('[ONEs] 写真保存完了:', photoKey);
       } catch(err) {
-        console.error('保存エラー:', err);
-        toast('❌ 保存できませんでした。容量を確認してください');
+        console.error('[ONEs] 保存エラー:', err);
+        toast('❌ 保存できませんでした');
       }
     };
     img.onerror = function() {
@@ -2919,22 +2946,50 @@ function applyProfilePhoto(dataUrl) {
 
 function loadProfilePhoto() {
   try {
-    var photoKey = (currentUser && currentUser.id) ? 'ones_profile_photo_'+currentUser.id : 'ones_profile_photo';
-    var saved = localStorage.getItem(photoKey);
+    var saved = null;
 
-    // ユーザー固有のキーで見つからない場合、共通キーも確認（旧データ対応）
+    // 1. ユーザーIDで検索
+    if(currentUser && currentUser.id) {
+      var photoKey = 'ones_profile_photo_'+currentUser.id;
+      saved = localStorage.getItem(photoKey);
+      if(saved) {
+        console.log('[ONEs] 写真読み込み (userId):', photoKey);
+      }
+    }
+
+    // 2. ニックネームで検索（ID変わってもニックネームが同じなら復元）
+    if(!saved && currentUser && currentUser.name) {
+      saved = localStorage.getItem('ones_photo_by_name_'+currentUser.name);
+      if(saved) {
+        console.log('[ONEs] 写真読み込み (name):', currentUser.name);
+        // 新しいIDで再保存
+        if(currentUser.id) {
+          try { localStorage.setItem('ones_profile_photo_'+currentUser.id, saved); } catch(e) {}
+        }
+      }
+    }
+
+    // 3. BOSS YASUの旧キー
     if(!saved && currentUser && currentUser.id === 'm001') {
       saved = localStorage.getItem('ones_profile_photo');
       if(saved) {
-        // 旧データを新形式に移行
-        try { localStorage.setItem(photoKey, saved); } catch(e){}
+        console.log('[ONEs] 写真読み込み (旧キー)');
+        try { localStorage.setItem('ones_profile_photo_m001', saved); } catch(e){}
+      }
+    }
+
+    // 4. 現在セッション用の保存場所
+    if(!saved) {
+      saved = localStorage.getItem('ones_current_photo');
+      if(saved) {
+        console.log('[ONEs] 写真読み込み (current)');
       }
     }
 
     if(saved) {
       applyProfilePhoto(saved);
     } else {
-      // 写真がない場合はemojiを表示する
+      console.log('[ONEs] 写真なし - emojiを表示');
       resetProfilePhoto();
     }
   } catch(e) {
