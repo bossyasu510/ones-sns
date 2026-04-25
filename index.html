@@ -1176,6 +1176,18 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
     <div class="pg" id="pg-help">
       <div class="sh" style="padding-top:14px;">❓ ヘルプ・よくある質問</div>
 
+      <!-- 取扱説明書バナー -->
+      <div style="margin:0 12px 14px;background:linear-gradient(135deg,#1e6e3a,#3a9e5f);border-radius:14px;padding:18px;color:#fff;cursor:pointer;box-shadow:0 6px 16px rgba(30,110,58,0.25);" onclick="openManual()">
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div style="font-size:36px;">📖</div>
+          <div style="flex:1;">
+            <div style="font-size:15px;font-weight:900;margin-bottom:2px;">取扱説明書</div>
+            <div style="font-size:11px;opacity:0.9;letter-spacing:0.05em;">ONEsの使い方を詳しく解説</div>
+          </div>
+          <div style="font-size:24px;">›</div>
+        </div>
+      </div>
+
       <!-- 検索 -->
       <div style="padding:0 12px 10px;">
         <div style="display:flex;gap:8px;">
@@ -4125,6 +4137,269 @@ function searchHelp() {
         </div>`).join('')}
     </div>
   </div>`;
+}
+
+function openManual() {
+  showSheet('📖 取扱説明書', getManualHTML());
+}
+
+function getManualHTML() {
+  var html = '<div style="font-family:inherit;line-height:1.9;color:#2a3328;">';
+
+  // ヒーロー
+  html += '<div style="background:linear-gradient(135deg,#1e6e3a,#3a9e5f);color:#fff;padding:32px 20px;text-align:center;border-radius:16px;margin-bottom:24px;">';
+  html += '<div style="font-family:Italiana,serif;font-size:48px;font-weight:400;letter-spacing:0.02em;margin-bottom:6px;">ONEs</div>';
+  html += '<div style="font-size:13px;letter-spacing:0.3em;opacity:0.92;margin-bottom:18px;">つながりを、ひとつに。</div>';
+  html += '<div style="width:50px;height:1px;background:rgba(255,255,255,0.5);margin:0 auto 14px;"></div>';
+  html += '<div style="font-size:18px;font-weight:700;letter-spacing:0.15em;">ご利用ガイド</div>';
+  html += '<div style="font-size:11px;letter-spacing:0.25em;opacity:0.7;margin-top:10px;">USER MANUAL · v1.0</div>';
+  html += '</div>';
+
+  // 目次
+  var tocItems = ['はじめに','アクセス方法','はじめての参加','ホーム画面の使い方','日記を書く','つぶやき','写真投稿','プロフィール設定','友達を招待','コミュニティ','ワンミク・足あと','ログアウト・ログイン','よくある質問','トラブル対応','お問い合わせ'];
+  html += '<div style="background:#fff;border-radius:14px;padding:20px;margin-bottom:18px;border:1px solid #d4ead9;">';
+  html += '<div style="font-size:11px;letter-spacing:0.3em;font-weight:700;color:#1e6e3a;margin-bottom:12px;">目次</div>';
+  html += '<div style="display:grid;grid-template-columns:1fr;gap:4px;">';
+  for(var i=0; i<tocItems.length; i++) {
+    var n = (i+1) < 10 ? '0'+(i+1) : (i+1);
+    html += '<div style="display:flex;align-items:center;gap:12px;padding:6px 10px;border-radius:8px;font-size:13px;font-weight:500;color:#2a3328;">';
+    html += '<span style="font-family:Italiana,serif;font-size:18px;color:#3a9e5f;font-style:italic;min-width:24px;">'+n+'</span>';
+    html += '<span>'+tocItems[i]+'</span>';
+    html += '</div>';
+  }
+  html += '</div></div>';
+
+  // セクション1: はじめに
+  html += manualSec(1, 'INTRODUCTION', 'はじめに',
+    '<p style="font-size:14px;color:#4a5d4f;margin-bottom:12px;">この度は、<strong>ONEs（ワンズ）</strong>にご招待いただき、誠にありがとうございます。</p>'+
+    '<p style="margin-bottom:12px;">ONEsは、信頼できる仲間とのつながりを大切にする、招待制クローズドSNSです。広告もアルゴリズムも追跡もありません。</p>'+
+    manualSubH('ONEsの3つの特徴')+
+    manualBl(['<strong>招待制</strong> — 信頼できる方からの紹介がなければ参加できません','<strong>シンプル</strong> — 必要な機能だけを、使いやすく','<strong>プライバシー重視</strong> — あなたの情報を守ります'])
+  );
+
+  // セクション2: アクセス方法
+  html += manualSec(2, 'ACCESS', 'サービスへのアクセス方法',
+    manualSubH('URL')+
+    '<div style="font-family:Italiana,serif;font-size:22px;color:#1e6e3a;font-style:italic;text-align:center;padding:14px;background:#edf8f1;border-radius:10px;margin:8px 0 14px;">brandyou.love</div>'+
+    manualSubH('対応デバイス')+
+    manualTb(['デバイス','対応状況'],[['iPhone','Safari/Chrome 完全対応'],['iPad','Safari/Chrome 完全対応'],['Android','Chrome 完全対応'],['PC','主要ブラウザ対応']])
+  );
+
+  // セクション3: はじめての参加
+  html += manualSec(3, 'JOIN', 'はじめての参加',
+    '<p style="font-size:14px;color:#4a5d4f;margin-bottom:12px;">ONEsへのご参加には、既存メンバーから発行された<strong>招待コード</strong>が必要です。</p>'+
+    manualSubH('方法A：招待コードを直接入力')+
+    manualNl(['ブラウザで <strong>brandyou.love</strong> を開く','「招待コード」欄に <strong>ONES-XXXX</strong> 形式のコードを入力','「ニックネーム」欄にお好きな名前を入力（20文字以内）','「参加する →」ボタンをタップ','参加完了画面が表示される'])+
+    manualSubH('方法B：QRコードで参加')+
+    manualNl(['スマートフォンのカメラでQRコードを読み取る','自動的に brandyou.love が開き、コードが入力済みに','ニックネームを入力','「参加する →」ボタンをタップ'])+
+    manualNote('参加時に入力したニックネームは、再ログイン時に必要となります。<strong>必ず控えておいてください。</strong>')
+  );
+
+  // セクション4: ホーム画面
+  html += manualSec(4, 'HOME', 'ホーム画面の使い方',
+    '<p style="font-size:14px;color:#4a5d4f;margin-bottom:12px;">ホーム画面は、メンバーの最新の投稿が一覧表示されるタイムラインです。</p>'+
+    manualSubH('画面構成')+
+    manualTb(['エリア','内容'],[['上部','投稿フォーム（日記/つぶやき/写真）'],['中央','タイムライン（最新の投稿）'],['右側','プロフィール、ワンミク（PC）'],['下部','ナビゲーションバー']])+
+    manualSubH('投稿への反応')+
+    manualBl(['👍 いいね — 投稿が気に入った時','💬 返信 — 感想やメッセージを送る','↗️ シェア — 他のメンバーに共有'])
+  );
+
+  // セクション5: 日記
+  html += manualSec(5, 'DIARY', '日記を書く',
+    '<p style="font-size:14px;color:#4a5d4f;margin-bottom:12px;">日記は、長文の文章を投稿できる機能です。</p>'+
+    manualSubH('投稿手順')+
+    manualNl(['ホーム画面の「📝 日記」ボタンをタップ','タイトルを入力','本文を入力','公開設定を選択','「投稿する」をタップ'])+
+    manualSubH('公開設定')+
+    manualTb(['設定','公開範囲'],[['🌐 全体に公開','ONEsの全メンバー'],['🤝 ワンミクのみ','つながっているメンバー'],['🔒 自分のみ','本人のみ']])
+  );
+
+  // セクション6: つぶやき
+  html += manualSec(6, 'VOICE', 'つぶやきを投稿する',
+    '<p style="font-size:14px;color:#4a5d4f;margin-bottom:12px;">短文で気軽に投稿できる機能。</p>'+
+    manualSubH('投稿手順')+
+    manualNl(['ホーム画面の「💬 つぶやき」ボタンをタップ','テキストを入力（140文字程度推奨）','「つぶやく」をタップ'])+
+    manualSubH('使い方のヒント')+
+    manualBl(['日常のちょっとした出来事','気になるニュースの感想','ランチや旅行の写真と一緒に','仕事や趣味の進捗報告'])
+  );
+
+  // セクション7: 写真
+  html += manualSec(7, 'PHOTO', '写真を投稿する',
+    '<p style="font-size:14px;color:#4a5d4f;margin-bottom:12px;">思い出やシーンを画像で共有。</p>'+
+    manualSubH('投稿手順')+
+    manualNl(['ホーム画面の「📷 フォト」ボタンをタップ','「写真を選択」エリアをタップ','カメラ または アルバムから選択','プレビューを確認','コメントを添える（任意）','公開設定を選択','「📷 投稿する」をタップ'])+
+    manualSubH('写真の仕様')+
+    manualTb(null,[['最大サイズ','10MB'],['対応形式','JPEG, PNG, GIF, WebP'],['自動圧縮','800×800px、品質85%'],['保存先','クラウドサーバー']])
+  );
+
+  // セクション8: プロフィール
+  html += manualSec(8, 'PROFILE', 'プロフィール設定',
+    manualSubH('プロフィール写真')+
+    manualNl(['画面右上のアイコンをタップ → マイページ','プロフィール写真エリアをタップ','カメラ または アルバムから写真を選択','自動でアップロード・反映される'])+
+    manualSubH('基本情報の編集')+
+    manualNl(['マイページの「基本情報」セクション','「編集」リンクをタップ','ニックネーム、自己紹介などを編集','「保存する」をタップ'])+
+    manualSubH('興味・関心タグ（14カテゴリー341個）')+
+    manualBl(['💼 ビジネス・経営','📣 マーケティング・PR','💻 テクノロジー・IT','💰 投資・資産形成','🏠 主婦・暮らし','👶 子育て・教育','💄 美容・ファッション','🐾 ペット・動物','🌿 ライフスタイル・健康','🍽️ グルメ・食','✈️ 旅行・地域','📚 学習・自己啓発','🎨 クリエイティブ','🤝 社会・コミュニティ'])
+  );
+
+  // セクション9: 招待
+  html += manualSec(9, 'INVITE', '友達を招待する',
+    '<p style="font-size:14px;color:#4a5d4f;margin-bottom:12px;">ONEsは招待制。あなたの大切な友人を招待コードで招待できます。</p>'+
+    manualSubH('招待手順')+
+    manualNl(['「招待」ページを開く','自分の招待コードとQRコードが表示される','「コードをコピー」または「シェア」で送信','友達がコードを使って参加','自動的にあなたが招待者として記録'])+
+    manualNote('信頼できる方のみご招待ください。')
+  );
+
+  // セクション10: コミュニティ
+  html += manualSec(10, 'COMMUNITY', 'コミュニティ',
+    manualSubH('コミュニティを探す')+
+    manualBl(['<strong>参加コミュニティ</strong> — 参加中のもの','<strong>おすすめ</strong> — 注目のコミュニティ','<strong>メンバーのコミュニティ</strong> — 他のメンバーが作ったもの'])+
+    manualSubH('コミュニティを作成')+
+    manualNl(['「＋ 追加」ボタンをタップ','コミュニティ名（30文字以内）','アイコン（絵文字）、カテゴリ','説明文、公開設定','「作成する」をタップ'])
+  );
+
+  // セクション11: ワンミク・足あと
+  html += manualSec(11, 'CONNECTIONS', 'ワンミク・足あと',
+    manualSubH('ワンミク（友達）')+
+    '<p style="margin-bottom:8px;font-size:13px;">ONEs内でつながっている友達のことを「ワンミク」と呼びます。</p>'+
+    manualBl(['メニューから「ワンミク」をタップ','つながっているメンバーが一覧表示','オンライン状態が緑のドットで表示'])+
+    manualSubH('足あと機能')+
+    '<p style="margin-bottom:8px;font-size:13px;">あなたのプロフィールを訪問したメンバーの記録を確認できます。</p>'+
+    manualNote('あなたが他のメンバーのページを訪問すると、相手にも足あとが残ります。')
+  );
+
+  // セクション12: ログアウト
+  html += manualSec(12, 'LOGIN', 'ログアウト・ログイン',
+    manualSubH('ログアウト')+
+    manualNl(['マイページまたはサイドバーの「ログアウト」','確認ダイアログで「OK」','ログイン画面に戻る'])+
+    manualSubH('再ログイン')+
+    manualNl(['brandyou.love にアクセス','招待コード（参加時のもの）を入力','ニックネーム（参加時のもの）を入力','「参加する →」をタップ'])+
+    manualSubH('セキュリティ')+
+    manualBl(['5回連続でニックネームを間違えると、15分間ロック','ロックは時間経過で自動解除','セッションは複数の方式で保護'])
+  );
+
+  // セクション13: FAQ
+  html += manualSec(13, 'FAQ', 'よくある質問',
+    manualFq('参加は無料ですか？','はい、無料でご参加いただけます。')+
+    manualFq('退会はできますか？','はい、いつでも退会可能です。管理者にご連絡ください。')+
+    manualFq('投稿した内容は誰に見られますか？','公開設定によります。「全体に公開」は全メンバー、「ワンミクのみ」は友達のみ、「自分のみ」は本人のみです。')+
+    manualFq('招待コードを失くしてしまいました','招待者にご連絡いただくか、新しい招待コードを発行してもらってください。')+
+    manualFq('ニックネームを変更できますか？','ログイン用ニックネームは管理者にご相談ください。表示名はマイページから変更できます。')+
+    manualFq('パスワードはありますか？','招待コード＋ニックネームで認証する仕組みです。パスワードは不要です。')+
+    manualFq('iPhoneのホーム画面に追加できますか？','はい。Safariの共有ボタンから「ホーム画面に追加」を選択してください。')+
+    manualFq('何人まで招待できますか？','制限はありませんが、信頼できる方を厳選してご招待ください。')
+  );
+
+  // セクション14: トラブル
+  html += manualSec(14, 'TROUBLESHOOT', 'トラブル対応',
+    manualSubH('ログインできない')+
+    manualTb(['症状','対処法'],[['コードが無効','ONES-XXXX形式・大文字を確認'],['ニックネーム不一致','参加時の正確な名前を入力'],['15分ロック','15分待ってから再試行']])+
+    manualSubH('画面が表示されない')+
+    manualBl(['ブラウザのキャッシュをクリア','ブラウザを最新版にアップデート','Wi-Fi接続を確認'])+
+    manualSubH('iPhoneで動作がおかしい')+
+    manualBl(['Safariの「履歴とデータを消去」を実行','iOSを最新版にアップデート'])
+  );
+
+  // セクション15: お問い合わせ
+  html += manualSec(15, 'CONTACT', 'お問い合わせ',
+    '<p style="font-size:14px;color:#4a5d4f;margin-bottom:12px;">ご不明な点がございましたら、以下までお問い合わせください。</p>'+
+    manualSubH('運営者情報')+
+    manualTb(null,[['サービス名','ONEs（ワンズ）'],['URL','brandyou.love'],['創設者','BOSS YASU'],['所在地','愛知県名古屋市']])+
+    manualSubH('お問い合わせ方法')+
+    manualNl(['メニューから「ヘルプ」を開く','「管理者に問い合わせる」フォームに記入','または、ヘルプ内のFAQで自己解決'])
+  );
+
+  // フッター
+  html += '<div style="text-align:center;padding:30px 16px;margin-top:18px;">';
+  html += '<div style="font-family:Italiana,serif;font-size:20px;color:#3a9e5f;letter-spacing:0.6em;font-style:italic;margin-bottom:14px;">— ONEs —</div>';
+  html += '<div style="font-size:13px;color:#1e6e3a;font-weight:700;letter-spacing:0.15em;margin-bottom:10px;">つながりを、ひとつに。</div>';
+  html += '<div style="font-size:11px;color:#7a8a7e;letter-spacing:0.2em;margin-top:18px;">© 2026 ONEs · ALL RIGHTS RESERVED</div>';
+  html += '</div>';
+
+  html += '</div>';
+  return html;
+}
+
+function manualSec(num, label, title, body) {
+  return '<div style="background:#fff;border-radius:14px;padding:24px 18px;margin-bottom:16px;border:1px solid #d4ead9;box-shadow:0 4px 16px rgba(30,110,58,0.06);">'+
+    '<div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:18px;padding-bottom:14px;border-bottom:2px solid #edf8f1;">'+
+      '<div style="flex-shrink:0;width:42px;height:42px;background:linear-gradient(135deg,#3a9e5f,#1e6e3a);color:#fff;border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:Italiana,serif;font-size:22px;font-style:italic;">'+num+'</div>'+
+      '<div style="flex:1;padding-top:2px;">'+
+        '<div style="font-family:Italiana,serif;font-style:italic;font-size:10px;color:#3a9e5f;letter-spacing:0.3em;margin-bottom:2px;">'+label+'</div>'+
+        '<div style="font-size:18px;font-weight:700;color:#1e6e3a;line-height:1.4;">'+title+'</div>'+
+      '</div>'+
+    '</div>'+
+    body+
+  '</div>';
+}
+
+function manualSubH(text) {
+  return '<div style="font-size:14px;font-weight:700;color:#1e6e3a;margin:18px 0 10px;padding-left:10px;border-left:3px solid #3a9e5f;">'+text+'</div>';
+}
+
+function manualBl(items) {
+  var h = '<ul style="list-style:none;margin:8px 0 12px;padding-left:0;">';
+  for(var i=0; i<items.length; i++) {
+    h += '<li style="position:relative;padding:6px 0 6px 22px;font-size:13px;line-height:1.7;">'+
+      '<span style="position:absolute;left:6px;top:14px;width:5px;height:5px;background:#3a9e5f;border-radius:50%;"></span>'+
+      items[i]+
+    '</li>';
+  }
+  h += '</ul>';
+  return h;
+}
+
+function manualNl(items) {
+  var h = '<div style="margin:12px 0;">';
+  for(var i=0; i<items.length; i++) {
+    h += '<div style="position:relative;padding:10px 0 10px 42px;font-size:13px;line-height:1.7;border-bottom:1px dashed #d4ead9;">'+
+      '<span style="position:absolute;left:0;top:8px;width:28px;height:28px;background:#edf8f1;color:#1e6e3a;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:Italiana,serif;font-size:14px;font-style:italic;border:2px solid #3a9e5f;">'+(i+1)+'</span>'+
+      items[i]+
+    '</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+function manualTb(headers, rows) {
+  var h = '<div style="margin:12px 0 16px;border-radius:10px;overflow:hidden;border:1px solid #d4ead9;"><table style="width:100%;border-collapse:collapse;font-size:12px;">';
+  if(headers) {
+    h += '<thead style="background:linear-gradient(135deg,#3a9e5f,#1e6e3a);"><tr>';
+    for(var i=0; i<headers.length; i++) {
+      h += '<th style="color:#fff;font-weight:700;text-align:left;padding:10px 12px;font-size:11px;">'+headers[i]+'</th>';
+    }
+    h += '</tr></thead>';
+  }
+  h += '<tbody>';
+  for(var ri=0; ri<rows.length; ri++) {
+    h += '<tr style="background:'+(ri % 2 === 0 ? '#f8fcfa' : '#fff')+';">';
+    for(var ci=0; ci<rows[ri].length; ci++) {
+      var firstStyle = ci === 0 ? 'font-weight:600;color:#1e6e3a;' : '';
+      h += '<td style="padding:10px 12px;border-top:1px solid #d4ead9;line-height:1.6;'+firstStyle+'">'+rows[ri][ci]+'</td>';
+    }
+    h += '</tr>';
+  }
+  h += '</tbody></table></div>';
+  return h;
+}
+
+function manualNote(text) {
+  return '<div style="background:linear-gradient(135deg,#fef9e7,#fdf4d3);border-left:4px solid #f4d03f;padding:12px 14px;border-radius:8px;margin:14px 0;font-size:12px;line-height:1.7;color:#7d6608;">'+
+    '<span style="display:inline-block;width:18px;height:18px;background:#f4d03f;color:#7d4f00;border-radius:50%;font-weight:900;text-align:center;line-height:18px;margin-right:6px;font-size:11px;">!</span>'+
+    text+
+  '</div>';
+}
+
+function manualFq(q, a) {
+  return '<div style="border-bottom:1px solid #d4ead9;padding:14px 0;">'+
+    '<div style="font-weight:700;color:#1e6e3a;margin-bottom:8px;padding-left:26px;position:relative;font-size:13px;line-height:1.6;">'+
+      '<span style="position:absolute;left:0;top:-2px;width:20px;height:20px;background:#3a9e5f;color:#fff;border-radius:50%;font-size:12px;text-align:center;line-height:20px;font-weight:700;">Q</span>'+
+      q+
+    '</div>'+
+    '<div style="color:#4a5d4f;padding-left:26px;position:relative;font-size:12px;line-height:1.8;">'+
+      '<span style="position:absolute;left:0;top:-2px;width:20px;height:20px;background:#edf8f1;color:#1e6e3a;border:1.5px solid #3a9e5f;border-radius:50%;font-size:12px;text-align:center;line-height:17px;font-weight:700;">A</span>'+
+      a+
+    '</div>'+
+  '</div>';
 }
 
 function openContactSheet() {
