@@ -821,10 +821,17 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
 
     <!-- COMMUNITY -->
     <div class="pg" id="pg-community">
-      <div class="sh" style="padding-top:14px;">参加コミュニティ</div>
+      <div class="sh" style="padding-top:14px;">
+        参加コミュニティ
+        <a href="#" onclick="openCreateCommunity();return false;">＋ 追加</a>
+      </div>
       <div class="card" style="margin:0 12px 10px;"><div class="cb" id="cmjoined"></div></div>
       <div class="sh">おすすめ</div>
       <div class="card" style="margin:0 12px 10px;"><div class="cb" id="cmrec"></div></div>
+
+      <!-- 自分が作ったコミュニティ -->
+      <div class="sh">私が作ったコミュニティ</div>
+      <div class="card" style="margin:0 12px 10px;"><div class="cb" id="cm-mine"></div></div>
     </div>
 
     <!-- INVITE PAGE -->
@@ -2140,7 +2147,7 @@ function renderStories(){document.getElementById('strow-inner').innerHTML=FP.sli
 function renderMxRow(){document.getElementById('mxrow-inner').innerHTML=USERS.map(u=>`<div class="mxi" onclick="openUserSheet('${esc(u.n)}','${u.e}')"><div class="av am" style="${AB};position:relative;">${u.e}${u.on?'<div class="odot"></div>':''}</div><div class="mn">${u.n}</div></div>`).join('');}
 function renderDiary(){
   const all=[...ld('od'),...DI];
-  document.getElementById('dlist').innerHTML=all.map(d=>`<div class="dc"><div class="dct"></div><div class="dcb"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">${myAvHtml('as')}<div><div class="fname" style="font-size:12px;">BOSS YASU</div><div class="dcm" style="margin-bottom:0;">📅 ${d.date}</div></div></div><div class="dctit" onclick="openDiarySheet('${esc(d.title)}')">${d.title}</div><div class="dcex">${d.excerpt}</div></div><div class="dcf"><div class="dcfb" onclick="openDiarySheet('${esc(d.title)}')">💬 ${d.comments||0}件</div><div class="dcfb">👍 ${d.good||0}</div></div></div>`).join('');
+  document.getElementById('dlist').innerHTML=all.map(d=>`<div class="dc"><div class="dct"></div><div class="dcb"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">${myAvHtml('as')}<div><div class="fname" style="font-size:12px;">BOSS YASU</div><div class="dcm" style="margin-bottom:0;">🗓️ ${d.date}</div></div></div><div class="dctit" onclick="openDiarySheet('${esc(d.title)}')">${d.title}</div><div class="dcex">${d.excerpt}</div></div><div class="dcf"><div class="dcfb" onclick="openDiarySheet('${esc(d.title)}')">💬 ${d.comments||0}件</div><div class="dcfb">👍 ${d.good||0}</div></div></div>`).join('');
 }
 function renderVoice(){
   const all=[...ld('ov'),...VC];
@@ -2154,7 +2161,149 @@ function renderVoice(){
 }
 function renderWanmik(){document.getElementById('mxgrid').innerHTML=USERS.map(u=>`<div style="display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;padding:12px 4px;background:#fff;border-radius:12px;box-shadow:var(--shadow);" onclick="openUserSheet('${esc(u.n)}','${u.e}')"><div style="position:relative;"><div class="av al" style="${AB};border-radius:18px;">${u.e}</div>${u.on?'<div style="position:absolute;bottom:2px;right:2px;width:12px;height:12px;background:#33cc44;border-radius:50%;border:2px solid #fff;"></div>':''}</div><div style="font-size:12px;font-weight:700;color:var(--text2);text-align:center;">${u.n}</div></div>`).join('');}
 function renderFP(){document.getElementById('fplist').innerHTML=FP.map(u=>`<div style="display:flex;gap:12px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--og-pale);cursor:pointer;" onclick="openUserSheet('${esc(u.n)}','${u.e}')"><div class="sring" style="width:50px;height:50px;flex-shrink:0;"><div class="sinn" style="font-size:24px;">${u.e}</div></div><div style="flex:1;"><div style="font-size:14px;font-weight:700;">${u.n}</div><div style="font-size:12px;color:var(--text3);">訪問 ${u.t}</div></div><button class="bos" onclick="event.stopPropagation();">プロフィール</button></div>`).join('');}
-function renderCM(){const mk=(list,id)=>{document.getElementById(id).innerHTML=list.map(c=>`<div class="cmi" onclick="openCmSheet('${esc(c.n)}')"><div class="cmico">${c.e}</div><div><div class="cn">${c.n}</div><div class="cc">👥 ${c.cnt.toLocaleString()}人参加</div></div><div style="color:var(--og);font-size:18px;">›</div></div>`).join('');};mk(CM,'cmjoined');mk(RCM,'cmrec');}
+function renderCM(){
+  var mk = function(list, id) {
+    var el = document.getElementById(id);
+    if(!el) return;
+    if(!list || list.length === 0) {
+      el.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text3);font-size:13px;">まだコミュニティがありません</div>';
+      return;
+    }
+    el.innerHTML = list.map(function(c){
+      var cnt = (c.cnt || 1).toLocaleString();
+      return '<div class="cmi" onclick="openCmSheet(\''+esc(c.n)+'\')">'+
+             '<div class="cmico">'+c.e+'</div>'+
+             '<div><div class="cn">'+c.n+'</div>'+
+             '<div class="cc">👥 '+cnt+'人参加</div></div>'+
+             '<div style="color:var(--og);font-size:18px;">›</div></div>';
+    }).join('');
+  };
+  mk(CM, 'cmjoined');
+  mk(RCM, 'cmrec');
+
+  // 自分が作ったコミュニティ
+  var myCommunities = [];
+  try {
+    myCommunities = JSON.parse(localStorage.getItem('ones_my_communities') || '[]');
+  } catch(e) { myCommunities = []; }
+  mk(myCommunities, 'cm-mine');
+}
+
+function openCreateCommunity() {
+  showSheet('🏘️ コミュニティを作成', `
+    <div>
+      <div style="font-size:13px;color:var(--text3);margin-bottom:16px;">
+        新しいコミュニティを作成して、興味のある仲間を集めましょう。
+      </div>
+      <div class="er">
+        <label class="el">コミュニティ名 <span style="color:#e53e3e;">*</span></label>
+        <input id="cc-name" class="ei" type="text" placeholder="例：名古屋IT勉強会" maxlength="30">
+      </div>
+      <div class="er">
+        <label class="el">アイコン（絵文字）</label>
+        <input id="cc-emoji" class="ei" type="text" placeholder="例：💻" value="🏘️" maxlength="2">
+      </div>
+      <div class="er">
+        <label class="el">カテゴリー</label>
+        <select id="cc-category" class="ei">
+          <option>💼 ビジネス・経営</option>
+          <option>📣 マーケティング</option>
+          <option>💻 テクノロジー・IT</option>
+          <option>💰 投資・資産形成</option>
+          <option>🏠 主婦・暮らし</option>
+          <option>👶 子育て・教育</option>
+          <option>💄 美容・ファッション</option>
+          <option>🐾 ペット・動物</option>
+          <option>🌿 ライフスタイル・健康</option>
+          <option>🍽️ グルメ・食</option>
+          <option>✈️ 旅行・地域</option>
+          <option>📚 学習・自己啓発</option>
+          <option>🎨 クリエイティブ</option>
+          <option>🤝 社会・コミュニティ</option>
+        </select>
+      </div>
+      <div class="er">
+        <label class="el">説明文 <span style="color:#e53e3e;">*</span></label>
+        <textarea id="cc-desc" class="eta" style="min-height:80px;" placeholder="どんなコミュニティか説明してください..." maxlength="200"></textarea>
+      </div>
+      <div class="er">
+        <label class="el">公開設定</label>
+        <div style="display:flex;gap:10px;">
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+            <input type="radio" name="cc-vis" value="public" checked style="accent-color:var(--og);"> 🌐 全員に公開
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+            <input type="radio" name="cc-vis" value="private" style="accent-color:var(--og);"> 🔒 招待のみ
+          </label>
+        </div>
+      </div>
+      <button class="bo" style="width:100%;" onclick="createCommunity()">🏘️ 作成する</button>
+    </div>`);
+}
+
+function createCommunity() {
+  try {
+    var nameEl = document.getElementById('cc-name');
+    var emojiEl = document.getElementById('cc-emoji');
+    var catEl = document.getElementById('cc-category');
+    var descEl = document.getElementById('cc-desc');
+    var visEl = document.querySelector('input[name="cc-vis"]:checked');
+
+    if(!nameEl || !descEl) return;
+
+    var name = nameEl.value.trim();
+    var emoji = emojiEl.value.trim() || '🏘️';
+    var category = catEl ? catEl.value : '';
+    var desc = descEl.value.trim();
+    var vis = visEl ? visEl.value : 'public';
+
+    if(!name) { toast('コミュニティ名を入力してください'); return; }
+    if(!desc) { toast('説明文を入力してください'); return; }
+    if(name.length > 30) { toast('コミュニティ名は30文字以内にしてください'); return; }
+    // HTMLタグ拒否
+    if(/<|>|script|javascript:|on\w+=/i.test(name) || /<|>|script|javascript:|on\w+=/i.test(desc)) {
+      toast('使用できない文字が含まれています');
+      return;
+    }
+
+    var owner = (currentUser && currentUser.name) ? currentUser.name : 'BOSS YASU';
+    var ownerEmoji = (currentUser && currentUser.emoji) ? currentUser.emoji : '😊';
+
+    var newCommunity = {
+      n: name,
+      e: emoji,
+      cnt: 1,
+      owner: owner,
+      ownerEmoji: ownerEmoji,
+      since: new Date().getFullYear() + '年' + (new Date().getMonth()+1) + '月',
+      desc: desc,
+      category: category,
+      visibility: vis,
+      createdAt: Date.now()
+    };
+
+    var myCommunities = [];
+    try {
+      myCommunities = JSON.parse(localStorage.getItem('ones_my_communities') || '[]');
+    } catch(e) { myCommunities = []; }
+    myCommunities.unshift(newCommunity);
+
+    try {
+      localStorage.setItem('ones_my_communities', JSON.stringify(myCommunities));
+    } catch(e) {
+      console.error('[ONEs]', e);
+      toast('❌ 保存できませんでした');
+      return;
+    }
+
+    closeSheet();
+    toast('🎉 コミュニティ「' + name + '」を作成しました！');
+    renderCM();
+  } catch(err) {
+    console.error('[ONEs] createCommunity:', err);
+    toast('❌ 作成に失敗しました');
+  }
+}
 function renderMsgs(){document.getElementById('msglist').innerHTML=MSG.map(m=>`<div class="mlit ${m.u?'unrd':''}" onclick="openMsgSheet('${esc(m.f)}','${m.e}','${esc(m.t)}')"><div class="av as" style="${AB}">${m.e}</div><div style="flex:1;min-width:0;"><div class="mlfrom">${m.f}</div><div class="mlprev">${m.t}</div></div><div class="mldate">${m.d}</div></div>`).join('');}
 function renderNT(id,list){const el=document.getElementById(id);if(!el)return;el.innerHTML=list.map(n=>`<div class="nti"><div class="ntd ${n.type||'old'}"></div><div><div class="ntt">${n.t}</div><div class="ntm">${n.tm}</div></div></div>`).join('');}
 function renderMpDiary(){const all=[...ld('od'),...DI];document.getElementById('mpdiary').innerHTML=all.slice(0,4).map(d=>`<div style="padding:8px 0;border-bottom:1px solid var(--og-pale);cursor:pointer;" onclick="openDiarySheet('${esc(d.title)}')"><div style="font-size:13px;font-weight:700;color:var(--og3);">${d.title}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${d.date}&nbsp;💬${d.comments||0}&nbsp;👍${d.good||0}</div></div>`).join('');}
@@ -2319,10 +2468,16 @@ function likeThis(el){el.classList.toggle('lk');toast(el.classList.contains('lk'
 
 /* ══════════ SHEETS ══════════ */
 function openSheet(type){if(type==='diary'){showSheet('日記を書く',`<div><input id="ws-ttl" class="wt" type="text" placeholder="タイトル"><textarea id="ws-bdy" class="wb" placeholder="今日はどんな1日でしたか？"></textarea><select class="wps"><option>全体に公開</option><option>ワンミクのみ</option><option>自分のみ</option></select><div class="wf"><button class="bo" style="flex:1;" onclick="postDiary()">投稿する</button><button class="bg" onclick="closeSheet()">キャンセル</button></div></div>`);}else if(type==='voice'){showSheet('つぶやく',`<div><textarea id="ws-vc" class="wb" placeholder="今なにしてる？" style="min-height:90px;"></textarea><div class="wf"><button class="bo" style="flex:1;" onclick="postVoice()">つぶやく</button><button class="bg" onclick="closeSheet()">キャンセル</button></div></div>`);}else{showSheet('フォトを投稿',`<div style="padding:20px;text-align:center;"><div style="font-size:60px;margin-bottom:12px;">📷</div><p style="color:var(--text2);margin-bottom:16px;">写真を選んで投稿しよう</p><button class="bo" onclick="toast('📷 写真投稿機能は近日公開！');closeSheet()">写真を選ぶ</button></div>`);}}
-function openDiarySheet(title){const all=[...ld('od'),...DI];const d=all.find(x=>x.title===title)||{title,excerpt:'',comments:0,good:0,date:''};showSheet(d.title,`<div><div style="font-size:11px;color:var(--text3);margin-bottom:10px;">📅 ${d.date||'---'}&nbsp;👤 BOSS YASU</div><div style="font-size:14px;color:var(--text);line-height:1.8;margin-bottom:16px;">${d.excerpt}</div><div style="background:var(--og-pale);border-radius:12px;padding:14px;"><div style="font-weight:700;color:var(--og3);margin-bottom:10px;font-size:13px;">💬 コメント（${d.comments}件）</div>${d.comments>0?`<div style="display:flex;gap:10px;margin-bottom:10px;"><div class="av as" style="${AB}">🌸</div><div style="flex:1;background:#fff;border-radius:10px;padding:10px;"><div style="font-size:12px;font-weight:700;color:var(--og3);">さくらんぼ</div><div style="font-size:13px;color:var(--text);margin-top:3px;">素敵な内容ですね！参考になりました😊</div></div></div>`:'<div style="font-size:13px;color:var(--text3);margin-bottom:10px;">まだコメントはありません</div>'}<div style="display:flex;gap:8px;"><div class="av ax" style="${AB}">😊</div><textarea style="flex:1;background:#fff;border:1.5px solid var(--og-border);border-radius:10px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none;resize:none;height:60px;" placeholder="コメントを書く..."></textarea></div><div style="display:flex;justify-content:flex-end;margin-top:8px;"><button class="bos" onclick="toast('💬 コメントしました！')">送信</button></div></div></div>`);}
+function openDiarySheet(title){const all=[...ld('od'),...DI];const d=all.find(x=>x.title===title)||{title,excerpt:'',comments:0,good:0,date:''};showSheet(d.title,`<div><div style="font-size:11px;color:var(--text3);margin-bottom:10px;">🗓️ ${d.date||'---'}&nbsp;👤 BOSS YASU</div><div style="font-size:14px;color:var(--text);line-height:1.8;margin-bottom:16px;">${d.excerpt}</div><div style="background:var(--og-pale);border-radius:12px;padding:14px;"><div style="font-weight:700;color:var(--og3);margin-bottom:10px;font-size:13px;">💬 コメント（${d.comments}件）</div>${d.comments>0?`<div style="display:flex;gap:10px;margin-bottom:10px;"><div class="av as" style="${AB}">🌸</div><div style="flex:1;background:#fff;border-radius:10px;padding:10px;"><div style="font-size:12px;font-weight:700;color:var(--og3);">さくらんぼ</div><div style="font-size:13px;color:var(--text);margin-top:3px;">素敵な内容ですね！参考になりました😊</div></div></div>`:'<div style="font-size:13px;color:var(--text3);margin-bottom:10px;">まだコメントはありません</div>'}<div style="display:flex;gap:8px;"><div class="av ax" style="${AB}">😊</div><textarea style="flex:1;background:#fff;border:1.5px solid var(--og-border);border-radius:10px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none;resize:none;height:60px;" placeholder="コメントを書く..."></textarea></div><div style="display:flex;justify-content:flex-end;margin-top:8px;"><button class="bos" onclick="toast('💬 コメントしました！')">送信</button></div></div></div>`);}
 function openUserSheet(name,emoji){showSheet(name+'さん',`<div style="text-align:center;padding:14px 0;"><div style="width:80px;height:80px;border-radius:20px;${AB};display:flex;align-items:center;justify-content:center;font-size:46px;margin:0 auto 10px;border:3px solid var(--og-border);">${emoji}</div><div style="font-size:20px;font-weight:700;color:var(--og3);margin-bottom:4px;">${name}</div><div style="font-size:12px;color:var(--text3);margin-bottom:16px;">ワンミク 🤝</div><div style="display:flex;gap:10px;justify-content:center;"><button class="bo" onclick="openComposeMsg('${name}')">💌 メッセージ</button><button class="bg" onclick="closeSheet()">閉じる</button></div></div>`);}
 function openCmSheet(name){
-  const c=[...CM,...RCM].find(x=>x.n===name)||{n:name,e:'🏘️',cnt:100,owner:'不明',ownerEmoji:'👤',since:'-',desc:''};
+  // ユーザー作成コミュニティも含めて検索
+  var myCommunities = [];
+  try { myCommunities = JSON.parse(localStorage.getItem('ones_my_communities') || '[]'); } catch(e){}
+  var allCommunities = CM.concat(RCM, myCommunities);
+  var c = allCommunities.find(function(x){ return x.n === name; }) ||
+          {n:name, e:'🏘️', cnt:1, owner:'不明', ownerEmoji:'👤', since:'-', desc:''};
+  var cntDisplay = (c.cnt || 1).toLocaleString();
   showSheet(c.e+' '+name,`
     <div>
       <!-- 主催者情報 -->
@@ -2331,13 +2486,13 @@ function openCmSheet(name){
         <div>
           <div style="font-size:11px;color:var(--text3);margin-bottom:2px;">🎯 主催者</div>
           <div style="font-size:14px;font-weight:700;color:var(--og3);">${c.owner||'不明'}</div>
-          <div style="font-size:11px;color:var(--text3);">📅 ${c.since||'-'} 設立</div>
+          <div style="font-size:11px;color:var(--text3);">🗓️ ${c.since||'-'} 設立</div>
         </div>
       </div>
       <!-- 概要 -->
       <div style="font-size:13px;color:var(--text);line-height:1.7;margin-bottom:10px;">${c.desc||name+'についての情報交換コミュニティです。'}</div>
       <!-- 参加人数 -->
-      <div style="font-size:13px;color:var(--text3);margin-bottom:14px;">👥 ${c.cnt.toLocaleString()}人が参加中</div>
+      <div style="font-size:13px;color:var(--text3);margin-bottom:14px;">👥 ${cntDisplay}人が参加中</div>
       <!-- トピック -->
       <div style="font-weight:700;font-size:13px;color:var(--og3);margin-bottom:8px;">📌 最新トピック</div>
       ${['【質問】初心者におすすめのツールは？ (23件)','【報告】先月の成果報告スレッド (41件)','【情報共有】便利なリソースまとめ (15件)'].map(t=>`
