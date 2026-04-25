@@ -771,7 +771,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
             <div id="mypage-qr-container" style="flex-shrink:0;"></div>
             <div style="flex:1;">
               <div style="font-size:13px;font-weight:700;color:var(--og3);margin-bottom:4px;">あなたの招待コード</div>
-              <div style="font-size:18px;font-weight:900;color:var(--og3);letter-spacing:.1em;margin-bottom:8px;">ONES-7X3K</div>
+              <div id="mypage-invite-code" style="font-size:18px;font-weight:900;color:var(--og3);letter-spacing:.1em;margin-bottom:8px;">ONES-7X3K</div>
               <div style="font-size:12px;color:var(--text3);margin-bottom:10px;">このQRを友人のスマホに見せると<br>そのまま参加できます</div>
               <div style="display:flex;gap:6px;">
                 <button class="bos" onclick="copyInviteCode()">📋 コピー</button>
@@ -1128,7 +1128,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
       <div class="sch">🎟️ 招待状況</div>
       <div class="scb">
         <div style="font-size:12px;color:var(--text3);margin-bottom:6px;">あなたのコード</div>
-        <div style="background:var(--og-pale);border-radius:8px;padding:8px;text-align:center;font-size:16px;font-weight:900;color:var(--og3);letter-spacing:.1em;cursor:pointer;" onclick="copyInviteCode()">ONES-7X3K</div>
+        <div id="side-invite-code" style="background:var(--og-pale);border-radius:8px;padding:8px;text-align:center;font-size:16px;font-weight:900;color:var(--og3);letter-spacing:.1em;cursor:pointer;" onclick="copyInviteCode()">ONES-7X3K</div>
         <div style="font-size:11px;color:var(--og);text-align:center;margin-top:4px;">招待済み 5人</div>
         <button class="bos" style="width:100%;margin-top:8px;" onclick="nav('invite',null)">招待ページへ</button>
       </div>
@@ -1167,18 +1167,18 @@ const AB='background:linear-gradient(135deg,#a8ddb8,#3fa865)';
 // 古い平文パスワードは廃止 → ADMIN_PASS_HASH を使用
 
 const DEMO_MEMBERS = [
-  {id:'m001',name:'BOSS YASU',emoji:'😊',code:'ONES-7X3K',invitedBy:null,invitedById:null,joinDate:'2005-04-03',status:'active',role:'admin'},
-  {id:'m002',name:'さくらんぼ',emoji:'🌸',code:'ONES-AK2P',invitedBy:'BOSS YASU',invitedById:'m001',joinDate:'2024-01-15',status:'active',role:'member'},
-  {id:'m003',name:'たけし君',emoji:'😎',code:'ONES-BT9R',invitedBy:'BOSS YASU',invitedById:'m001',joinDate:'2024-02-03',status:'active',role:'member'},
-  {id:'m004',name:'みほりん',emoji:'🌺',code:'ONES-CM4S',invitedBy:'さくらんぼ',invitedById:'m002',joinDate:'2024-02-20',status:'active',role:'member'},
-  {id:'m005',name:'けんじ',emoji:'🏄',code:'ONES-DN7T',invitedBy:'さくらんぼ',invitedById:'m002',joinDate:'2024-02-28',status:'active',role:'member'},
-  {id:'m006',name:'ゆきちゃん',emoji:'⛄',code:'ONES-EP1U',invitedBy:'たけし君',invitedById:'m003',joinDate:'2024-03-05',status:'active',role:'member'},
-  {id:'m007',name:'のりちゃん',emoji:'🎸',code:'ONES-FQ8V',invitedBy:'みほりん',invitedById:'m004',joinDate:'2024-03-08',status:'active',role:'member'},
-  {id:'m008',name:'あやか',emoji:'🌼',code:'ONES-GR2W',invitedBy:'BOSS YASU',invitedById:'m001',joinDate:'2024-03-10',status:'active',role:'member'},
-  {id:'m009',name:'まさや',emoji:'🎷',code:'ONES-HS5X',invitedBy:'けんじ',invitedById:'m005',joinDate:'2024-03-12',status:'active',role:'member'},
-  {id:'m010',name:'えみ',emoji:'🌈',code:'ONES-IT6Y',invitedBy:'のりちゃん',invitedById:'m007',joinDate:'2024-03-14',status:'active',role:'member'},
-  {id:'m011',name:'田中さん申請中',emoji:'🙋',code:null,invitedBy:'あやか',invitedById:'m008',joinDate:'2024-03-20',status:'pending',role:'member'},
-  {id:'m012',name:'鈴木さん申請中',emoji:'🙆',code:null,invitedBy:'えみ',invitedById:'m010',joinDate:'2024-03-21',status:'pending',role:'member'},
+  {id:'m001',name:'BOSS YASU',emoji:'😊',code:'ONES-7X3K',myCode:'ONES-7X3K',invitedBy:null,invitedById:null,joinDate:'2005-04-03',status:'active',role:'admin'},
+  {id:'m002',name:'さくらんぼ',emoji:'🌸',code:'ONES-AK2P',myCode:'ONES-S2K9',invitedBy:'BOSS YASU',invitedById:'m001',joinDate:'2024-01-15',status:'active',role:'member'},
+  {id:'m003',name:'たけし君',emoji:'😎',code:'ONES-BT9R',myCode:'ONES-T3M5',invitedBy:'BOSS YASU',invitedById:'m001',joinDate:'2024-02-03',status:'active',role:'member'},
+  {id:'m004',name:'みほりん',emoji:'🌺',code:'ONES-CM4S',myCode:'ONES-M4P8',invitedBy:'さくらんぼ',invitedById:'m002',joinDate:'2024-02-20',status:'active',role:'member'},
+  {id:'m005',name:'けんじ',emoji:'🏄',code:'ONES-DN7T',myCode:'ONES-K5R7',invitedBy:'さくらんぼ',invitedById:'m002',joinDate:'2024-02-28',status:'active',role:'member'},
+  {id:'m006',name:'ゆきちゃん',emoji:'⛄',code:'ONES-EP1U',myCode:'ONES-Y6W2',invitedBy:'たけし君',invitedById:'m003',joinDate:'2024-03-05',status:'active',role:'member'},
+  {id:'m007',name:'のりちゃん',emoji:'🎸',code:'ONES-FQ8V',myCode:'ONES-N7B4',invitedBy:'みほりん',invitedById:'m004',joinDate:'2024-03-08',status:'active',role:'member'},
+  {id:'m008',name:'あやか',emoji:'🌼',code:'ONES-GR2W',myCode:'ONES-A8C6',invitedBy:'BOSS YASU',invitedById:'m001',joinDate:'2024-03-10',status:'active',role:'member'},
+  {id:'m009',name:'まさや',emoji:'🎷',code:'ONES-HS5X',myCode:'ONES-X9D3',invitedBy:'けんじ',invitedById:'m005',joinDate:'2024-03-12',status:'active',role:'member'},
+  {id:'m010',name:'えみ',emoji:'🌈',code:'ONES-IT6Y',myCode:'ONES-E1F2',invitedBy:'のりちゃん',invitedById:'m007',joinDate:'2024-03-14',status:'active',role:'member'},
+  {id:'m011',name:'田中さん申請中',emoji:'🙋',code:null,myCode:null,invitedBy:'あやか',invitedById:'m008',joinDate:'2024-03-20',status:'pending',role:'member'},
+  {id:'m012',name:'鈴木さん申請中',emoji:'🙆',code:null,myCode:null,invitedBy:'えみ',invitedById:'m010',joinDate:'2024-03-21',status:'pending',role:'member'},
 ];
 
 const INVITE_CODES = [
@@ -1497,6 +1497,22 @@ window.addEventListener('unhandledrejection', function(e) {
 function integrityCheck() {
   console.log('[ONEs] 起動時整合性チェック開始...');
 
+  // === データ移行：既存メンバーに myCode を追加 ===
+  try {
+    var members = safeJsonParse(safeGet('ones_members'), []);
+    var changed = false;
+    members.forEach(function(m) {
+      if(m.status === 'active' && !m.myCode) {
+        m.myCode = 'ONES-' + Math.random().toString(36).slice(2,6).toUpperCase();
+        changed = true;
+        console.log('[ONEs] myCode 自動生成:', m.name, m.myCode);
+      }
+    });
+    if(changed) {
+      try { localStorage.setItem('ones_members', JSON.stringify(members)); } catch(e) {}
+    }
+  } catch(e) { console.error('[ONEs] data migration:', e); }
+
   // セッションが存在するが、リンクされたメンバーが存在しないケース
   const sess = safeJsonParse(safeGet('ones_session'), null);
   if(sess && sess.id && sess.id !== 'm001') {
@@ -1517,6 +1533,7 @@ function integrityCheck() {
         name: sess.name,
         emoji: sess.emoji || '🙋',
         code: sess.code,
+        myCode: sess.code,
         invitedBy: sess.invitedBy,
         invitedById: null,
         joinDate: sess.joinDate || new Date().toISOString().slice(0,10),
@@ -1527,6 +1544,13 @@ function integrityCheck() {
         localStorage.setItem('ones_members', JSON.stringify(members));
         console.log('[ONEs] メンバー復元完了');
       } catch(e) { console.error(e); }
+    } else {
+      // セッションのcodeをメンバーのmyCodeで更新
+      if(member.myCode && sess.code !== member.myCode) {
+        sess.code = member.myCode;
+        try { saveSession(sess); } catch(e) {}
+        console.log('[ONEs] セッションのcodeをmyCodeに更新');
+      }
     }
   }
 
@@ -1850,12 +1874,36 @@ function joinWithCode(){
     localStorage.removeItem('ones_join_attempts_'+raw);
 
     // 既存メンバーとして再ログイン
+    // myCode が無い場合は自動生成して保存
+    if(!existingMember.myCode) {
+      existingMember.myCode = generateSecureCode();
+      // members に保存
+      var midx = members.findIndex(function(m){ return m.id === existingMember.id; });
+      if(midx !== -1) {
+        members[midx].myCode = existingMember.myCode;
+        saveMembers(members);
+      }
+      // INVITE_CODES にも追加
+      var allCodes = getCodes();
+      if(!allCodes.find(function(c){ return c.code === existingMember.myCode; })) {
+        allCodes.unshift({
+          code: existingMember.myCode,
+          issuedBy: existingMember.name,
+          issuedById: existingMember.id,
+          usedBy: '未使用',
+          status: 'unused'
+        });
+        saveCodes(allCodes);
+      }
+    }
+
     currentUser = {
       id: existingMember.id,
       name: existingMember.name,
       emoji: existingMember.emoji || '🙋',
       role: existingMember.role || 'member',
-      code: existingMember.code,
+      code: existingMember.myCode,        // 表示用：自分の招待コード（myCode）
+      usedCode: existingMember.code,      // 使ったコード（記録用）
       invitedBy: existingMember.invitedBy,
       joinDate: existingMember.joinDate
     };
@@ -1876,10 +1924,11 @@ function joinWithCode(){
 
   // 招待コードが有効なら即座に承認（自動承認）
   const newId = 'm'+Date.now();
-  const newCode = generateSecureCode();
+  const newMyCode = generateSecureCode(); // 自分の新しい招待コード（友達に渡すもの）
   const newMember = {
     id:newId, name, emoji:'🎉',
-    code: newCode,
+    code: raw,           // 自分が使った招待コード
+    myCode: newMyCode,   // 自分が発行できる新しいコード
     invitedBy: referrer ? referrer.name : 'Unknown',
     invitedById: referrer ? referrer.id : null,
     joinDate: new Date().toISOString().slice(0,10),
@@ -1888,12 +1937,30 @@ function joinWithCode(){
   members.push(newMember);
   saveMembers(members);
 
+  // 新しい myCode をINVITE_CODESに追加（このコードで他人を招待できる）
+  codes.unshift({
+    code: newMyCode,
+    issuedBy: name,
+    issuedById: newId,
+    usedBy: '未使用',
+    status: 'unused'
+  });
+
   // 招待コードを使用済みに
   code.status='used'; code.usedBy=name;
   saveCodes(codes);
 
-  // 自動ログイン
-  currentUser = {id:newId, name, emoji:'🎉', role:'member', code: newCode, invitedBy: referrer?referrer.name:null, joinDate: new Date().toISOString().slice(0,10)};
+  // 自動ログイン (currentUser.code は myCode を使う - 表示用)
+  currentUser = {
+    id:newId,
+    name,
+    emoji:'🎉',
+    role:'member',
+    code: newMyCode,    // 表示用：自分の招待コード
+    usedCode: raw,      // 使ったコード（記録用）
+    invitedBy: referrer ? referrer.name : null,
+    joinDate: new Date().toISOString().slice(0,10)
+  };
   saveSession(currentUser);
 
   // 2回目以降のログイン用に招待コードとニックネームを保存
@@ -1910,7 +1977,7 @@ function joinWithCode(){
         <strong>${name}</strong> さん、ONEsへようこそ！<br>
         招待者 <strong>${referrer?referrer.name:'管理者'}</strong> さんのご紹介で<br>
         参加が承認されました🌱<br><br>
-        あなたの招待コード：<strong>${newCode}</strong>
+        あなたの招待コード：<strong>${newMyCode}</strong>
       </div>
       <div style="background:rgba(255,255,255,.15);border-radius:12px;padding:14px;margin-bottom:20px;">
         <div style="color:rgba(255,255,255,.7);font-size:11px;">紹介者</div>
@@ -3996,15 +4063,15 @@ function initApp(){
 
     // 招待コードを全箇所に反映（全ユーザー対応）
     if(currentUser.code) {
-      document.querySelectorAll('#my-invite-code').forEach(el => {
-        el.textContent = currentUser.code;
-      });
-      // マイページの招待コード表示エリア（複数ある場合に対応）
-      document.querySelectorAll('[data-invite-code], .inv-code-num').forEach(el => {
-        if(el.textContent.startsWith('ONES-')) {
-          el.textContent = currentUser.code;
-        }
-      });
+      // my-invite-code (招待ページ)
+      var myInvCode = document.getElementById('my-invite-code');
+      if(myInvCode) myInvCode.textContent = currentUser.code;
+      // mypage-invite-code (マイページ)
+      var mypageInvCode = document.getElementById('mypage-invite-code');
+      if(mypageInvCode) mypageInvCode.textContent = currentUser.code;
+      // side-invite-code (サイドバー)
+      var sideInvCode = document.getElementById('side-invite-code');
+      if(sideInvCode) sideInvCode.textContent = currentUser.code;
     }
 
     // 紹介者情報を更新
