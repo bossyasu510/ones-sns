@@ -865,11 +865,11 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
         <div class="psh"><span class="t">🤝 私を招待したひと</span></div>
         <div class="psb">
           <div style="display:flex;align-items:center;gap:12px;padding:8px 0;">
-            <div class="av am">🌱</div>
+            <div class="av am" id="referrer-avatar">🌱</div>
             <div>
-              <div style="font-size:14px;font-weight:700;color:var(--text);">ONEs 創設者</div>
-              <div style="font-size:12px;color:var(--text3);">管理者 / 2005年4月3日</div>
-              <div class="inv-badge" style="margin-top:4px;">🌳 ルートメンバー</div>
+              <div style="font-size:14px;font-weight:700;color:var(--text);" id="referrer-name">ONEs 創設者</div>
+              <div style="font-size:12px;color:var(--text3);" id="referrer-info">管理者 / 2005年4月3日</div>
+              <div class="inv-badge" id="referrer-badge" style="margin-top:4px;">🌳 ルートメンバー</div>
             </div>
           </div>
         </div>
@@ -1311,10 +1311,41 @@ function isLoginLocked() {
 /* ══════════ INVITE SYSTEM ══════════ */
 let currentUser = null;
 
-function getMembers(){return JSON.parse(localStorage.getItem('ones_members')||JSON.stringify(DEMO_MEMBERS));}
-function saveMembers(m){localStorage.setItem('ones_members',JSON.stringify(m));}
-function getCodes(){return JSON.parse(localStorage.getItem('ones_codes')||JSON.stringify(INVITE_CODES));}
-function saveCodes(c){localStorage.setItem('ones_codes',JSON.stringify(c));}
+function getMembers(){
+  try {
+    return JSON.parse(localStorage.getItem('ones_members')||JSON.stringify(DEMO_MEMBERS));
+  } catch(e) {
+    console.error('[ONEs] getMembers error:', e);
+    return DEMO_MEMBERS;
+  }
+}
+function saveMembers(m){
+  try {
+    localStorage.setItem('ones_members',JSON.stringify(m));
+    return true;
+  } catch(e) {
+    console.error('[ONEs] saveMembers error:', e);
+    if(e.name === 'QuotaExceededError') toast('⚠️ 容量不足のため保存できません');
+    return false;
+  }
+}
+function getCodes(){
+  try {
+    return JSON.parse(localStorage.getItem('ones_codes')||JSON.stringify(INVITE_CODES));
+  } catch(e) {
+    console.error('[ONEs] getCodes error:', e);
+    return INVITE_CODES;
+  }
+}
+function saveCodes(c){
+  try {
+    localStorage.setItem('ones_codes',JSON.stringify(c));
+    return true;
+  } catch(e) {
+    console.error('[ONEs] saveCodes error:', e);
+    return false;
+  }
+}
 
 
 
@@ -1387,7 +1418,129 @@ function logoutApp(){
   localStorage.removeItem('ones_session');
   location.reload();
 }
+
+
+/* ══════════ グローバルエラー処理 ══════════ */
+window.addEventListener('error', function(e) {
+  console.error('[ONEs Global Error]', e.message, e.filename, e.lineno);
+  // 致命的でなければ静かに記録
+});
+
+window.addEventListener('unhandledrejection', function(e) {
+  console.error('[ONEs Promise Error]', e.reason);
+});
+
+// 起動時の整合性チェック
+function integrityCheck() {
+  console.log('[ONEs] 起動時整合性チェック開始...');
+
+  // セッションが存在するが、リンクされたメンバーが存在しないケース
+  const sess = safeJsonParse(safeGet('ones_session'), null);
+  if(sess && sess.id && sess.id !== 'm001') {
+    const members = safeJsonParse(safeGet('ones_members'), []);
+    const member = members.find(m => m.id === sess.id);
+    if(!member) {
+      console.warn('[ONEs] セッションは存在するがメンバーが見つかりません。セッションをクリア');
+      try { localStorage.removeItem('ones_session'); } catch(e) {}
+    }
+  }
+
+  // 容量チェック
+  const q = checkStorageQuota();
+  console.log('[ONEs] LocalStorage使用量:', q.usedKB + 'KB');
+  if(q.used > 4 * 1024 * 1024) { // 4MB超
+    console.warn('[ONEs] ⚠️ ストレージが容量限界に近づいています');
+  }
+
+  console.log('[ONEs] 整合性チェック完了 ✅');
+}
+
+/* ══════════ 安全アクセス ヘルパー ══════════ */
+
+// LocalStorage 安全な読み込み
+function safeGet(key, defaultVal=null) {
+  try {
+    const v = localStorage.getItem(key);
+    return v !== null ? v : defaultVal;
+  } catch(e) {
+    console.warn('[ONEs] safeGet error:', key, e);
+    return defaultVal;
+  }
+}
+
+// LocalStorage 安全な保存
+function safeSet(key, value) {
+  try {
+    localStorage.setItem(key, value);
+    return true;
+  } catch(e) {
+    console.warn('[ONEs] safeSet error:', key, e);
+    if(e.name === 'QuotaExceededError') {
+      toast('⚠️ ストレージ容量がいっぱいです');
+    }
+    return false;
+  }
+}
+
+// JSON 安全な解析
+function safeJsonParse(str, defaultVal=null) {
+  if(!str) return defaultVal;
+  try {
+    return JSON.parse(str);
+  } catch(e) {
+    console.warn('[ONEs] JSON parse error:', e);
+    return defaultVal;
+  }
+}
+
+// LocalStorage の使用容量チェック
+function checkStorageQuota() {
+  let total = 0;
+  try {
+    for(let key in localStorage) {
+      if(localStorage.hasOwnProperty(key)) {
+        total += (localStorage[key].length + key.length) * 2;
+      }
+    }
+    return { used: total, usedKB: (total/1024).toFixed(1) };
+  } catch(e) {
+    return { used: 0, usedKB: 0 };
+  }
+}
+
+// セキュアなランダムコード生成
+function generateSecureCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 紛らわしい文字を除く
+  let code = 'ONES-';
+  if(window.crypto && window.crypto.getRandomValues) {
+    const arr = new Uint32Array(4);
+    crypto.getRandomValues(arr);
+    for(let i=0; i<4; i++) {
+      code += chars[arr[i] % chars.length];
+    }
+  } else {
+    for(let i=0; i<4; i++) {
+      code += chars[Math.floor(Math.random() * chars.length)];
+    }
+  }
+  return code;
+}
+
+// HTML安全表示
+function safeText(str) {
+  if(str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+
 function checkSession(){
+  // 整合性チェック実行
+  try { integrityCheck(); } catch(e) { console.error('Integrity check failed:', e); }
+
   // QRコード経由の場合は既存セッションを無視
   const params = new URLSearchParams(window.location.search);
   if(params.get('code')) {
@@ -1395,21 +1548,38 @@ function checkSession(){
     return;
   }
 
-  const sess = localStorage.getItem('ones_session');
+  const sess = safeGet('ones_session');
   console.log('[ONEs] セッション確認:', sess ? '存在' : 'なし');
 
   if(sess){
     try {
-      currentUser = JSON.parse(sess);
+      currentUser = safeJsonParse(sess, null);
+      if(!currentUser || !currentUser.id || !currentUser.name) {
+        console.warn('[ONEs] セッションが不完全です。クリアします');
+        try { localStorage.removeItem('ones_session'); } catch(e) {}
+        return;
+      }
       console.log('[ONEs] 自動ログイン:', currentUser.name);
-      document.getElementById('invite-screen').style.display='none';
-      document.getElementById('body').style.display='';
-      document.getElementById('bnav').style.display='';
-      document.getElementById('fab').style.display='';
-      initApp();
+
+      const inv = document.getElementById('invite-screen');
+      const body = document.getElementById('body');
+      const bnav = document.getElementById('bnav');
+      const fab = document.getElementById('fab');
+
+      if(inv) inv.style.display='none';
+      if(body) body.style.display='';
+      if(bnav) bnav.style.display='';
+      if(fab) fab.style.display='';
+
+      try {
+        initApp();
+      } catch(e) {
+        console.error('[ONEs] initApp エラー:', e);
+        // 致命的でない限り続行
+      }
     } catch(e) {
       console.error('[ONEs] セッション読み込みエラー:', e);
-      localStorage.removeItem('ones_session');
+      try { localStorage.removeItem('ones_session'); } catch(err) {}
     }
   }
 }
@@ -1422,6 +1592,26 @@ function joinWithCode(){
 
   if(!raw){errEl.textContent='招待コードを入力してください';return;}
   if(!name){errEl.textContent='ニックネームを入力してください';return;}
+
+  // ニックネームの検証
+  if(name.length > 20) {
+    errEl.textContent='ニックネームは20文字以内にしてください';
+    return;
+  }
+  if(name.length < 1) {
+    errEl.textContent='ニックネームを入力してください';
+    return;
+  }
+  // HTMLタグや危険な文字を含む場合は拒否
+  if(/<|>|script|javascript:|on\w+=/i.test(name)) {
+    errEl.textContent='ニックネームに使用できない文字が含まれています';
+    return;
+  }
+  // 招待コードフォーマットチェック
+  if(!/^ONES-[A-Z0-9]{4,8}$/.test(raw)) {
+    errEl.textContent='❌ 招待コードの形式が正しくありません';
+    return;
+  }
 
   // ===== ロックチェック =====
   const lockKey = 'ones_join_lock_'+raw;
@@ -1493,7 +1683,7 @@ function joinWithCode(){
 
   // 招待コードが有効なら即座に承認（自動承認）
   const newId = 'm'+Date.now();
-  const newCode = 'ONES-'+Math.random().toString(36).slice(2,6).toUpperCase();
+  const newCode = generateSecureCode();
   const newMember = {
     id:newId, name, emoji:'🎉',
     code: newCode,
@@ -1817,7 +2007,7 @@ function renderInvitePage(){
 }
 
 function copyInviteCode(){
-  const code = document.getElementById('my-invite-code')?.textContent || 'ONES-7X3K';
+  const code = currentUser?.code || document.getElementById('my-invite-code')?.textContent || 'ONES-7X3K';
   if(navigator.clipboard){navigator.clipboard.writeText(code).then(()=>toast('📋 招待コードをコピーしました！'));}
   else{toast(code);}
 }
@@ -1868,7 +2058,7 @@ function generateInviteQRSmall(code) {
 }
 
 function shareInviteQR() {
-  const code = document.getElementById('my-invite-code')?.textContent || 'ONES-7X3K';
+  const code = currentUser?.code || document.getElementById('my-invite-code')?.textContent || 'ONES-7X3K';
   const url = 'https://brandyou.love?code=' + code;
   if(navigator.share) {
     navigator.share({
@@ -1955,10 +2145,11 @@ function nav(name,el){
   if(name==='notice')renderNT('ntlist',NT);
   if(name==='mypage'){
     renderMpDiary();
+    const myCode = currentUser?.code || 'ONES-7X3K';
     const tryQR2 = (attempts) => {
       if(typeof qrcode !== 'undefined') {
-        generateInviteQR('ONES-7X3K');
-        generateInviteQRSmall('ONES-7X3K');
+        generateInviteQR(myCode);
+        generateInviteQRSmall(myCode);
       } else if(attempts > 0) {
         setTimeout(()=>tryQR2(attempts-1), 300);
       }
@@ -1968,9 +2159,10 @@ function nav(name,el){
   if(name==='invite'){
     renderInvitePage();
     // QRライブラリ読み込み待ち
+    const myCode = currentUser?.code || 'ONES-7X3K';
     const tryQR = (attempts) => {
       if(typeof qrcode !== 'undefined') {
-        generateInviteQR('ONES-7X3K');
+        generateInviteQR(myCode);
       } else if(attempts > 0) {
         setTimeout(()=>tryQR(attempts-1), 300);
       }
@@ -3063,16 +3255,48 @@ function initApp(){
         stats[3].textContent = '1';  // 招待数（自分自身が入った時の1コード）
       }
 
-      // 招待コードを表示
-      const inviteCodeEl = document.getElementById('my-invite-code');
-      if(inviteCodeEl && currentUser.code) {
-        inviteCodeEl.textContent = currentUser.code;
-      }
-
       // フォトサンプルを消す
       const photoGrid = document.querySelector('.pgr');
       if(photoGrid) {
         photoGrid.innerHTML = '<div class="pth ptadd" style="grid-column:span 3;height:80px;">＋ 写真を追加</div>';
+      }
+    }
+
+    // 招待コードを全箇所に反映（全ユーザー対応）
+    if(currentUser.code) {
+      document.querySelectorAll('#my-invite-code').forEach(el => {
+        el.textContent = currentUser.code;
+      });
+      // マイページの招待コード表示エリア（複数ある場合に対応）
+      document.querySelectorAll('[data-invite-code], .inv-code-num').forEach(el => {
+        if(el.textContent.startsWith('ONES-')) {
+          el.textContent = currentUser.code;
+        }
+      });
+    }
+
+    // 紹介者情報を更新
+    const refName = document.getElementById('referrer-name');
+    const refInfo = document.getElementById('referrer-info');
+    const refBadge = document.getElementById('referrer-badge');
+    const refAvatar = document.getElementById('referrer-avatar');
+
+    if(isBossYasu) {
+      // BOSS YASUは創設者
+      if(refName) refName.textContent = 'ONEs 創設者';
+      if(refInfo) refInfo.textContent = '管理者 / 2005年4月3日';
+      if(refBadge) refBadge.textContent = '🌳 ルートメンバー';
+      if(refAvatar) refAvatar.textContent = '🌱';
+    } else if(currentUser.invitedBy) {
+      // 招待された人
+      if(refName) refName.textContent = currentUser.invitedBy;
+      if(refInfo) refInfo.textContent = '紹介者 / ' + (currentUser.joinDate || new Date().toISOString().slice(0,10));
+      if(refBadge) refBadge.textContent = '🤝 あなたを招待した方';
+      if(refAvatar) {
+        // 招待者の絵文字を取得
+        const members = JSON.parse(localStorage.getItem('ones_members') || '[]');
+        const referrer = members.find(m => m.name === currentUser.invitedBy);
+        refAvatar.textContent = referrer?.emoji || '🙋';
       }
     }
   }
