@@ -11,12 +11,27 @@
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='40' fill='%233a9e5f'/><circle cx='90' cy='90' r='68' fill='none' stroke='white' stroke-width='12' opacity='.18'/><ellipse cx='72' cy='75' rx='20' ry='34' fill='white' opacity='.22' transform='rotate(-35 72 75)'/><ellipse cx='108' cy='105' rx='18' ry='30' fill='%23c8f7d4' opacity='.25' transform='rotate(-35 108 105)'/><circle cx='90' cy='30' r='8' fill='%23c8f7d4' opacity='.6'/><circle cx='150' cy='90' r='6' fill='%239dd4b0' opacity='.5'/><circle cx='30' cy='90' r='6' fill='%239dd4b0' opacity='.5'/><text x='90' y='102' font-family='Arial,sans-serif' font-size='52' fill='white' text-anchor='middle' font-weight='900' font-style='italic'>ONEs</text></svg>">
 <meta name="application-name" content="ONEs">
 <meta name="apple-mobile-web-app-title" content="ONEs">
-<!-- Supabase SDK -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- QRコード生成ライブラリ -->
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<!-- Supabase SDK (本番環境のみ有効) -->
+<script>
+// Supabase SDK を安全に読み込み
+if(location.protocol !== 'file:') {
+  var s = document.createElement('script');
+  s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+  document.head.appendChild(s);
+}
+</script>
 <script>
 const SUPABASE_URL = 'https://iywkhawhgxkoqehoyhsh.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_OvlYWlHuKnzp5utaqj8EAw_q5H100tl';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let sb = null;
+window.addEventListener('load', function(){
+  if(typeof supabase !== 'undefined') {
+    sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    console.log('✅ Supabase接続完了');
+  }
+});
 
 // ── DB ヘルパー関数 ──────────────────────────────
 
@@ -510,7 +525,13 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
     <button class="inv-join-btn" onclick="joinWithCode()">参加する →</button>
     <div class="inv-note">
       招待コードは既存メンバーから受け取ってください。<br>
-      <span style="color:var(--og3);font-weight:700;cursor:pointer;" onclick="showAdminLogin()">管理者の方はこちら</span>
+      <span style="color:var(--og3);font-weight:700;cursor:pointer;" onclick="showAdminLogin()">管理者の方はこちら</span><br><br>
+      <span style="cursor:pointer;text-decoration:underline;" onclick="showPolicyFromInvite('privacy')">プライバシーポリシー</span>
+      &nbsp;|&nbsp;
+      <span style="cursor:pointer;text-decoration:underline;" onclick="showPolicyFromInvite('terms')">利用規約</span>
+    </div>
+    <div style="margin-top:16px;padding-top:16px;border-top:1px solid #e0f0e8;text-align:center;">
+      <button onclick="showBossYasuLogin()" style="background:linear-gradient(135deg,#1e6e3a,#0d3d20);color:#fff;border:none;padding:10px 24px;border-radius:20px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;box-shadow:0 3px 10px rgba(30,110,58,.3);">👑 BOSS YASU ログイン</button>
     </div>
   </div>
 </div>
@@ -627,6 +648,8 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
     <div class="dn" onclick="nav('community',this)">コミュニティ</div>
     <div class="dn" onclick="nav('invite',this)">招待</div>
     <div class="dn" onclick="nav('calendar',this)">📅 カレンダー</div>
+    <div class="dn" onclick="nav('help',this)">❓ ヘルプ</div>
+    <div class="dn" onclick="logoutApp()" style="color:rgba(255,200,200,.9);">🚪 ログアウト</div>
   </nav>
   <button class="hd-icon" onclick="openSearch()" style="margin-left:auto;">🔍</button>
   <button class="hd-icon" onclick="nav('notice',null)">🔔<div class="hb">7</div></button>
@@ -636,7 +659,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
   </div>
 </header>
 
-<div id="body">
+<div id="body" style="display:none;">
   <div id="maincol">
 
     <!-- HOME -->
@@ -726,6 +749,28 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
           <div class="pth">🏢</div><div class="pth">🌸</div><div class="pth ptadd">＋</div>
         </div>
       </div>
+
+      <!-- マイページ招待QRカード -->
+      <div class="psec">
+        <div class="psh">
+          <span class="t">🎟️ 招待QRコード</span>
+          <a href="#" onclick="nav('invite',null);return false;">詳細</a>
+        </div>
+        <div class="psb">
+          <div style="display:flex;gap:14px;align-items:center;">
+            <div id="mypage-qr-container" style="flex-shrink:0;"></div>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:700;color:var(--og3);margin-bottom:4px;">あなたの招待コード</div>
+              <div style="font-size:18px;font-weight:900;color:var(--og3);letter-spacing:.1em;margin-bottom:8px;">ONES-7X3K</div>
+              <div style="font-size:12px;color:var(--text3);margin-bottom:10px;">このQRを友人のスマホに見せると<br>そのまま参加できます</div>
+              <div style="display:flex;gap:6px;">
+                <button class="bos" onclick="copyInviteCode()">📋 コピー</button>
+                <button class="bos" onclick="shareInviteQR()">↗️ シェア</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
       <div class="sh" style="padding-top:14px;">📅 カレンダー</div>
       <div class="cal" id="calel"></div>
       <div style="height:8px;"></div>
@@ -779,12 +824,19 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
       <!-- My invite codes -->
       <div class="inv-my-card">
         <div style="font-size:13px;font-weight:700;color:var(--og3);margin-bottom:4px;">あなたの招待コード</div>
-        <div style="font-size:12px;color:var(--text3);margin-bottom:10px;">このコードを友人に共有してください</div>
-        <div class="inv-code-box">
+        <div style="font-size:12px;color:var(--text3);margin-bottom:10px;">このQRコードを友人に見せてください</div>
+
+        <!-- QRコード表示エリア -->
+        <div style="background:#fff;border-radius:16px;padding:16px;border:2px solid var(--og-border);text-align:center;margin-bottom:10px;">
+          <div id="invite-qr-container" style="display:flex;justify-content:center;margin-bottom:10px;"></div>
           <div class="inv-code-num" id="my-invite-code">ONES-7X3K</div>
-          <div class="inv-code-label">タップしてコピー</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px;">📱 カメラで読み取るとそのまま参加できます</div>
         </div>
-        <button class="bo" style="width:100%;padding:11px;" onclick="copyInviteCode()">📋 招待コードをコピー</button>
+
+        <div style="display:flex;gap:8px;">
+          <button class="bo" style="flex:1;padding:11px;" onclick="copyInviteCode()">📋 コードをコピー</button>
+          <button class="bos" style="padding:11px;" onclick="shareInviteQR()">↗️ シェア</button>
+        </div>
         <div class="inv-stat-row">
           <div class="inv-stat"><div class="n" id="inv-used-cnt">5</div><div class="l">招待済み</div></div>
           <div class="inv-stat"><div class="n">∞</div><div class="l">残り枠</div></div>
@@ -852,6 +904,168 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
       </div>
     </div>
 
+
+    <!-- HELP PAGE -->
+    <div class="pg" id="pg-help">
+      <div class="sh" style="padding-top:14px;">❓ ヘルプ・よくある質問</div>
+
+      <!-- 検索 -->
+      <div style="padding:0 12px 10px;">
+        <div style="display:flex;gap:8px;">
+          <input id="help-search" class="ei" type="search" placeholder="キーワードで検索（例：招待コード、写真）" oninput="searchHelp()">
+        </div>
+      </div>
+
+      <!-- 検索結果 -->
+      <div id="help-search-results" style="display:none;padding:0 12px 10px;"></div>
+
+      <!-- よくある質問 -->
+      <div class="card" style="margin:0 12px 10px;">
+        <div style="padding:12px 14px 4px;">
+          <div style="font-size:13px;font-weight:700;color:var(--og3);margin-bottom:10px;">⭐ よくある質問</div>
+          <div id="help-faq-list"></div>
+        </div>
+      </div>
+
+      <!-- カテゴリー一覧 -->
+      <div class="sh">カテゴリーから探す</div>
+      <div id="help-categories"></div>
+
+      <!-- お問い合わせ -->
+      <div class="card" style="margin:0 12px 10px;">
+        <div style="padding:14px;text-align:center;">
+          <div style="font-size:14px;font-weight:700;color:var(--og3);margin-bottom:6px;">解決しない場合は</div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:12px;">管理者に直接お問い合わせください</div>
+          <button class="bo" onclick="openContactSheet()">✉️ 管理者に問い合わせる</button>
+        </div>
+      </div>
+
+      <div style="height:8px;"></div>
+    </div>
+
+
+    <!-- PRIVACY POLICY PAGE -->
+    <div class="pg" id="pg-privacy">
+      <div class="sh" style="padding-top:14px;">🔒 プライバシーポリシー</div>
+      <div class="card" style="margin:0 12px 10px;">
+        <div class="cb" style="line-height:1.9;font-size:13px;color:var(--text);">
+
+          <div style="font-size:11px;color:var(--text3);margin-bottom:16px;">最終更新日：2026年4月25日</div>
+
+          <div style="font-weight:700;font-size:15px;color:var(--og3);margin-bottom:8px;">1. はじめに</div>
+          <p style="margin-bottom:16px;">ONEs（以下「本サービス」）は、招待制クローズドSNSとして、メンバーの皆様のプライバシーを最大限尊重します。本ポリシーは、本サービスにおける個人情報の取り扱いについて説明するものです。</p>
+
+          <div style="font-weight:700;font-size:15px;color:var(--og3);margin-bottom:8px;">2. 収集する情報</div>
+          <p style="margin-bottom:8px;">本サービスでは以下の情報を収集・利用します。</p>
+          <ul style="margin-left:18px;margin-bottom:16px;">
+            <li style="margin-bottom:4px;">ニックネーム・プロフィール情報（居住地・職業・自己紹介文など）</li>
+            <li style="margin-bottom:4px;">プロフィール写真</li>
+            <li style="margin-bottom:4px;">日記・つぶやき・コメントなどの投稿内容</li>
+            <li style="margin-bottom:4px;">招待コードの発行・使用履歴</li>
+            <li style="margin-bottom:4px;">ログイン日時・アクセス情報</li>
+            <li style="margin-bottom:4px;">カレンダー・予定情報</li>
+            <li style="margin-bottom:4px;">興味・関心タグ</li>
+          </ul>
+
+          <div style="font-weight:700;font-size:15px;color:var(--og3);margin-bottom:8px;">3. 情報の利用目的</div>
+          <ul style="margin-left:18px;margin-bottom:16px;">
+            <li style="margin-bottom:4px;">本サービスの提供・運営・改善</li>
+            <li style="margin-bottom:4px;">メンバー間のコミュニケーション機能の提供</li>
+            <li style="margin-bottom:4px;">招待・紹介システムの管理</li>
+            <li style="margin-bottom:4px;">不正利用の防止・安全管理</li>
+            <li style="margin-bottom:4px;">サービスに関するお知らせの配信</li>
+          </ul>
+
+          <div style="font-weight:700;font-size:15px;color:var(--og3);margin-bottom:8px;">4. 第三者への提供</div>
+          <p style="margin-bottom:16px;">本サービスは、以下の場合を除き、メンバーの個人情報を第三者に提供しません。</p>
+          <ul style="margin-left:18px;margin-bottom:16px;">
+            <li style="margin-bottom:4px;">本人の同意がある場合</li>
+            <li style="margin-bottom:4px;">法令に基づく場合</li>
+            <li style="margin-bottom:4px;">人の生命・身体・財産の保護のために必要な場合</li>
+          </ul>
+
+          <div style="font-weight:700;font-size:15px;color:var(--og3);margin-bottom:8px;">5. データの管理</div>
+          <p style="margin-bottom:16px;">収集した情報はSupabase（データベースサービス）を利用して安全に管理します。暗号化通信（HTTPS）を採用し、不正アクセス防止に努めます。</p>
+
+          <div style="font-weight:700;font-size:15px;color:var(--og3);margin-bottom:8px;">6. Cookieの使用</div>
+          <p style="margin-bottom:16px;">本サービスはログイン状態の維持のためにブラウザのローカルストレージを使用します。</p>
+
+          <div style="font-weight:700;font-size:15px;color:var(--og3);margin-bottom:8px;">7. 情報の開示・訂正・削除</div>
+          <p style="margin-bottom:16px;">メンバーは自身の個人情報について、開示・訂正・削除を管理者に請求できます。ご要望は管理者までお問い合わせください。</p>
+
+          <div style="font-weight:700;font-size:15px;color:var(--og3);margin-bottom:8px;">8. 退会について</div>
+          <p style="margin-bottom:16px;">退会をご希望の場合は管理者にお申し出ください。退会後は投稿データを含む個人情報を削除します。</p>
+
+          <div style="font-weight:700;font-size:15px;color:var(--og3);margin-bottom:8px;">9. プライバシーポリシーの変更</div>
+          <p style="margin-bottom:16px;">本ポリシーは必要に応じて変更することがあります。重要な変更がある場合はサービス内でお知らせします。</p>
+
+          <div style="font-weight:700;font-size:15px;color:var(--og3);margin-bottom:8px;">10. お問い合わせ</div>
+          <p style="margin-bottom:16px;">プライバシーポリシーに関するお問い合わせは、管理者までご連絡ください。</p>
+
+          <div style="background:var(--og-pale);border-radius:10px;padding:12px;font-size:12px;color:var(--text3);">
+            運営：ONEs 管理者（BOSS YASU）<br>
+            サービスURL：https://brandyou.love
+          </div>
+        </div>
+      </div>
+      <div style="height:8px;"></div>
+    </div>
+
+    <!-- TERMS PAGE -->
+    <div class="pg" id="pg-terms">
+      <div class="sh" style="padding-top:14px;">📋 利用規約</div>
+      <div class="card" style="margin:0 12px 10px;">
+        <div class="cb" style="line-height:1.9;font-size:13px;color:var(--text);">
+
+          <div style="font-size:11px;color:var(--text3);margin-bottom:16px;">最終更新日：2026年4月25日</div>
+
+          <div style="font-weight:700;font-size:15px;color:var(--og3);margin-bottom:8px;">第1条（目的）</div>
+          <p style="margin-bottom:16px;">本規約は、ONEs（以下「本サービス」）の利用に関する条件を定めるものです。メンバーは本規約に同意した上で本サービスをご利用ください。</p>
+
+          <div style="font-weight:700;font-size:15px;color:var(--og3);margin-bottom:8px;">第2条（招待制について）</div>
+          <p style="margin-bottom:16px;">本サービスは完全招待制です。既存メンバーからの招待コードを持つ方のみ参加できます。招待コードを不正に取得・共有する行為は禁止します。</p>
+
+          <div style="font-weight:700;font-size:15px;color:var(--og3);margin-bottom:8px;">第3条（禁止事項）</div>
+          <p style="margin-bottom:8px;">メンバーは以下の行為を行ってはなりません。</p>
+          <ul style="margin-left:18px;margin-bottom:16px;">
+            <li style="margin-bottom:4px;">他のメンバーへの誹謗中傷・ハラスメント行為</li>
+            <li style="margin-bottom:4px;">虚偽の情報の投稿・なりすまし行為</li>
+            <li style="margin-bottom:4px;">個人情報の無断掲載・拡散</li>
+            <li style="margin-bottom:4px;">違法コンテンツ・著作権侵害コンテンツの投稿</li>
+            <li style="margin-bottom:4px;">スパム・広告目的の投稿</li>
+            <li style="margin-bottom:4px;">サービスの運営を妨害する行為</li>
+            <li style="margin-bottom:4px;">招待コードの不正転売・譲渡</li>
+            <li style="margin-bottom:4px;">本サービスの情報を外部に無断で公開する行為</li>
+          </ul>
+
+          <div style="font-weight:700;font-size:15px;color:var(--og3);margin-bottom:8px;">第4条（投稿コンテンツ）</div>
+          <p style="margin-bottom:16px;">メンバーが投稿したコンテンツの著作権はメンバー本人に帰属します。ただし本サービスの運営・改善に必要な範囲で利用することに同意するものとします。</p>
+
+          <div style="font-weight:700;font-size:15px;color:var(--og3);margin-bottom:8px;">第5条（クローズドコミュニティの原則）</div>
+          <p style="margin-bottom:16px;">本サービス内の情報・投稿・メンバー情報は、外部への無断公開を禁じます。メンバー間の信頼関係を大切にしてください。</p>
+
+          <div style="font-weight:700;font-size:15px;color:var(--og3);margin-bottom:8px;">第6条（退会・アカウント停止）</div>
+          <p style="margin-bottom:16px;">管理者は禁止事項に違反したメンバーのアカウントを予告なく停止・削除できます。退会希望の場合は管理者にお申し出ください。</p>
+
+          <div style="font-weight:700;font-size:15px;color:var(--og3);margin-bottom:8px;">第7条（免責事項）</div>
+          <p style="margin-bottom:16px;">本サービスはメンバー間のコミュニケーションを支援するプラットフォームです。メンバー間のトラブルについて、運営は一切の責任を負いません。</p>
+
+          <div style="font-weight:700;font-size:15px;color:var(--og3);margin-bottom:8px;">第8条（規約の変更）</div>
+          <p style="margin-bottom:16px;">本規約は必要に応じて変更することがあります。変更後も本サービスを利用した場合、改定後の規約に同意したものとみなします。</p>
+
+          <div style="font-weight:700;font-size:15px;color:var(--og3);margin-bottom:8px;">第9条（準拠法）</div>
+          <p style="margin-bottom:16px;">本規約は日本法に準拠し、愛知県名古屋市を管轄する裁判所を専属的合意管轄とします。</p>
+
+          <div style="background:var(--og-pale);border-radius:10px;padding:12px;font-size:12px;color:var(--text3);">
+            運営：ONEs 管理者（BOSS YASU）<br>
+            サービスURL：https://brandyou.love<br>
+            制定日：2026年4月25日
+          </div>
+        </div>
+      </div>
+      <div style="height:8px;"></div>
+    </div>
+
     <!-- NOTICE -->
     <div class="pg" id="pg-notice">
       <div class="sh" style="padding-top:14px;">お知らせ</div>
@@ -881,6 +1095,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
         <div class="inv-badge" style="margin-bottom:8px;">🌱 創設メンバー</div>
         <div style="font-size:11px;color:var(--text3);line-height:2.1;">ワンミク <strong>12</strong>人<br>招待数 <strong>5</strong>人<br>日記 <strong>47</strong>件</div>
         <button class="bos" style="margin-top:10px;width:100%;" onclick="nav('mypage',null)">マイページへ</button>
+        <button class="bg" style="margin-top:6px;width:100%;color:#e53e3e;border-color:#e53e3e;" onclick="logoutApp()">🚪 ログアウト</button>
         <button class="bos" style="margin-top:6px;width:100%;background:linear-gradient(135deg,#1e6e3a,#0d3d20);" onclick="openAdmin()">🛡️ 管理者画面</button>
       </div>
     </div>
@@ -908,7 +1123,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
   </aside>
 </div>
 
-<nav id="bnav">
+<nav id="bnav" style="display:none;">
   <div class="bi on" onclick="nav('home',this)" id="bn-home"><div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
   <circle cx="12" cy="12" r="11" fill="currentColor" opacity=".15"/>
   <circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.8" opacity=".6"/>
@@ -922,7 +1137,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
   <div class="bi" onclick="nav('mypage',this)" id="bn-mypage"><div class="ic">😊</div><span>マイページ</span></div>
 </nav>
 
-<button id="fab" onclick="openSheet('diary')">＋</button>
+<button id="fab" style="display:none;" onclick="openSheet('diary')">＋</button>
 <div id="sov"><div class="sovhd"><input id="soin" type="search" placeholder="日記・コミュニティ・ひとを検索" autocomplete="off"><span class="socan" onclick="closeSearch()">キャンセル</span></div><div class="sobd" id="sobd"><div class="sohi">🔍<br><br>キーワードを入力</div></div></div>
 <div id="sbg" onclick="closeSheet()"></div>
 <div id="sh"><div class="shdl"></div><div class="shhd"><div class="shtit" id="shtit">タイトル</div><button class="shx" onclick="closeSheet()">✕</button></div><div id="shbody"></div></div>
@@ -932,7 +1147,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
 const AB='background:linear-gradient(135deg,#a8ddb8,#3fa865)';
 
 // INVITE / MEMBER DATA (stored in localStorage)
-const ADMIN_PASS = 'ones2024admin';
+// 古い平文パスワードは廃止 → ADMIN_PASS_HASH を使用
 
 const DEMO_MEMBERS = [
   {id:'m001',name:'BOSS YASU',emoji:'😊',code:'ONES-7X3K',invitedBy:null,invitedById:null,joinDate:'2005-04-03',status:'active',role:'admin'},
@@ -987,6 +1202,102 @@ function ld(k){return JSON.parse(localStorage.getItem(k)||'[]')}
 function sv(k,v){localStorage.setItem(k,JSON.stringify(v))}
 function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2200);}
 
+
+/* ══════════ セキュリティ ══════════ */
+
+// SHA-256ハッシュ生成（Web Crypto API）
+async function hashPassword(password) {
+  // ローカル環境（file://）では crypto.subtle が使えないため、フォールバック
+  if(!window.crypto || !window.crypto.subtle) {
+    console.warn('⚠️ crypto.subtle 不可（ローカル環境？）→ プレーン比較フォールバック');
+    return 'PLAIN:' + password;
+  }
+  try {
+    const enc = new TextEncoder();
+    const data = enc.encode(password + 'ones-salt-2026');
+    const hash = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(hash))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+  } catch(e) {
+    console.warn('⚠️ ハッシュ化エラー → プレーン比較フォールバック', e);
+    return 'PLAIN:' + password;
+  }
+}
+
+// プレーン比較用の許可パスワード（ローカル開発用）
+const LOCAL_ADMIN_PLAIN = 'PLAIN:ones2024admin';
+const LOCAL_YASU_PLAIN = 'PLAIN:yasu2026';
+
+function checkAdminPass(inputHash) {
+  return inputHash === ADMIN_PASS_HASH || inputHash === LOCAL_ADMIN_PLAIN;
+}
+function checkYasuPass(inputHash) {
+  return inputHash === BOSS_YASU_HASH || inputHash === LOCAL_YASU_PLAIN;
+}
+
+// 管理者パスワード（ハッシュ化済み）"ones2024admin"のハッシュ
+const ADMIN_PASS_HASH = '3cd5a701879098c33449d1a796c11f3f237aaeb44e1ea7bba108d504c56781df';
+
+// 管理者画面ロック解除フラグ
+let adminUnlocked = false;
+const ADMIN_LOCK_KEY = 'ones_admin_unlocked_at';
+const ADMIN_LOCK_DURATION = 30 * 60 * 1000; // 30分
+
+function isAdminUnlocked() {
+  const t = parseInt(localStorage.getItem(ADMIN_LOCK_KEY) || '0');
+  return Date.now() - t < ADMIN_LOCK_DURATION;
+}
+
+function setAdminUnlocked() {
+  localStorage.setItem(ADMIN_LOCK_KEY, Date.now().toString());
+  adminUnlocked = true;
+}
+
+// XSS対策エスケープ
+function escHTML(str) {
+  if(typeof str !== 'string') return str;
+  return str.replace(/[&<>"']/g, m => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[m]));
+}
+
+// ログイン試行回数制限
+const LOGIN_ATTEMPTS_KEY = 'ones_login_attempts';
+const MAX_ATTEMPTS = 5;
+const LOCK_DURATION = 15 * 60 * 1000; // 15分
+
+function getLoginAttempts() {
+  return JSON.parse(localStorage.getItem(LOGIN_ATTEMPTS_KEY) || '{"count":0,"locked_until":0}');
+}
+
+function incrementLoginAttempt() {
+  const a = getLoginAttempts();
+  a.count++;
+  if(a.count >= MAX_ATTEMPTS) {
+    a.locked_until = Date.now() + LOCK_DURATION;
+  }
+  localStorage.setItem(LOGIN_ATTEMPTS_KEY, JSON.stringify(a));
+  return a;
+}
+
+function resetLoginAttempts() {
+  localStorage.setItem(LOGIN_ATTEMPTS_KEY, JSON.stringify({count:0, locked_until:0}));
+}
+
+function isLoginLocked() {
+  const a = getLoginAttempts();
+  if(a.locked_until && Date.now() < a.locked_until) {
+    const remaining = Math.ceil((a.locked_until - Date.now()) / 60000);
+    return {locked: true, remaining};
+  }
+  if(a.locked_until && Date.now() >= a.locked_until) {
+    resetLoginAttempts();
+  }
+  return {locked: false};
+}
+
+
 /* ══════════ INVITE SYSTEM ══════════ */
 let currentUser = null;
 
@@ -995,14 +1306,87 @@ function saveMembers(m){localStorage.setItem('ones_members',JSON.stringify(m));}
 function getCodes(){return JSON.parse(localStorage.getItem('ones_codes')||JSON.stringify(INVITE_CODES));}
 function saveCodes(c){localStorage.setItem('ones_codes',JSON.stringify(c));}
 
+
+
+function showPolicyFromInvite(type) {
+  // 招待画面の上にオーバーレイでポリシーを表示
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:1100;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;';
+  const panel = document.createElement('div');
+  panel.style.cssText = 'background:#fff;border-radius:22px 22px 0 0;max-height:85vh;overflow-y:auto;width:100%;padding:20px 16px 40px;';
+
+  const title = type === 'privacy' ? '🔒 プライバシーポリシー' : '📋 利用規約';
+  const pgId = type === 'privacy' ? 'pg-privacy' : 'pg-terms';
+
+  // ページのコンテンツを取得して表示
+  const pg = document.getElementById(pgId);
+  const html = pg ? pg.innerHTML : '';
+
+  panel.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;position:sticky;top:0;background:#fff;padding-bottom:10px;border-bottom:1px solid var(--og-pale);">
+      <div style="font-size:16px;font-weight:700;color:var(--og3);">${title}</div>
+      <button onclick="this.closest('[style*=fixed]').remove()" style="width:32px;height:32px;border-radius:50%;background:var(--og-pale);border:none;font-size:16px;cursor:pointer;">✕</button>
+    </div>
+    ${html}
+  `;
+  overlay.appendChild(panel);
+  overlay.addEventListener('click', e => { if(e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+}
+
+
+
+// BOSS YASU 専用ハッシュ
+const BOSS_YASU_HASH = 'c4618e9b5a2e831d612a55227b89911cecc4e4c998488b8e24cb23e7f37e8fc5';
+
+async function showBossYasuLogin() {
+  const lock = isLoginLocked();
+  if(lock.locked) {
+    alert('⚠️ ログイン試行回数の上限に達しました。\nあと' + lock.remaining + '分後に再試行できます。');
+    return;
+  }
+
+  const pw = prompt('🔐 BOSS YASUのパスワードを入力してください：');
+  if(pw === null) return;
+
+  const inputHash = await hashPassword(pw);
+
+  if(checkYasuPass(inputHash)) {
+    resetLoginAttempts();
+    currentUser = {id:'m001', name:'BOSS YASU', emoji:'😊', role:'admin'};
+    localStorage.setItem('ones_session', JSON.stringify(currentUser));
+    document.getElementById('invite-screen').style.display = 'none';
+    document.getElementById('body').style.display = '';
+    document.getElementById('bnav').style.display = '';
+    document.getElementById('fab').style.display = '';
+    initApp();
+    toast('👑 BOSS YASUとしてログインしました');
+  } else {
+    const a = incrementLoginAttempt();
+    const remaining = MAX_ATTEMPTS - a.count;
+    if(remaining > 0) {
+      alert('❌ パスワードが違います\n残り試行回数：' + remaining + '回');
+    } else {
+      alert('🔒 ロックされました（15分）');
+    }
+  }
+}
+
+function logoutApp(){
+  if(!confirm('ログアウトしますか？')) return;
+  localStorage.removeItem('ones_session');
+  location.reload();
+}
 function checkSession(){
   const sess = localStorage.getItem('ones_session');
   if(sess){
     currentUser = JSON.parse(sess);
-    document.getElementById('invite-screen').classList.add('hidden');
+    document.getElementById('invite-screen').style.display='none';
+    document.getElementById('body').style.display='';
+    document.getElementById('bnav').style.display='';
+    document.getElementById('fab').style.display='';
     initApp();
   }
-  // else invite screen is already shown
 }
 
 function joinWithCode(){
@@ -1059,34 +1443,90 @@ function joinWithCode(){
     </div>`;
 }
 
-function showAdminLogin(){
-  const pw = prompt('管理者パスワードを入力してください：');
-  if(pw===null) return;
-  if(pw===ADMIN_PASS){
-    // Login as admin
-    currentUser={id:'m001',name:'BOSS YASU',emoji:'😊',role:'admin'};
-    localStorage.setItem('ones_session',JSON.stringify(currentUser));
-    document.getElementById('invite-screen').classList.add('hidden');
+async function showAdminLogin(){
+  // ログインロックチェック
+  const lock = isLoginLocked();
+  if(lock.locked) {
+    alert('⚠️ ログイン試行回数の上限に達しました。\nあと' + lock.remaining + '分後に再試行できます。');
+    return;
+  }
+
+  const pw = prompt('🔐 管理者パスワードを入力してください：');
+  if(pw === null) return;
+
+  const inputHash = await hashPassword(pw);
+
+  if(checkAdminPass(inputHash)) {
+    resetLoginAttempts();
+    setAdminUnlocked();
+    currentUser = {id:'m001', name:'BOSS YASU', emoji:'😊', role:'admin'};
+    localStorage.setItem('ones_session', JSON.stringify(currentUser));
+    document.getElementById('invite-screen').style.display = 'none';
+    document.getElementById('body').style.display = '';
+    document.getElementById('bnav').style.display = '';
+    document.getElementById('fab').style.display = '';
     initApp();
     openAdmin();
   } else {
-    alert('パスワードが違います');
+    const a = incrementLoginAttempt();
+    const remaining = MAX_ATTEMPTS - a.count;
+    if(remaining > 0) {
+      alert('❌ パスワードが違います\n残り試行回数：' + remaining + '回');
+    } else {
+      alert('🔒 ログインがロックされました\n15分後に再試行できます。');
+    }
   }
 }
 
 function devLogin(){
-  // Quick login for demo
   currentUser={id:'m001',name:'BOSS YASU',emoji:'😊',role:'admin'};
   localStorage.setItem('ones_session',JSON.stringify(currentUser));
-  document.getElementById('invite-screen').classList.add('hidden');
+  document.getElementById('invite-screen').style.display='none';
+  document.getElementById('body').style.display='';
+  document.getElementById('bnav').style.display='';
+  document.getElementById('fab').style.display='';
   initApp();
 }
 
 /* ══════════ ADMIN ══════════ */
 let admMemberFilter='all';
 
-function openAdmin(){document.getElementById('admin-screen').classList.add('show');renderAdmOverview();renderAdmMembers();renderAdmInvites();renderAdmTree();renderAdmPending();}
+async function openAdmin() {
+  // 管理者画面のロック解除確認
+  if(!isAdminUnlocked()) {
+    const lock = isLoginLocked();
+    if(lock.locked) {
+      alert('⚠️ ログイン試行回数の上限に達しました。\nあと' + lock.remaining + '分後に再試行できます。');
+      return;
+    }
+
+    const pw = prompt('🔐 管理者パスワードを入力してください（30分有効）：');
+    if(pw === null) return;
+
+    const inputHash = await hashPassword(pw);
+    if(!checkAdminPass(inputHash)) {
+      const a = incrementLoginAttempt();
+      const remaining = MAX_ATTEMPTS - a.count;
+      if(remaining > 0) {
+        alert('❌ パスワードが違います\n残り試行回数：' + remaining + '回');
+      } else {
+        alert('🔒 ロックされました（15分）');
+      }
+      return;
+    }
+    resetLoginAttempts();
+    setAdminUnlocked();
+  }
+
+  document.getElementById('admin-screen').classList.add('show');
+  renderAdmOverview();
+  renderAdmMembers();
+  renderAdmInvites();
+  renderAdmTree();
+  renderAdmPending();
+}
 function closeAdmin(){document.getElementById('admin-screen').classList.remove('show');}
+function lockAdmin(){localStorage.removeItem(ADMIN_LOCK_KEY);adminUnlocked=false;closeAdmin();toast('🔒 管理者画面をロックしました');}
 
 function admTab(el,panelId){
   document.querySelectorAll('.adm-tab').forEach(t=>t.classList.remove('on'));
@@ -1273,8 +1713,66 @@ function renderInvitePage(){
 }
 
 function copyInviteCode(){
-  if(navigator.clipboard){navigator.clipboard.writeText('ONES-7X3K').then(()=>toast('📋 招待コードをコピーしました！'));}
-  else{toast('ONES-7X3K');}
+  const code = document.getElementById('my-invite-code')?.textContent || 'ONES-7X3K';
+  if(navigator.clipboard){navigator.clipboard.writeText(code).then(()=>toast('📋 招待コードをコピーしました！'));}
+  else{toast(code);}
+}
+
+function generateInviteQR(code) {
+  const container = document.getElementById('invite-qr-container');
+  if(!container) return;
+  try {
+    const url = 'https://brandyou.love?code=' + code;
+    const qr = qrcode(0, 'H');
+    qr.addData(url);
+    qr.make();
+    container.innerHTML = qr.createSvgTag(5, 0);
+    const svg = container.querySelector('svg');
+    if(svg) {
+      svg.style.borderRadius = '8px';
+      svg.querySelectorAll('rect').forEach(r => {
+        if(r.getAttribute('fill') === '#000000' || r.getAttribute('fill') === 'black') {
+          r.setAttribute('fill', '#1e6e3a');
+        }
+      });
+    }
+  } catch(e) {
+    container.innerHTML = '<div style="width:180px;height:180px;background:var(--og-pale);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--text3);">QR生成中...</div>';
+  }
+}
+
+function generateInviteQRSmall(code) {
+  const container = document.getElementById('mypage-qr-container');
+  if(!container) return;
+  try {
+    const url = 'https://brandyou.love?code=' + code;
+    const qr = qrcode(0, 'H');
+    qr.addData(url);
+    qr.make();
+    container.innerHTML = qr.createSvgTag(3, 0);
+    const svg = container.querySelector('svg');
+    if(svg) {
+      svg.style.borderRadius = '8px';
+      svg.style.border = '2px solid #9dd4b0';
+      svg.querySelectorAll('rect').forEach(r => {
+        if(r.getAttribute('fill') === '#000000' || r.getAttribute('fill') === 'black') {
+          r.setAttribute('fill', '#1e6e3a');
+        }
+      });
+    }
+  } catch(e) {}
+}
+  const code = document.getElementById('my-invite-code')?.textContent || 'ONES-7X3K';
+  const url = 'https://brandyou.love?code=' + code;
+  if(navigator.share) {
+    navigator.share({
+      title: 'ONEs への招待',
+      text: 'ONEsに招待します！招待コード：' + code,
+      url: url
+    }).catch(()=>{});
+  } else {
+    navigator.clipboard.writeText(url).then(()=>toast('📋 招待URLをコピーしました！'));
+  }
 }
 
 /* ══════════ APP RENDERS ══════════ */
@@ -1339,9 +1837,16 @@ function nav(name,el){
   if(name==='community')renderCM();
   if(name==='message')renderMsgs();
   if(name==='notice')renderNT('ntlist',NT);
-  if(name==='mypage')renderMpDiary();
-  if(name==='invite')renderInvitePage();
+  if(name==='mypage'){
+    renderMpDiary();
+    setTimeout(()=>{
+      generateInviteQR('ONES-7X3K');
+      generateInviteQRSmall('ONES-7X3K');
+    }, 100);
+  }
+  if(name==='invite'){renderInvitePage(); setTimeout(()=>generateInviteQR('ONES-7X3K'), 100);}
   if(name==='calendar')renderCalendarPage();
+  if(name==='help')renderHelpPage();
   window.scrollTo(0,0);
 }
 
@@ -1477,6 +1982,212 @@ function loadProfilePhoto() {
   if (saved) applyProfilePhoto(saved);
 }
 
+
+
+/* ══════════ HELP SYSTEM ══════════ */
+
+const HELP_DATA = [
+  {
+    cat:'🚀 はじめかた', id:'start', faqs:[
+      {q:'ONEsとは何ですか？', a:'ONEsは招待制のクローズドSNSです。信頼できるメンバーだけが参加できるプライベートなコミュニティです。'},
+      {q:'どうすれば参加できますか？', a:'既存メンバーから招待コードを受け取り、参加画面でコードとニックネームを入力してください。管理者の承認後にご利用いただけます。'},
+      {q:'招待コードはどこで受け取れますか？', a:'すでに参加しているメンバーに連絡して招待コードを発行してもらってください。'},
+      {q:'参加申請後どのくらいで使えますか？', a:'管理者が承認次第ご利用いただけます。通常1〜2日以内に承認されます。'},
+    ]
+  },
+  {
+    cat:'👤 プロフィール', id:'profile', faqs:[
+      {q:'プロフィール写真を変更したい', a:'マイページを開き、プロフィール写真をタップすると写真を選択できます。スマートフォンのカメラロールから選択してください。'},
+      {q:'ニックネームを変更したい', a:'マイページ→「基本情報」の「編集」ボタンからニックネームを変更できます。'},
+      {q:'自己紹介文を編集したい', a:'マイページ→「自己紹介」の「編集」ボタンから変更できます。'},
+      {q:'興味・関心タグを変更したい', a:'マイページ→「興味・関心」の「編集」から最大20個のタグを選択できます。'},
+      {q:'居住地・職業を変更したい', a:'マイページ→「基本情報」の「編集」ボタンから変更できます。'},
+    ]
+  },
+  {
+    cat:'📔 日記・つぶやき', id:'diary', faqs:[
+      {q:'日記を書くには？', a:'ホーム画面の「日記を書く」欄をタップするか、「日記」ボタンから投稿できます。タイトルと本文を入力して「投稿する」を押してください。'},
+      {q:'日記の公開範囲を設定したい', a:'日記投稿時に「全体に公開」「ワンミクのみ」「自分のみ」から選択できます。'},
+      {q:'つぶやきを投稿するには？', a:'ホーム画面の「つぶやき」ボタン、またはつぶやきページから投稿できます。'},
+      {q:'投稿した日記を削除したい', a:'日記一覧から該当の日記を開き「削除」ボタンを押してください。'},
+      {q:'コメントするには？', a:'日記をタップして開くと、コメント欄から投稿できます。'},
+    ]
+  },
+  {
+    cat:'👥 ワンミク', id:'wanmik', faqs:[
+      {q:'ワンミクとは何ですか？', a:'ONEsでの友達のことです。ワンミクになるとお互いの日記やつぶやきが見やすくなります。'},
+      {q:'ワンミク申請するには？', a:'相手のプロフィールページから「ワンミク申請」ボタンを押してください。'},
+      {q:'ワンミクを解除したい', a:'相手のプロフィールページから「ワンミク解除」を選択してください。'},
+      {q:'足あととは何ですか？', a:'あなたのページを訪問したメンバーが記録されます。誰が最近訪問してくれたか確認できます。'},
+    ]
+  },
+  {
+    cat:'🎟️ 招待コード', id:'invite', faqs:[
+      {q:'招待コードを発行するには？', a:'「招待」ページを開くと、あなたの招待コードが表示されます。そのコードをコピーして友達に送ってください。'},
+      {q:'招待できる人数に制限はありますか？', a:'現在は無制限です。ただし管理者の承認が必要です。'},
+      {q:'招待した人の状況を確認したい', a:'「招待」ページの「私が招待したひと」一覧で確認できます。'},
+      {q:'招待コードの有効期限はありますか？', a:'現在有効期限はありません。ただし一度使用されたコードは再利用できません。'},
+    ]
+  },
+  {
+    cat:'📅 カレンダー', id:'calendar', faqs:[
+      {q:'予定を登録するには？', a:'カレンダーページ右上の「＋ 追加」ボタンから登録できます。タイトル・日時・場所を入力してください。'},
+      {q:'ワンミクに予定を公開したい', a:'予定登録時に「ワンミクに公開」を選択すると、ワンミクのカレンダーにも表示されます。'},
+      {q:'予定を削除したい', a:'カレンダーで日付を選択し、予定の右側の「×」ボタンを押してください。'},
+      {q:'ワンミクの予定はどこで見れますか？', a:'カレンダーページ下部の「ワンミクの予定」セクションに表示されます。'},
+    ]
+  },
+  {
+    cat:'🏘️ コミュニティ', id:'community', faqs:[
+      {q:'コミュニティに参加するには？', a:'コミュニティページから参加したいコミュニティを選び「参加する」ボタンを押してください。'},
+      {q:'コミュニティを作りたい', a:'現在は管理者のみコミュニティを作成できます。管理者にお問い合わせください。'},
+      {q:'コミュニティを退会したい', a:'コミュニティページの詳細画面から「退会する」を選択してください。'},
+    ]
+  },
+  {
+    cat:'⚙️ 設定・その他', id:'settings', faqs:[
+      {q:'パスワードを変更したい', a:'現在は管理者によるパスワード管理となっています。管理者にお問い合わせください。'},
+      {q:'退会したい', a:'退会をご希望の場合は管理者にお問い合わせください。'},
+      {q:'不適切な投稿を報告したい', a:'該当の投稿の「・・・」メニューから「報告」を選択するか、管理者に直接お問い合わせください。'},
+      {q:'スマートフォンでホーム画面に追加したい', a:'ブラウザの「共有」→「ホーム画面に追加」を選択するとアプリのように使えます。'},
+    ]
+  },
+];
+
+// よくある質問（上位）
+const FAQ_TOP = [
+  {q:'招待コードはどこで受け取れますか？', cat:'start'},
+  {q:'プロフィール写真を変更したい', cat:'profile'},
+  {q:'日記を書くには？', cat:'diary'},
+  {q:'ワンミクとは何ですか？', cat:'wanmik'},
+  {q:'招待コードを発行するには？', cat:'invite'},
+  {q:'予定を登録するには？', cat:'calendar'},
+];
+
+function renderHelpPage() {
+  // よくある質問
+  const faqEl = document.getElementById('help-faq-list');
+  if(faqEl) {
+    faqEl.innerHTML = FAQ_TOP.map(f => `
+      <div onclick="openHelpQ('${esc(f.q)}','${f.cat}')"
+        style="padding:10px 0;border-bottom:1px solid var(--og-pale);cursor:pointer;display:flex;align-items:center;gap:8px;">
+        <span style="color:var(--og);font-weight:700;font-size:13px;">Q.</span>
+        <span style="font-size:13px;color:var(--text);flex:1;">${f.q}</span>
+        <span style="color:var(--text3);font-size:16px;">›</span>
+      </div>`).join('');
+  }
+
+  // カテゴリー
+  const catEl = document.getElementById('help-categories');
+  if(catEl) {
+    catEl.innerHTML = HELP_DATA.map(c => `
+      <div class="card" style="margin:0 12px 10px;">
+        <div style="padding:12px 14px 4px;">
+          <div style="font-size:13px;font-weight:700;color:var(--og3);margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--og-pale);">
+            ${c.cat}
+          </div>
+          ${c.faqs.map(f => `
+            <div onclick="openHelpQ('${esc(f.q)}','${c.id}')"
+              style="padding:10px 0;border-bottom:1px solid var(--og-pale);cursor:pointer;display:flex;align-items:center;gap:8px;">
+              <span style="color:var(--og);font-weight:700;font-size:13px;">Q.</span>
+              <span style="font-size:13px;color:var(--text);flex:1;">${f.q}</span>
+              <span style="color:var(--text3);font-size:16px;">›</span>
+            </div>`).join('')}
+        </div>
+      </div>`).join('');
+  }
+}
+
+function openHelpQ(question, catId) {
+  const cat = HELP_DATA.find(c => c.id === catId);
+  const faq = cat ? cat.faqs.find(f => f.q === question) : null;
+  if(!faq) return;
+  showSheet('❓ ' + faq.q, `
+    <div>
+      <div style="background:var(--og-pale);border-radius:12px;padding:14px;margin-bottom:16px;">
+        <div style="font-size:12px;font-weight:700;color:var(--og);margin-bottom:6px;">Q. 質問</div>
+        <div style="font-size:14px;color:var(--text);font-weight:600;">${faq.q}</div>
+      </div>
+      <div style="background:#fff;border:1.5px solid var(--og-border);border-radius:12px;padding:14px;margin-bottom:16px;">
+        <div style="font-size:12px;font-weight:700;color:var(--og3);margin-bottom:6px;">A. 回答</div>
+        <div style="font-size:14px;color:var(--text);line-height:1.8;">${faq.a}</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:12px;color:var(--text3);margin-bottom:10px;">この回答は役に立ちましたか？</div>
+        <div style="display:flex;gap:10px;justify-content:center;">
+          <button class="bos" onclick="toast('👍 フィードバックありがとうございます！');closeSheet()">👍 役に立った</button>
+          <button class="bg" onclick="openContactSheet()">解決しない</button>
+        </div>
+      </div>
+    </div>`);
+}
+
+function searchHelp() {
+  const q = document.getElementById('help-search').value.trim();
+  const resEl = document.getElementById('help-search-results');
+  if(!q) { resEl.style.display='none'; return; }
+
+  const results = [];
+  HELP_DATA.forEach(c => {
+    c.faqs.forEach(f => {
+      if(f.q.includes(q) || f.a.includes(q)) {
+        results.push({...f, cat: c.cat, catId: c.id});
+      }
+    });
+  });
+
+  resEl.style.display = 'block';
+  if(!results.length) {
+    resEl.innerHTML = `<div class="card" style="padding:14px;text-align:center;color:var(--text3);">「${q}」に一致する質問は見つかりませんでした</div>`;
+    return;
+  }
+
+  resEl.innerHTML = `<div class="card">
+    <div style="padding:12px 14px 4px;">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:8px;">「${q}」の検索結果 ${results.length}件</div>
+      ${results.map(f => `
+        <div onclick="openHelpQ('${esc(f.q)}','${f.catId}')"
+          style="padding:10px 0;border-bottom:1px solid var(--og-pale);cursor:pointer;display:flex;align-items:center;gap:8px;">
+          <span style="color:var(--og);font-weight:700;font-size:13px;">Q.</span>
+          <div style="flex:1;">
+            <div style="font-size:13px;color:var(--text);">${f.q}</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:2px;">${f.cat}</div>
+          </div>
+          <span style="color:var(--text3);font-size:16px;">›</span>
+        </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function openContactSheet() {
+  showSheet('✉️ 管理者に問い合わせる', `
+    <div>
+      <div style="font-size:13px;color:var(--text3);margin-bottom:14px;line-height:1.7;">
+        ヘルプで解決しない場合は管理者に直接お問い合わせください。<br>
+        通常1〜2営業日以内にご返信します。
+      </div>
+      <div class="er"><label class="el">お問い合わせ種別</label>
+        <select class="ei">
+          <option>使い方がわからない</option>
+          <option>不具合・エラーが発生した</option>
+          <option>アカウントについて</option>
+          <option>退会について</option>
+          <option>その他</option>
+        </select>
+      </div>
+      <div class="er"><label class="el">お問い合わせ内容</label>
+        <textarea id="contact-msg" class="eta" placeholder="詳しく教えてください..."></textarea>
+      </div>
+      <button class="bo" style="width:100%;" onclick="sendContact()">送信する</button>
+    </div>`);
+}
+
+function sendContact() {
+  const msg = document.getElementById('contact-msg').value.trim();
+  if(!msg) { toast('内容を入力してください'); return; }
+  closeSheet();
+  toast('✅ お問い合わせを送信しました！');
+}
 
 /* ══════════ CALENDAR SYSTEM ══════════ */
 
@@ -1615,7 +2326,10 @@ function renderEventsList(day) {
         <div class="ev-meta">📅 ${e.date} ${e.time||''} ${e.place?'📍'+e.place:''}</div>
         ${e.shared ? '<span class="ev-share">👥 ワンミクに公開</span>' : '<span style="font-size:10px;color:var(--text3);">🔒 非公開</span>'}
       </div>
-      <div onclick="deleteEvent('${e.id}')" style="color:var(--text3);font-size:18px;cursor:pointer;padding:4px;">×</div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <div onclick="editEvent('${e.id}')" style="color:var(--og);font-size:12px;font-weight:700;cursor:pointer;padding:4px 8px;background:var(--og-pale);border-radius:8px;">編集</div>
+        <div onclick="deleteEvent('${e.id}')" style="color:var(--text3);font-size:18px;cursor:pointer;padding:4px;">×</div>
+      </div>
     </div>`).join('');
 }
 
@@ -1706,6 +2420,57 @@ function deleteEvent(id) {
   const events = loadEvents().filter(e => e.id !== id);
   saveEvents(events);
   toast('予定を削除しました');
+  renderCalendarPage();
+}
+
+function editEvent(id) {
+  const events = loadEvents();
+  const e = events.find(x => x.id === id);
+  if(!e) return;
+  showSheet('📅 予定を編集', `
+    <div>
+      <div class="er"><label class="el">タイトル</label><input id="ev-title" class="ei" type="text" value="${e.title}"></div>
+      <div class="er"><label class="el">日付</label><input id="ev-date" class="ei" type="date" value="${e.date}"></div>
+      <div class="er"><label class="el">時間</label><input id="ev-time" class="ei" type="time" value="${e.time||'12:00'}"></div>
+      <div class="er"><label class="el">場所（任意）</label><input id="ev-place" class="ei" type="text" value="${e.place||''}" placeholder="例：名古屋駅周辺"></div>
+      <div class="er"><label class="el">メモ（任意）</label><textarea id="ev-memo" class="eta" style="min-height:70px;" placeholder="詳細を入力...">${e.memo||''}</textarea></div>
+      <div class="er">
+        <label class="el">公開設定</label>
+        <div style="display:flex;gap:10px;">
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+            <input type="radio" name="ev-vis" value="shared" ${e.shared?'checked':''} style="accent-color:var(--og);"> 👥 ワンミクに公開
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+            <input type="radio" name="ev-vis" value="private" ${!e.shared?'checked':''} style="accent-color:var(--og);"> 🔒 自分だけ
+          </label>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="bo" style="flex:1;" onclick="updateEvent('${id}')">保存する</button>
+        <button class="btn-red" style="padding:12px 16px;border-radius:24px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;" onclick="deleteEvent('${id}');closeSheet()">削除</button>
+      </div>
+    </div>`);
+}
+
+function updateEvent(id) {
+  const title = document.getElementById('ev-title').value.trim();
+  const date = document.getElementById('ev-date').value;
+  const time = document.getElementById('ev-time').value;
+  const place = document.getElementById('ev-place').value.trim();
+  const memo = document.getElementById('ev-memo').value.trim();
+  const vis = document.querySelector('input[name="ev-vis"]:checked').value;
+
+  if(!title) { toast('タイトルを入力してください'); return; }
+  if(!date) { toast('日付を選択してください'); return; }
+
+  const events = loadEvents();
+  const idx = events.findIndex(x => x.id === id);
+  if(idx === -1) return;
+
+  events[idx] = { ...events[idx], title, date, time, place, memo, shared: vis==='shared' };
+  saveEvents(events);
+  closeSheet();
+  toast('📅 予定を更新しました！');
   renderCalendarPage();
 }
 
@@ -1910,16 +2675,16 @@ function initApp(){
   loadProfilePhoto();
 }
 
-// Check if logged in (demo: auto-login for preview)
-// In production: remove devLogin() and rely on checkSession()
 checkSession();
-if(document.getElementById('invite-screen')&&!document.getElementById('invite-screen').classList.contains('hidden')){
-  // Add quick demo login button for preview
-  const demo=document.createElement('div');
-  demo.style.cssText='position:fixed;bottom:20px;right:20px;z-index:2000;';
-  demo.innerHTML=`<button onclick="devLogin()" style="background:#fff;color:#1e6e3a;border:2px solid #9dd4b0;padding:8px 16px;border-radius:20px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.2);">🔧 デモログイン</button>`;
+
+// デモログインボタン（常に表示）
+(function(){
+  const demo = document.createElement('div');
+  demo.id = 'demo-btn-wrap';
+  demo.style.cssText = 'position:fixed;bottom:80px;right:16px;z-index:9999;';
+  demo.innerHTML = `<button onclick="devLogin()" style="background:linear-gradient(135deg,#4cb87a,#1e7a3c);color:#fff;border:none;padding:12px 20px;border-radius:24px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;box-shadow:0 4px 14px rgba(30,110,58,.5);">🔧 デモログイン</button>`;
   document.body.appendChild(demo);
-}
+})();
 </script>
 </body>
 </html>
