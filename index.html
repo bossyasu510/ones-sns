@@ -2007,7 +2007,7 @@ function renderInvitePage(){
 }
 
 function copyInviteCode(){
-  const code = currentUser?.code || document.getElementById('my-invite-code')?.textContent || 'ONES-7X3K';
+  var _mc = document.getElementById('my-invite-code'); var code = (currentUser && currentUser.code) ? currentUser.code : (_mc && _mc.textContent ? _mc.textContent : 'ONES-7X3K');
   if(navigator.clipboard){navigator.clipboard.writeText(code).then(()=>toast('📋 招待コードをコピーしました！'));}
   else{toast(code);}
 }
@@ -2058,7 +2058,7 @@ function generateInviteQRSmall(code) {
 }
 
 function shareInviteQR() {
-  const code = currentUser?.code || document.getElementById('my-invite-code')?.textContent || 'ONES-7X3K';
+  var _mc = document.getElementById('my-invite-code'); var code = (currentUser && currentUser.code) ? currentUser.code : (_mc && _mc.textContent ? _mc.textContent : 'ONES-7X3K');
   const url = 'https://brandyou.love?code=' + code;
   if(navigator.share) {
     navigator.share({
@@ -2086,7 +2086,7 @@ function renderTL(){
   let h='';
   allD.slice(0,2).forEach(d=>{h+=`<div class="fc"><div class="fch">${myAvHtml('am')}<div class="fui"><div class="fname">BOSS YASU</div><div class="fsub">${d.date}&nbsp;<span class="fbadge bd">日記</span></div></div></div><div class="fcb"><div class="ftit" onclick="openDiarySheet('${esc(d.title)}')">${d.title}</div><div class="ftxt">${d.excerpt.slice(0,70)}…</div></div><div class="fcf"><div class="fbtn" onclick="likeThis(this)">👍 ${d.good}</div><div class="fbtn" onclick="openDiarySheet('${esc(d.title)}')">💬 ${d.comments}件</div><div class="fbtn">↗️ シェア</div></div></div>`;});
   allV.slice(0,4).forEach(v=>{
-    const isMe = v.u===(currentUser?.name||'BOSS YASU');
+    const isMe = v.u === ((currentUser && currentUser.name) ? currentUser.name : 'BOSS YASU');
     const avHtml = isMe ? myAvHtml('am') : `<div class="av am" style="${AB}" onclick="openUserSheet('${esc(v.u)}','${v.e}')">${v.e}</div>`;
     h+=`<div class="fc"><div class="fch">${avHtml}<div class="fui"><div class="fname">${v.u}</div><div class="fsub">${v.tm}&nbsp;<span class="fbadge bv">つぶやき</span></div></div></div><div class="fcb"><div class="ftxt" style="padding-bottom:2px;">${v.t}</div></div><div class="fcf"><div class="fbtn" onclick="likeThis(this)">👍 いいね</div><div class="fbtn">💬 返信</div><div class="fbtn">↗️ シェア</div></div></div>`;
   });
@@ -2101,7 +2101,7 @@ function renderDiary(){
 function renderVoice(){
   const all=[...ld('ov'),...VC];
   document.getElementById('vfeed').innerHTML=all.map(v=>{
-    const isMe = v.u===(currentUser?.name||'BOSS YASU');
+    const isMe = v.u === ((currentUser && currentUser.name) ? currentUser.name : 'BOSS YASU');
     const avHtml = isMe
       ? myAvHtml('am')
       : `<div class="av am" style="${AB}" onclick="openUserSheet('${esc(v.u)}','${v.e}')">${v.e}</div>`;
@@ -2145,7 +2145,7 @@ function nav(name,el){
   if(name==='notice')renderNT('ntlist',NT);
   if(name==='mypage'){
     renderMpDiary();
-    const myCode = currentUser?.code || 'ONES-7X3K';
+    const myCode = (currentUser && currentUser.code) ? currentUser.code : 'ONES-7X3K';
     const tryQR2 = (attempts) => {
       if(typeof qrcode !== 'undefined') {
         generateInviteQR(myCode);
@@ -2159,7 +2159,7 @@ function nav(name,el){
   if(name==='invite'){
     renderInvitePage();
     // QRライブラリ読み込み待ち
-    const myCode = currentUser?.code || 'ONES-7X3K';
+    const myCode = (currentUser && currentUser.code) ? currentUser.code : 'ONES-7X3K';
     const tryQR = (attempts) => {
       if(typeof qrcode !== 'undefined') {
         generateInviteQR(myCode);
@@ -2176,65 +2176,90 @@ function nav(name,el){
 
 /* ══════════ ACTIONS ══════════ */
 function postDiary(){
-  const ttl=document.getElementById('ws-ttl').value.trim();
-  const bdy=document.getElementById('ws-bdy').value.trim();
-  if(!ttl&&!bdy){toast('タイトルか本文を入力してください');return;}
-  const t=ttl||bdy.slice(0,20)+'…';
-  const now=new Date();
-  const ds=`${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 ${pad(now.getHours())}:${pad(now.getMinutes())}`;
-  const author = currentUser?.name || 'ゲスト';
-  const authorEmoji = currentUser?.emoji || '🙋';
-  // ユーザー別に日記を保存
-  const userKey = currentUser?.id ? 'od_'+currentUser.id : 'od';
-  const all = JSON.parse(localStorage.getItem(userKey) || '[]');
-  all.unshift({title:t,date:ds,excerpt:bdy||'（本文なし）',comments:0,good:0,author:author,authorEmoji:authorEmoji,authorId:currentUser?.id});
-  localStorage.setItem(userKey, JSON.stringify(all));
-  // 共有日記タイムラインにも追加
-  const sharedKey = 'ones_shared_diaries';
-  const shared = JSON.parse(localStorage.getItem(sharedKey) || '[]');
-  shared.unshift({title:t,date:ds,excerpt:bdy||'（本文なし）',comments:0,good:0,author:author,authorEmoji:authorEmoji,authorId:currentUser?.id});
-  localStorage.setItem(sharedKey, JSON.stringify(shared));
-  closeSheet();
-  toast('📔 日記を投稿しました！');
-  renderTL();
-  if(typeof renderDiary === 'function') renderDiary();
+  try {
+    var ttlEl = document.getElementById('ws-ttl');
+    var bdyEl = document.getElementById('ws-bdy');
+    if(!ttlEl || !bdyEl) return;
+    var ttl = ttlEl.value ? ttlEl.value.trim() : '';
+    var bdy = bdyEl.value ? bdyEl.value.trim() : '';
+    if(!ttl && !bdy){ toast('タイトルか本文を入力してください'); return; }
+    var t = ttl || bdy.slice(0,20)+'…';
+    var now = new Date();
+    var ds = now.getFullYear()+'年'+(now.getMonth()+1)+'月'+now.getDate()+'日 '+pad(now.getHours())+':'+pad(now.getMinutes());
+    var author = (currentUser && currentUser.name) ? currentUser.name : 'ゲスト';
+    var authorEmoji = (currentUser && currentUser.emoji) ? currentUser.emoji : '🙋';
+    var userId = (currentUser && currentUser.id) ? currentUser.id : null;
+    var userKey = userId ? 'od_'+userId : 'od';
+    var all = [];
+    try { all = JSON.parse(localStorage.getItem(userKey) || '[]'); } catch(err) { all = []; }
+    var entry = {title: t, date: ds, excerpt: bdy || '（本文なし）', comments: 0, good: 0, author: author, authorEmoji: authorEmoji, authorId: userId};
+    all.unshift(entry);
+    try { localStorage.setItem(userKey, JSON.stringify(all)); } catch(err) { console.error('[ONEs] diary save:', err); }
+    var shared = [];
+    try { shared = JSON.parse(localStorage.getItem('ones_shared_diaries') || '[]'); } catch(err) { shared = []; }
+    shared.unshift(entry);
+    try { localStorage.setItem('ones_shared_diaries', JSON.stringify(shared)); } catch(err) { console.error('[ONEs] shared diary:', err); }
+    closeSheet();
+    toast('📔 日記を投稿しました！');
+    try { if(typeof renderTL === 'function') renderTL(); } catch(err) { console.error(err); }
+    try { if(typeof renderDiary === 'function') renderDiary(); } catch(err) { console.error(err); }
+  } catch(err) {
+    console.error('[ONEs] postDiary:', err);
+    toast('❌ 投稿に失敗しました');
+  }
 }
 function postVoice(text){
-  const t=text||document.getElementById('ws-vc')?.value.trim();
-  if(!t){toast('テキストを入力してください');return;}
-  const u = currentUser?.name || 'ゲスト';
-  const e = currentUser?.emoji || '🙋';
-  // ユーザー別＋共有
-  const userKey = currentUser?.id ? 'ov_'+currentUser.id : 'ov';
-  const own = JSON.parse(localStorage.getItem(userKey) || '[]');
-  own.unshift({u, e, t, tm:'たった今', authorId:currentUser?.id});
-  localStorage.setItem(userKey, JSON.stringify(own));
-  // 共有タイムライン
-  const shared = JSON.parse(localStorage.getItem('ones_shared_voices') || '[]');
-  shared.unshift({u, e, t, tm:'たった今', authorId:currentUser?.id});
-  localStorage.setItem('ones_shared_voices', JSON.stringify(shared));
-  closeSheet();
-  toast('💬 つぶやきを投稿しました！');
-  if(cur==='voice')renderVoice();
-  renderTL();
+  try {
+    var wsEl = document.getElementById('ws-vc');
+    var t = text || (wsEl && wsEl.value ? wsEl.value.trim() : '');
+    if(!t){ toast('テキストを入力してください'); return; }
+    var u = (currentUser && currentUser.name) ? currentUser.name : 'ゲスト';
+    var e = (currentUser && currentUser.emoji) ? currentUser.emoji : '🙋';
+    var userId = (currentUser && currentUser.id) ? currentUser.id : null;
+    var userKey = userId ? 'ov_'+userId : 'ov';
+    var own = [];
+    try { own = JSON.parse(localStorage.getItem(userKey) || '[]'); } catch(err) { own = []; }
+    own.unshift({u: u, e: e, t: t, tm: 'たった今', authorId: userId});
+    try { localStorage.setItem(userKey, JSON.stringify(own)); } catch(err) { console.error('[ONEs]', err); }
+    var shared = [];
+    try { shared = JSON.parse(localStorage.getItem('ones_shared_voices') || '[]'); } catch(err) { shared = []; }
+    shared.unshift({u: u, e: e, t: t, tm: 'たった今', authorId: userId});
+    try { localStorage.setItem('ones_shared_voices', JSON.stringify(shared)); } catch(err) { console.error('[ONEs]', err); }
+    closeSheet();
+    toast('💬 つぶやきを投稿しました！');
+    try { if(typeof cur !== 'undefined' && cur === 'voice' && typeof renderVoice === 'function') renderVoice(); } catch(err) { console.error(err); }
+    try { if(typeof renderTL === 'function') renderTL(); } catch(err) { console.error(err); }
+  } catch(err) {
+    console.error('[ONEs] postVoice:', err);
+    toast('❌ 投稿に失敗しました');
+  }
 }
 function postVoiceInline(){
-  const el=document.getElementById('vcin');
-  const t=el.value.trim();
-  if(!t){toast('テキストを入力してください');return;}
-  const u = currentUser?.name || 'ゲスト';
-  const e = currentUser?.emoji || '🙋';
-  const userKey = currentUser?.id ? 'ov_'+currentUser.id : 'ov';
-  const own = JSON.parse(localStorage.getItem(userKey) || '[]');
-  own.unshift({u, e, t, tm:'たった今', authorId:currentUser?.id});
-  localStorage.setItem(userKey, JSON.stringify(own));
-  const shared = JSON.parse(localStorage.getItem('ones_shared_voices') || '[]');
-  shared.unshift({u, e, t, tm:'たった今', authorId:currentUser?.id});
-  localStorage.setItem('ones_shared_voices', JSON.stringify(shared));
-  el.value='';
-  toast('💬 つぶやきを投稿しました！');
-  renderVoice();
-  renderTL();
+  try {
+    var el = document.getElementById('vcin');
+    if(!el) return;
+    var t = el.value ? el.value.trim() : '';
+    if(!t){ toast('テキストを入力してください'); return; }
+    var u = (currentUser && currentUser.name) ? currentUser.name : 'ゲスト';
+    var e = (currentUser && currentUser.emoji) ? currentUser.emoji : '🙋';
+    var userId = (currentUser && currentUser.id) ? currentUser.id : null;
+    var userKey = userId ? 'ov_'+userId : 'ov';
+    var own = [];
+    try { own = JSON.parse(localStorage.getItem(userKey) || '[]'); } catch(err) { own = []; }
+    own.unshift({u: u, e: e, t: t, tm: 'たった今', authorId: userId});
+    try { localStorage.setItem(userKey, JSON.stringify(own)); } catch(err) { console.error('[ONEs]', err); }
+    var shared = [];
+    try { shared = JSON.parse(localStorage.getItem('ones_shared_voices') || '[]'); } catch(err) { shared = []; }
+    shared.unshift({u: u, e: e, t: t, tm: 'たった今', authorId: userId});
+    try { localStorage.setItem('ones_shared_voices', JSON.stringify(shared)); } catch(err) { console.error('[ONEs]', err); }
+    el.value = '';
+    toast('💬 つぶやきを投稿しました！');
+    try { if(typeof renderVoice === 'function') renderVoice(); } catch(err) { console.error(err); }
+    try { if(typeof renderTL === 'function') renderTL(); } catch(err) { console.error(err); }
+  } catch(err) {
+    console.error('[ONEs] postVoiceInline:', err);
+    toast('❌ 投稿に失敗しました');
+  }
 }
 function likeThis(el){el.classList.toggle('lk');toast(el.classList.contains('lk')?'👍 いいねしました！':'いいねを取り消しました');}
 
@@ -3296,7 +3321,7 @@ function initApp(){
         // 招待者の絵文字を取得
         const members = JSON.parse(localStorage.getItem('ones_members') || '[]');
         const referrer = members.find(m => m.name === currentUser.invitedBy);
-        refAvatar.textContent = referrer?.emoji || '🙋';
+        refAvatar.textContent = (referrer && referrer.emoji) ? referrer.emoji : '🙋';
       }
     }
   }
@@ -3369,13 +3394,13 @@ checkSession();
 
         // ログイン用の表示を変更
         const inviteCard = document.querySelector('.inv-card');
-        const heading = inviteCard?.querySelector('h2');
+        const heading = inviteCard ? inviteCard.querySelector('h2') : null;
         if(heading) heading.innerHTML = '👋 おかえりなさい！';
 
-        const desc = inviteCard?.querySelector('p');
+        const desc = inviteCard ? inviteCard.querySelector('p') : null;
         if(desc) desc.innerHTML = '<strong style="color:#1e6e3a;">'+savedName+'</strong> さん、また会えて嬉しいです！<br>ボタンを押してONEsに入りましょう。';
 
-        const submitBtn = inviteCard?.querySelector('.inv-btn');
+        const submitBtn = inviteCard ? inviteCard.querySelector('.inv-btn') : null;
         if(submitBtn) submitBtn.textContent = 'ログインする →';
 
         toast('👋 おかえりなさい、'+savedName+'さん！');
