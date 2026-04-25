@@ -985,9 +985,9 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
         <div class="psh"><span class="t">👤 基本情報</span><a href="#" onclick="openEditProfile();return false;">編集</a></div>
         <div class="psb">
           <div class="pr"><div class="pk">ニックネーム</div><div class="pv" id="pvnick">BOSS YASU</div></div>
-          <div class="pr"><div class="pk">性別</div><div class="pv" id="pvgender">未設定</div></div>
-          <div class="pr"><div class="pk">居住地</div><div class="pv" id="pvloc">未設定</div></div>
-          <div class="pr"><div class="pk">職業</div><div class="pv" id="pvjob">未設定</div></div>
+          <div class="pr"><div class="pk">性別</div><div class="pv">男性</div></div>
+          <div class="pr"><div class="pk">居住地</div><div class="pv" id="pvloc">愛知県 名古屋市</div></div>
+          <div class="pr"><div class="pk">職業</div><div class="pv" id="pvjob">IT会社経営</div></div>
           <div class="pr"><div class="pk">招待者</div><div class="pv">🌱 創設メンバー（管理者）</div></div>
           <div class="pr"><div class="pk">登録日</div><div class="pv">2005年4月3日</div></div>
         </div>
@@ -2919,42 +2919,19 @@ async function renderWanmik(){
   if(dbReady() && currentUser && currentUser.id){
     try {
       var r1 = await sb.from('wanmik').select('*').eq('from_id',currentUser.id).eq('status','accepted');
-      if(!r1.error) {
-        accepted = [...accepted, ...(r1.data||[])];
-        wanmikQuerySuccess = true;
-      } else {
-        console.warn('[ONEs] wanmik r1 error:', r1.error);
-      }
+      if(!r1.error) { accepted = [...accepted, ...(r1.data||[])]; wanmikQuerySuccess = true; }
     } catch(e){ console.warn('[ONEs] wanmik r1:', e); }
-
     try {
       var r2 = await sb.from('wanmik').select('*').eq('to_id',currentUser.id).eq('status','accepted');
-      if(!r2.error) {
-        accepted = [...accepted, ...(r2.data||[])];
-        wanmikQuerySuccess = true;
-      } else {
-        console.warn('[ONEs] wanmik r2 error:', r2.error);
-      }
+      if(!r2.error) { accepted = [...accepted, ...(r2.data||[])]; wanmikQuerySuccess = true; }
     } catch(e){ console.warn('[ONEs] wanmik r2:', e); }
-
     try {
       var rps = await sb.from('wanmik').select('*').eq('from_id',currentUser.id).eq('status','pending');
-      if(!rps.error) {
-        pending_sent = rps.data || [];
-        wanmikQuerySuccess = true;
-      } else {
-        console.warn('[ONEs] wanmik rps error:', rps.error);
-      }
+      if(!rps.error) { pending_sent = rps.data || []; wanmikQuerySuccess = true; }
     } catch(e){ console.warn('[ONEs] wanmik rps:', e); }
-
     try {
       var rpr = await sb.from('wanmik').select('*').eq('to_id',currentUser.id).eq('status','pending');
-      if(!rpr.error) {
-        pending_recv = rpr.data || [];
-        wanmikQuerySuccess = true;
-      } else {
-        console.warn('[ONEs] wanmik rpr error:', rpr.error);
-      }
+      if(!rpr.error) { pending_recv = rpr.data || []; wanmikQuerySuccess = true; }
     } catch(e){ console.warn('[ONEs] wanmik rpr:', e); }
   }
 
@@ -2964,8 +2941,6 @@ async function renderWanmik(){
   }
 
   var html = '';
-
-  // 受け取った申請（承認ボタン付き）
   if(pending_recv.length > 0){
     html += '<div style="grid-column:1/-1;background:linear-gradient(135deg,#fef9e7,#fdf4d3);border:1.5px solid #f4d03f;border-radius:12px;padding:12px 14px;margin-bottom:4px;">';
     html += '<div style="font-size:13px;font-weight:700;color:#7d6608;margin-bottom:10px;">🔔 ワンミク申請が届いています（'+pending_recv.length+'件）</div>';
@@ -2981,7 +2956,6 @@ async function renderWanmik(){
     html += '</div>';
   }
 
-  // 承認済みワンミク
   accepted.forEach(function(w){
     var name  = w.from_id===currentUser.id ? w.to_name  : w.from_name;
     var emoji = w.from_id===currentUser.id ? (w.to_emoji||'🙋') : (w.from_emoji||'🙋');
@@ -2991,7 +2965,6 @@ async function renderWanmik(){
     html += '<div style="font-size:12px;font-weight:700;color:var(--text2);text-align:center;">'+escHtml(name)+'</div></div>';
   });
 
-  // 申請中（送った側）
   pending_sent.forEach(function(w){
     html += '<div style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 4px;background:#fff;border-radius:12px;box-shadow:var(--shadow);opacity:.55;">';
     html += '<div class="av al" style="'+AB+';border-radius:18px;">'+(w.to_emoji||'🙋')+'</div>';
@@ -3002,14 +2975,9 @@ async function renderWanmik(){
   if(accepted.length===0 && pending_sent.length===0 && pending_recv.length===0){
     html += '<div style="padding:40px;text-align:center;color:var(--text3);grid-column:1/-1;">まだワンミクがいません<br><span style="font-size:12px;">メンバーのプロフィールから申請しましょう</span></div>';
   }
-
   grid.innerHTML = html;
-
-  // ヘッダー人数更新
   var sh = document.querySelector('#pg-wanmik .sh');
   if(sh) sh.innerHTML = 'ワンミク（'+accepted.length+'人）';
-
-  // マイページ・サイドバーの数も更新
   var mpw = document.querySelector('.mps .n');
   if(mpw) mpw.textContent = accepted.length;
 }
@@ -3393,19 +3361,12 @@ async function likeThis(el, tableType, recordId) {
     var isLiked = el.classList.contains('lk');
     var countEl = el.querySelector('.like-count');
     var currentCount = countEl ? parseInt(countEl.textContent||'0') : 0;
-
     if(isLiked) {
-      // いいね取り消し
       el.classList.remove('lk');
       var newCount = Math.max(0, currentCount - 1);
       if(countEl) countEl.textContent = newCount;
       toast('いいねを取り消しました');
-
-      // Supabaseで減算
-      if(dbReady() && recordId && tableType) {
-        await sb.from(tableType).update({good: newCount}).eq('id', recordId);
-      }
-      // LocalStorageからも削除
+      if(dbReady() && recordId && tableType) await sb.from(tableType).update({good: newCount}).eq('id', recordId);
       if(currentUser && recordId) {
         var likeKey = 'ones_likes_'+currentUser.id;
         var likes = JSON.parse(localStorage.getItem(likeKey)||'[]');
@@ -3413,17 +3374,11 @@ async function likeThis(el, tableType, recordId) {
         localStorage.setItem(likeKey, JSON.stringify(likes));
       }
     } else {
-      // いいね追加
       el.classList.add('lk');
       var newCount = currentCount + 1;
       if(countEl) countEl.textContent = newCount;
       toast('👍 いいねしました！');
-
-      // Supabaseで加算
-      if(dbReady() && recordId && tableType) {
-        await sb.from(tableType).update({good: newCount}).eq('id', recordId);
-      }
-      // LocalStorageにも保存
+      if(dbReady() && recordId && tableType) await sb.from(tableType).update({good: newCount}).eq('id', recordId);
       if(currentUser && recordId) {
         var likeKey = 'ones_likes_'+currentUser.id;
         var likes = JSON.parse(localStorage.getItem(likeKey)||'[]');
@@ -3690,16 +3645,14 @@ async function openUserSheet(name, emoji) {
   }
 }
 
+// ワンミク申請
 async function requestWanmik(name) {
   try {
     if(!dbReady() || !currentUser || !currentUser.id){ toast('❌ 接続できません'); return; }
     if(name === currentUser.name){ toast('自分には申請できません'); return; }
-
     var targetResult = await sb.from('members').select('*').eq('name', name).maybeSingle();
     if(!targetResult.data){ toast('❌ メンバーが見つかりません'); closeSheet(); return; }
     var target = targetResult.data;
-
-    // 重複チェック（双方向）
     var dup = await sb.from('wanmik').select('*')
       .or('and(from_id.eq.'+currentUser.id+',to_id.eq.'+target.id+'),and(from_id.eq.'+target.id+',to_id.eq.'+currentUser.id+')')
       .maybeSingle();
@@ -3707,14 +3660,12 @@ async function requestWanmik(name) {
       if(dup.data.status==='accepted'){ toast('すでにワンミクです！'); closeSheet(); return; }
       if(dup.data.status==='pending'){  toast('すでに申請済みです'); closeSheet(); return; }
     }
-
     var ins = await sb.from('wanmik').insert({
       from_id: currentUser.id, from_name: currentUser.name, from_emoji: currentUser.emoji||'🙋',
       to_id: target.id, to_name: target.name, to_emoji: target.emoji||'🙋',
       status: 'pending'
     });
     if(ins.error){ toast('❌ 申請失敗: '+(ins.error.message||'')); return; }
-
     closeSheet();
     toast('🤝 '+name+'さんに申請しました！承認されるとワンミク成立です');
     if(typeof cur!=='undefined' && cur==='wanmik') renderWanmik();
@@ -4031,46 +3982,27 @@ function escHtml(str) {
 }
 function openMsgSheet(from,emoji,text){showSheet(from+'さんのメッセージ',`<div><div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;"><div class="av am" style="${AB}">${emoji}</div><div><div style="font-weight:700;color:var(--og3);">${from}</div><div style="font-size:11px;color:var(--text3);">ワンミク</div></div></div><div style="background:var(--og-pale);border-radius:12px;padding:14px;font-size:14px;color:var(--text);line-height:1.7;margin-bottom:16px;">${text}</div><textarea style="width:100%;background:var(--og-pale);border:1.5px solid var(--og-border);border-radius:12px;padding:12px;font-size:14px;font-family:inherit;outline:none;resize:none;height:90px;margin-bottom:10px;" placeholder="返信を入力..."></textarea><button class="bo" style="width:100%;" onclick="toast('返信を送信しました！');closeSheet()">送信する</button></div>`);}
 function openComposeMsg(to){showSheet('新しいメッセージ',`<div><div class="er"><label class="el">宛先</label><input class="ei" type="text" value="${to||''}" placeholder="ニックネームを入力"></div><div class="er"><label class="el">件名</label><input class="ei" type="text" placeholder="件名を入力"></div><div class="er"><label class="el">本文</label><textarea class="eta" placeholder="メッセージを入力してください..."></textarea></div><button class="bo" style="width:100%;" onclick="toast('メッセージを送信しました！');closeSheet()">送信する</button></div>`);}
-function openEditProfile(){
-  const nick = document.getElementById('pvnick').textContent;
-  const loc = document.getElementById('pvloc').textContent;
-  const job = document.getElementById('pvjob').textContent;
-  const gender = document.getElementById('pvgender').textContent;
-  const status = document.getElementById('mpstatus').textContent;
-  const gOpts = ['未設定','男性','女性','その他','回答しない'];
-  const gSel = gOpts.map(g=>`<option${g===gender?' selected':''}>${g}</option>`).join('');
-  showSheet('プロフィールを編集',`<div>
-    <div class="er"><label class="el">ニックネーム</label><input id="ep-nick" class="ei" type="text" value="${nick}"></div>
-    <div class="er"><label class="el">ひとこと</label><input id="ep-st" class="ei" type="text" value="${status}"></div>
-    <div class="er"><label class="el">性別</label><select id="ep-gender" class="ei">${gSel}</select></div>
-    <div class="er"><label class="el">居住地</label><input id="ep-loc" class="ei" type="text" placeholder="例：愛知県 名古屋市" value="${loc==='未設定'?'':loc}"></div>
-    <div class="er"><label class="el">職業</label><input id="ep-job" class="ei" type="text" placeholder="例：IT会社経営" value="${job==='未設定'?'':job}"></div>
-    <button class="bo" style="width:100%;" onclick="saveProfile()">保存する</button>
-  </div>`);
-}
+function openEditProfile(){const nick=document.getElementById('pvnick').textContent;const loc=document.getElementById('pvloc').textContent;const job=document.getElementById('pvjob').textContent;const status=document.getElementById('mpstatus').textContent;showSheet('プロフィールを編集',`<div><div class="er"><label class="el">ニックネーム</label><input id="ep-nick" class="ei" type="text" value="${nick}"></div><div class="er"><label class="el">ひとこと</label><input id="ep-st" class="ei" type="text" value="${status}"></div><div class="er"><label class="el">居住地</label><input id="ep-loc" class="ei" type="text" value="${loc}"></div><div class="er"><label class="el">職業</label><input id="ep-job" class="ei" type="text" value="${job}"></div><button class="bo" style="width:100%;" onclick="saveProfile()">保存する</button></div>`);}
 function openEditBio(){const cur=document.getElementById('pvbio').innerText;showSheet('自己紹介を編集',`<div><div class="er"><label class="el">自己紹介文</label><textarea id="ep-bio" class="eta" style="min-height:150px;">${cur}</textarea></div><button class="bo" style="width:100%;" onclick="saveBio()">保存する</button></div>`);}
 async function saveProfile(){
   try {
     const nick = document.getElementById('ep-nick').value.trim();
     const st = document.getElementById('ep-st').value.trim();
-    const gender = document.getElementById('ep-gender').value;
-    const loc = document.getElementById('ep-loc').value.trim() || '未設定';
-    const job = document.getElementById('ep-job').value.trim() || '未設定';
+    const loc = document.getElementById('ep-loc').value.trim();
+    const job = document.getElementById('ep-job').value.trim();
 
     if(!nick) { toast('ニックネームを入力してください'); return; }
-    if(/<|>|script|javascript:|on\w+=/i.test(nick + st + gender + loc + job)) {
+    if(/<|>|script|javascript:|on\w+=/i.test(nick + st + loc + job)) {
       toast('使用できない文字が含まれています'); return;
     }
 
     // 画面更新
     var pvnick = document.getElementById('pvnick');
-    var pvgender = document.getElementById('pvgender');
     var pvloc = document.getElementById('pvloc');
     var pvjob = document.getElementById('pvjob');
     var mpname = document.getElementById('mpname');
     var mpstatus = document.getElementById('mpstatus');
     if(pvnick) pvnick.textContent = nick;
-    if(pvgender) pvgender.textContent = gender;
     if(pvloc) pvloc.textContent = loc;
     if(pvjob) pvjob.textContent = job;
     if(mpname) mpname.textContent = nick;
@@ -4085,7 +4017,7 @@ async function saveProfile(){
     // LocalStorage にも保存（フォールバック）
     if(currentUser && currentUser.id) {
       var existing = JSON.parse(localStorage.getItem('ones_profile_'+currentUser.id) || '{}');
-      var profile = { nick: nick, status: st, gender: gender, loc: loc, job: job };
+      var profile = { nick: nick, status: st, loc: loc, job: job };
       localStorage.setItem('ones_profile_'+currentUser.id, JSON.stringify(Object.assign(existing, profile)));
     }
 
@@ -4094,7 +4026,6 @@ async function saveProfile(){
       var updateResult = await sb.from('members').update({
         name: nick,
         bio: st,
-        gender: gender,
         location: loc,
         job: job
       }).eq('id', currentUser.id);
@@ -4877,7 +4808,6 @@ function loadEvents() {
   try {
     var key = getEventsStorageKey();
     var raw = localStorage.getItem(key);
-    // 旧キー互換（初回のみ移行）
     if(raw === null) {
       var legacy = localStorage.getItem('ones_events');
       if(legacy !== null) {
@@ -5484,15 +5414,17 @@ function initApp(){
 
       const pvloc = document.getElementById('pvloc');
       const pvjob = document.getElementById('pvjob');
-      const pvgender = document.getElementById('pvgender');
       const pvbio = document.getElementById('pvbio');
       const mpstatus = document.getElementById('mpstatus');
 
-      if(pvgender) pvgender.textContent = savedProf.gender || '未設定';
       if(pvloc) pvloc.textContent = savedProf.loc || '未設定';
       if(pvjob) pvjob.textContent = savedProf.job || '未設定';
       if(pvbio) pvbio.innerHTML = savedProf.bio || '<span style="color:var(--text3);">プロフィールを編集して自己紹介を書きましょう ✏️</span>';
       if(mpstatus) mpstatus.textContent = savedProf.status || 'よろしくお願いします！';
+
+      // 性別を未設定に
+      const genderRow = document.querySelector('.pr:nth-child(2) .pv');
+      if(genderRow && !genderRow.id) genderRow.textContent = '未設定';
 
       // 招待者情報
       const invRow = document.querySelectorAll('.pr');
