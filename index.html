@@ -2871,82 +2871,76 @@ async function renderVoice(){
 async function renderWanmik(){
   var grid = document.getElementById('mxgrid');
   if(!grid) return;
-  grid.innerHTML = '<div style="padding:20px;color:var(--text3);text-align:center;">読み込み中...</div>';
+  grid.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text3);grid-column:1/-1;">読み込み中...</div>';
 
-  // 自分のワンミク一覧をSupabaseから取得
-  var wanmiks = [];
+  var accepted = [], pending_sent = [], pending_recv = [];
+
   if(dbReady() && currentUser && currentUser.id){
     try {
-      var r1 = await sb.from('wanmik').select('*').eq('from_id', currentUser.id).eq('status', 'accepted');
-      var r2 = await sb.from('wanmik').select('*').eq('to_id', currentUser.id).eq('status', 'accepted');
-      wanmiks = [].concat(r1.data || [], r2.data || []);
-    } catch(e){ console.error('[ONEs] renderWanmik accepted:', e); }
+      // 承認済み（双方向）
+      var r1 = await sb.from('wanmik').select('*').eq('from_id',currentUser.id).eq('status','accepted');
+      var r2 = await sb.from('wanmik').select('*').eq('to_id',currentUser.id).eq('status','accepted');
+      accepted = [...(r1.data||[]), ...(r2.data||[])];
+
+      // 申請中（自分が送った）
+      var rps = await sb.from('wanmik').select('*').eq('from_id',currentUser.id).eq('status','pending');
+      pending_sent = rps.data || [];
+
+      // 申請中（自分が受け取った）
+      var rpr = await sb.from('wanmik').select('*').eq('to_id',currentUser.id).eq('status','pending');
+      pending_recv = rpr.data || [];
+    } catch(e){ console.error('[ONEs] renderWanmik:',e); }
   }
 
-  // 申請中リストも取得して表示
-  var pending = [];
-  if(dbReady() && currentUser && currentUser.id){
-    try {
-      var rp = await sb.from('wanmik').select('*').eq('from_id', currentUser.id).eq('status', 'pending');
-      pending = rp.data || [];
-    } catch(e){ console.error('[ONEs] renderWanmik pending:', e); }
+  var html = '';
+
+  // 受け取った申請（承認ボタン付き）
+  if(pending_recv.length > 0){
+    html += '<div style="grid-column:1/-1;background:linear-gradient(135deg,#fef9e7,#fdf4d3);border:1.5px solid #f4d03f;border-radius:12px;padding:12px 14px;margin-bottom:4px;">';
+    html += '<div style="font-size:13px;font-weight:700;color:#7d6608;margin-bottom:10px;">🔔 ワンミク申請が届いています（'+pending_recv.length+'件）</div>';
+    pending_recv.forEach(function(w){
+      html += '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid rgba(0,0,0,.06);">';
+      html += '<div class="av am" style="'+AB+';flex-shrink:0;">'+(w.from_emoji||'🙋')+'</div>';
+      html += '<div style="flex:1;"><div style="font-size:13px;font-weight:700;">'+escHtml(w.from_name||'')+'</div><div style="font-size:11px;color:var(--text3);">ワンミク申請中</div></div>';
+      html += '<div style="display:flex;gap:6px;">';
+      html += '<button onclick="approveWanmik(\''+w.id+'\')" style="background:linear-gradient(135deg,#4cb87a,#218a4a);color:#fff;border:none;padding:8px 14px;border-radius:20px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;">✅ 承認</button>';
+      html += '<button onclick="rejectWanmik(\''+w.id+'\')" style="background:var(--og-pale);color:var(--text3);border:1.5px solid var(--og-border);padding:8px 14px;border-radius:20px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;">✕ 断る</button>';
+      html += '</div></div>';
+    });
+    html += '</div>';
   }
 
-  if(wanmiks.length === 0 && pending.length === 0){
-    grid.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3);grid-column:1/-1;">まだワンミクがいません</div>';
-    return;
+  // 承認済みワンミク
+  accepted.forEach(function(w){
+    var name  = w.from_id===currentUser.id ? w.to_name  : w.from_name;
+    var emoji = w.from_id===currentUser.id ? (w.to_emoji||'🙋') : (w.from_emoji||'🙋');
+    html += '<div style="display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;padding:12px 4px;background:#fff;border-radius:12px;box-shadow:var(--shadow);" onclick="openUserSheet(\''+esc(name)+'\',\''+emoji+'\')">';
+    html += '<div style="position:relative;"><div class="av al" style="'+AB+';border-radius:18px;">'+emoji+'</div>';
+    html += '<div style="position:absolute;bottom:2px;right:2px;width:12px;height:12px;background:#33cc44;border-radius:50%;border:2px solid #fff;"></div></div>';
+    html += '<div style="font-size:12px;font-weight:700;color:var(--text2);text-align:center;">'+escHtml(name)+'</div></div>';
+  });
+
+  // 申請中（送った側）
+  pending_sent.forEach(function(w){
+    html += '<div style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 4px;background:#fff;border-radius:12px;box-shadow:var(--shadow);opacity:.55;">';
+    html += '<div class="av al" style="'+AB+';border-radius:18px;">'+(w.to_emoji||'🙋')+'</div>';
+    html += '<div style="font-size:11px;font-weight:700;color:var(--text3);text-align:center;">'+escHtml(w.to_name||'')+'</div>';
+    html += '<div style="font-size:10px;color:var(--og);background:var(--og-pale);padding:2px 8px;border-radius:10px;">申請中</div></div>';
+  });
+
+  if(accepted.length===0 && pending_sent.length===0 && pending_recv.length===0){
+    html += '<div style="padding:40px;text-align:center;color:var(--text3);grid-column:1/-1;">まだワンミクがいません<br><span style="font-size:12px;">メンバーのプロフィールから申請しましょう</span></div>';
   }
 
-  // 相手のメンバー情報をまとめて取得
-  var otherIds = [];
-  wanmiks.forEach(function(w){
-    var oid = (w.from_id === currentUser.id) ? w.to_id : w.from_id;
-    if(oid) otherIds.push(oid);
-  });
-  pending.forEach(function(w){
-    if(w.to_id) otherIds.push(w.to_id);
-  });
-  otherIds = Array.from(new Set(otherIds));
+  grid.innerHTML = html;
 
-  var memberMap = {};
-  if(dbReady() && otherIds.length){
-    try {
-      var mr = await sb.from('members').select('id,name,emoji').in('id', otherIds);
-      (mr.data || []).forEach(function(m){ memberMap[m.id] = m; });
-    } catch(e){ console.error('[ONEs] renderWanmik members:', e); }
-  }
+  // ヘッダー人数更新
+  var sh = document.querySelector('#pg-wanmik .sh');
+  if(sh) sh.innerHTML = 'ワンミク（'+accepted.length+'人）';
 
-  var cards = [];
-
-  wanmiks.forEach(function(w){
-    var oid = (w.from_id === currentUser.id) ? w.to_id : w.from_id;
-    var fallbackName = (w.from_id === currentUser.id) ? (w.to_name || 'メンバー') : (w.from_name || 'メンバー');
-    var fallbackEmoji = (w.from_id === currentUser.id) ? (w.to_emoji || '🙋') : (w.from_emoji || '🙋');
-    var m = memberMap[oid] || {};
-    var name = m.name || fallbackName || 'メンバー';
-    var emoji = m.emoji || fallbackEmoji || '🙋';
-    cards.push(
-      '<div style="display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;padding:12px 4px;background:#fff;border-radius:12px;box-shadow:var(--shadow);" onclick="openUserSheet(\''+esc(name)+'\',\''+emoji+'\')">'+
-      '<div style="position:relative;"><div class="av al" style="'+AB+';border-radius:18px;">'+emoji+'</div><div style="position:absolute;bottom:2px;right:2px;width:12px;height:12px;background:#33cc44;border-radius:50%;border:2px solid #fff;"></div></div>'+
-      '<div style="font-size:12px;font-weight:700;color:var(--text2);text-align:center;">'+escHtml(name)+'</div>'+
-      '</div>'
-    );
-  });
-
-  pending.forEach(function(w){
-    var m = memberMap[w.to_id] || {};
-    var name = m.name || w.to_name || 'メンバー';
-    var emoji = m.emoji || w.to_emoji || '🙋';
-    cards.push(
-      '<div style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 4px;background:#fff8ee;border-radius:12px;box-shadow:var(--shadow);">'+
-      '<div style="position:relative;"><div class="av al" style="'+AB+';border-radius:18px;">'+emoji+'</div></div>'+
-      '<div style="font-size:12px;font-weight:700;color:var(--text2);text-align:center;">'+escHtml(name)+'</div>'+
-      '<div style="font-size:10px;color:#e67e22;font-weight:700;">申請中</div>'+
-      '</div>'
-    );
-  });
-
-  grid.innerHTML = cards.join('');
+  // マイページ・サイドバーの数も更新
+  var mpw = document.querySelector('.mps .n');
+  if(mpw) mpw.textContent = accepted.length;
 }
 function renderFP(){document.getElementById('fplist').innerHTML=FP.map(u=>`<div style="display:flex;gap:12px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--og-pale);cursor:pointer;" onclick="openUserSheet('${esc(u.n)}','${u.e}')"><div class="sring" style="width:50px;height:50px;flex-shrink:0;"><div class="sinn" style="font-size:24px;">${u.e}</div></div><div style="flex:1;"><div style="font-size:14px;font-weight:700;">${u.n}</div><div style="font-size:12px;color:var(--text3);">訪問 ${u.t}</div></div><button class="bos" onclick="event.stopPropagation();">プロフィール</button></div>`).join('');}
 async function renderCM(){
@@ -3098,6 +3092,28 @@ async function createCommunity() {
 }
 function renderMsgs(){document.getElementById('msglist').innerHTML=MSG.map(m=>`<div class="mlit ${m.u?'unrd':''}" onclick="openMsgSheet('${esc(m.f)}','${m.e}','${esc(m.t)}')"><div class="av as" style="${AB}">${m.e}</div><div style="flex:1;min-width:0;"><div class="mlfrom">${m.f}</div><div class="mlprev">${m.t}</div></div><div class="mldate">${m.d}</div></div>`).join('');}
 function renderNT(id,list){const el=document.getElementById(id);if(!el)return;el.innerHTML=list.map(n=>`<div class="nti"><div class="ntd ${n.type||'old'}"></div><div><div class="ntt">${n.t}</div><div class="ntm">${n.tm}</div></div></div>`).join('');}
+async function loadWanmikNotices(){
+  if(!dbReady() || !currentUser || !currentUser.id) return;
+  try {
+    var r = await sb.from('wanmik').select('*').eq('to_id',currentUser.id).eq('status','pending');
+    var list = r.data || [];
+    if(list.length === 0) return;
+    var el = document.getElementById('ntlist');
+    if(!el) return;
+    var notices = list.map(function(w){
+      return '<div class="nti" style="background:var(--og-pale);border-radius:10px;padding:10px 12px;margin-bottom:8px;">'+
+        '<div class="ntd new"></div>'+
+        '<div style="flex:1;">'+
+          '<div class="ntt"><strong>'+escHtml(w.from_name||'')+'</strong>さんからワンミク申請が届いています</div>'+
+          '<div style="display:flex;gap:8px;margin-top:8px;">'+
+            '<button onclick="approveWanmik(\''+w.id+'\')" style="background:var(--og);color:#fff;border:none;padding:7px 16px;border-radius:16px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;">✅ 承認する</button>'+
+            '<button onclick="rejectWanmik(\''+w.id+'\')" style="background:var(--og-pale);color:var(--text3);border:1.5px solid var(--og-border);padding:7px 16px;border-radius:16px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;">✕ 断る</button>'+
+          '</div>'+
+        '</div></div>';
+    }).join('');
+    el.innerHTML = notices + el.innerHTML;
+  } catch(e){ console.error('[ONEs] loadWanmikNotices:',e); }
+}
 function renderMpDiary(){const all=[...ld('od'),...DI];document.getElementById('mpdiary').innerHTML=all.slice(0,4).map(d=>`<div style="padding:8px 0;border-bottom:1px solid var(--og-pale);cursor:pointer;" onclick="openDiarySheet('${esc(d.title)}')"><div style="font-size:13px;font-weight:700;color:var(--og3);">${d.title}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${d.date}&nbsp;💬${d.comments||0}&nbsp;👍${d.good||0}</div></div>`).join('');}
 function renderCal(){const y=2024,m=2,first=new Date(y,m,1).getDay(),last=new Date(y,m+1,0).getDate(),tod=15,ev=[8,10,15,22];let h=`<div class="calhd"><button>◀</button><span class="calt">${y}年${m+1}月</span><button>▶</button></div><div class="calg">`;['日','月','火','水','木','金','土'].forEach(d=>{h+=`<div class="cdow">${d}</div>`;});for(let i=0;i<first;i++)h+=`<div class="cd oth"></div>`;for(let d=1;d<=last;d++){const c=d===tod?'tod':ev.includes(d)?'hev':'';h+=`<div class="cd ${c}">${d}</div>`;}h+='</div>';document.getElementById('calel').innerHTML=h;}
 function renderSide(){
@@ -3135,7 +3151,7 @@ function nav(name,el){
     try { if(name==='footprint' && typeof renderFP === 'function') renderFP(); } catch(e) { console.error(e); }
     try { if(name==='community' && typeof renderCM === 'function') renderCM(); } catch(e) { console.error(e); }
     try { if(name==='message' && typeof renderMsgs === 'function') renderMsgs(); } catch(e) { console.error(e); }
-    try { if(name==='notice' && typeof renderNT === 'function') renderNT('ntlist',NT); } catch(e) { console.error(e); }
+    if(name==='notice'){ try { renderNT('ntlist',NT); loadWanmikNotices(); } catch(e){} }
   if(name==='mypage'){
     renderMpDiary();
     try { renderMypagePhotos(); } catch(e) { console.error(e); }
@@ -3556,77 +3572,54 @@ async function openUserSheet(name, emoji) {
   }
 }
 
-// ワンミク申請
 async function requestWanmik(name) {
   try {
-    if(!currentUser || !currentUser.id) {
-      toast('❌ ログイン情報がありません');
-      return;
-    }
-    if(!dbReady()) {
-      toast('❌ 接続できません');
-      return;
+    if(!dbReady() || !currentUser || !currentUser.id){ toast('❌ 接続できません'); return; }
+    if(name === currentUser.name){ toast('自分には申請できません'); return; }
+
+    var targetResult = await sb.from('members').select('*').eq('name', name).maybeSingle();
+    if(!targetResult.data){ toast('❌ メンバーが見つかりません'); closeSheet(); return; }
+    var target = targetResult.data;
+
+    // 重複チェック（双方向）
+    var dup = await sb.from('wanmik').select('*')
+      .or('and(from_id.eq.'+currentUser.id+',to_id.eq.'+target.id+'),and(from_id.eq.'+target.id+',to_id.eq.'+currentUser.id+')')
+      .maybeSingle();
+    if(dup.data){
+      if(dup.data.status==='accepted'){ toast('すでにワンミクです！'); closeSheet(); return; }
+      if(dup.data.status==='pending'){  toast('すでに申請済みです'); closeSheet(); return; }
     }
 
-    // 申請先ユーザーを取得
-    var toRes = await sb.from('members').select('id,name,emoji').eq('name', name).maybeSingle();
-    if(toRes.error || !toRes.data) {
-      toast('❌ 申請先ユーザーが見つかりません');
-      return;
-    }
-    var target = toRes.data;
-
-    if(target.id === currentUser.id) {
-      toast('自分には申請できません');
-      return;
-    }
-
-    // 既存レコード重複チェック（順不同）
-    var ex1 = await sb.from('wanmik').select('id,status').eq('from_id', currentUser.id).eq('to_id', target.id).maybeSingle();
-    var ex2 = await sb.from('wanmik').select('id,status').eq('from_id', target.id).eq('to_id', currentUser.id).maybeSingle();
-    var exists = ex1.data || ex2.data;
-    if(exists) {
-      if(exists.status === 'accepted') toast('すでにワンミクです');
-      else toast('すでに申請済みです');
-      closeSheet();
-      if(cur === 'wanmik') renderWanmik();
-      return;
-    }
-
-    // Supabaseに保存
     var ins = await sb.from('wanmik').insert({
-      from_id: currentUser.id,
-      from_name: currentUser.name || 'メンバー',
-      from_emoji: currentUser.emoji || '🙋',
-      to_id: target.id,
-      to_name: target.name || name,
-      to_emoji: target.emoji || '🙋',
+      from_id: currentUser.id, from_name: currentUser.name, from_emoji: currentUser.emoji||'🙋',
+      to_id: target.id, to_name: target.name, to_emoji: target.emoji||'🙋',
       status: 'pending'
     });
-    if(ins.error) {
-      console.error('[ONEs] requestWanmik insert:', ins.error);
-      toast('❌ 送信に失敗しました');
-      return;
-    }
-
-    // 既存のローカル保存も互換維持
-    var requestKey = 'ones_wanmik_request_' + currentUser.id;
-    var requests = [];
-    try { requests = JSON.parse(localStorage.getItem(requestKey) || '[]'); } catch(e) {}
-    if(requests.indexOf(name) === -1) {
-      requests.push(name);
-      try { localStorage.setItem(requestKey, JSON.stringify(requests)); } catch(e) {}
-    }
+    if(ins.error){ toast('❌ 申請失敗: '+(ins.error.message||'')); return; }
 
     closeSheet();
-    toast('🤝 '+name+'さんにワンミク申請を送りました！');
+    toast('🤝 '+name+'さんに申請しました！承認されるとワンミク成立です');
+    if(typeof cur!=='undefined' && cur==='wanmik') renderWanmik();
+  } catch(e){ console.error('[ONEs] requestWanmik:',e); toast('❌ エラーが発生しました'); }
+}
 
-    // 申請後に再描画
-    if(cur === 'wanmik') await renderWanmik();
-  } catch(e) {
-    console.error('[ONEs] requestWanmik:', e);
-    toast('❌ 送信に失敗しました');
-  }
+async function approveWanmik(wanmikId){
+  try {
+    var r = await sb.from('wanmik').update({status:'accepted'}).eq('id',wanmikId);
+    if(r.error){ toast('❌ 承認に失敗しました'); return; }
+    toast('🤝 ワンミク成立！');
+    renderWanmik();
+  } catch(e){ toast('❌ エラーが発生しました'); }
+}
+
+async function rejectWanmik(wanmikId){
+  if(!confirm('この申請を断りますか？')) return;
+  try {
+    var r = await sb.from('wanmik').update({status:'rejected'}).eq('id',wanmikId);
+    if(r.error){ toast('❌ 処理に失敗しました'); return; }
+    toast('申請を断りました');
+    renderWanmik();
+  } catch(e){ toast('❌ エラーが発生しました'); }
 }
 async function openCmSheet(name){
   try {
