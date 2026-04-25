@@ -118,10 +118,12 @@ async function dbCreateMember(memberData) {
       return { data: null, error: memberErr };
     }
 
-    // 2. 招待コードを使用済みに
-    await sb.from('invite_codes')
-      .update({ status: 'used', used_by: memberData.name })
-      .eq('code', memberData.code);
+    // 2. 招待コードを使用済みに（ただしBOSS YASUのマスターコードはそのまま）
+    if(memberData.code !== 'ONES-7X3K') {
+      await sb.from('invite_codes')
+        .update({ status: 'used', used_by: memberData.name })
+        .eq('code', memberData.code);
+    }
 
     // 3. 自分の新しい招待コードを発行
     await sb.from('invite_codes').insert({
@@ -2135,8 +2137,35 @@ async function joinWithCode(){
       return;
     }
 
-    // ===== 既にコードが使用済み = 既存メンバーのログイン =====
-    if(code.status === 'used') {
+    // ===== 管理者（BOSS YASU）のマスターコードは何人でも使用可能 =====
+    var isAdminMasterCode = (code.issued_by_id === 'm001');
+
+    if(isAdminMasterCode) {
+      // 入力されたニックネームでメンバーを検索
+      var existingResult = await sb.from('members').select('*').eq('name', name).maybeSingle();
+
+      if(existingResult.data) {
+        // 既存メンバー = 再ログイン
+        var existingMember = existingResult.data;
+        localStorage.removeItem('ones_join_attempts_'+raw);
+        currentUser = {
+          id: existingMember.id,
+          name: existingMember.name,
+          emoji: existingMember.emoji || '🙋',
+          role: existingMember.role || 'member',
+          code: existingMember.my_code || existingMember.code,
+          usedCode: existingMember.code,
+          invitedBy: existingMember.invited_by,
+          joinDate: existingMember.join_date
+        };
+        saveSession(currentUser);
+        enterApp();
+        setTimeout(function(){ toast('👋 おかえりなさい、'+name+'さん！'); }, 300);
+        return;
+      }
+      // 既存メンバーじゃなければ新規登録に進む（下記のコードで処理）
+    } else if(code.status === 'used') {
+      // ===== 既にコードが使用済み = 既存メンバーのログイン =====
       // 該当メンバーを名前で検索
       const memberResult = await dbFindMember(code.issued_by_id, name);
       const existingMember = memberResult.data;
