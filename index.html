@@ -1446,7 +1446,7 @@ async function showBossYasuLogin() {
   if(checkYasuPass(inputHash)) {
     resetLoginAttempts();
     currentUser = {id:'m001', name:'BOSS YASU', emoji:'😊', role:'admin'};
-    localStorage.setItem('ones_session', JSON.stringify(currentUser));
+    saveSession(currentUser);
     document.getElementById('invite-screen').style.display = 'none';
     document.getElementById('body').style.display = '';
     document.getElementById('bnav').style.display = '';
@@ -1467,15 +1467,16 @@ async function showBossYasuLogin() {
 function logoutApp(){
   if(!confirm('ログアウトしますか？\n（次回は招待コードを手動で入力する必要があります）')) return;
 
-  // セッションと認証情報を完全に削除
+  // セッションと認証情報を完全に削除（LocalStorage / SessionStorage / Cookie 全部）
   try { localStorage.removeItem('ones_session'); } catch(e) {}
+  try { sessionStorage.removeItem('ones_session'); } catch(e) {}
+  try { deleteCookie('ones_session'); } catch(e) {}
   try { localStorage.removeItem('ones_my_invite_code'); } catch(e) {}
   try { localStorage.removeItem('ones_my_nickname'); } catch(e) {}
   try { localStorage.removeItem('ones_my_member_id'); } catch(e) {}
   try { localStorage.removeItem('ones_admin_unlocked_at'); } catch(e) {}
   try { localStorage.removeItem('ones_current_photo'); } catch(e) {}
 
-  // 写真は member データに残るので、emoji/IDキャッシュなど揮発系のみ削除
   console.log('[ONEs] ログアウト完了 - 認証情報をすべて削除しました');
 
   location.reload();
@@ -1500,10 +1501,32 @@ function integrityCheck() {
   const sess = safeJsonParse(safeGet('ones_session'), null);
   if(sess && sess.id && sess.id !== 'm001') {
     const members = safeJsonParse(safeGet('ones_members'), []);
+
+    // メンバーリストが空の場合は何もしない（DEMO_MEMBERSがロードされる前の可能性）
+    if(members.length === 0) {
+      console.log('[ONEs] メンバーリストが空 - セッションを保持');
+      return;
+    }
+
     const member = members.find(m => m.id === sess.id);
     if(!member) {
-      console.warn('[ONEs] セッションは存在するがメンバーが見つかりません。セッションをクリア');
-      try { localStorage.removeItem('ones_session'); } catch(e) {}
+      // メンバーが見つからない場合、セッション情報からメンバーを復元
+      console.warn('[ONEs] メンバーが見つかりません - セッションから復元します');
+      members.push({
+        id: sess.id,
+        name: sess.name,
+        emoji: sess.emoji || '🙋',
+        code: sess.code,
+        invitedBy: sess.invitedBy,
+        invitedById: null,
+        joinDate: sess.joinDate || new Date().toISOString().slice(0,10),
+        status: 'active',
+        role: sess.role || 'member'
+      });
+      try {
+        localStorage.setItem('ones_members', JSON.stringify(members));
+        console.log('[ONEs] メンバー復元完了');
+      } catch(e) { console.error(e); }
     }
   }
 
@@ -1518,6 +1541,88 @@ function integrityCheck() {
 }
 
 /* ══════════ 安全アクセス ヘルパー ══════════ */
+
+// Cookie 保存・読み込み（LocalStorage が消える対策）
+function setCookie(name, value, days) {
+  try {
+    days = days || 365;
+    var expires = new Date();
+    expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
+    document.cookie = name + '=' + encodeURIComponent(value) + ';expires=' + expires.toUTCString() + ';path=/;SameSite=Lax';
+    return true;
+  } catch(e) {
+    console.error('[ONEs] setCookie error:', e);
+    return false;
+  }
+}
+
+function getCookie(name) {
+  try {
+    var nameEQ = name + '=';
+    var ca = document.cookie.split(';');
+    for(var i = 0; i < ca.length; i++) {
+      var c = ca[i].trim();
+      if(c.indexOf(nameEQ) === 0) {
+        return decodeURIComponent(c.substring(nameEQ.length));
+      }
+    }
+    return null;
+  } catch(e) {
+    console.error('[ONEs] getCookie error:', e);
+    return null;
+  }
+}
+
+function deleteCookie(name) {
+  try {
+    document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+  } catch(e) {}
+}
+
+// セッションを LocalStorage と Cookie の両方に保存
+function saveSession(user) {
+  try {
+    var json = JSON.stringify(user);
+    try { localStorage.setItem('ones_session', json); } catch(e) {}
+    try { sessionStorage.setItem('ones_session', json); } catch(e) {}
+    setCookie('ones_session', json, 365);
+    return true;
+  } catch(e) {
+    console.error('[ONEs] saveSession error:', e);
+    return false;
+  }
+}
+
+// 複数の場所からセッション復元を試みる
+function restoreSession() {
+  var sess = null;
+
+  // 1. LocalStorage から
+  try { sess = localStorage.getItem('ones_session'); } catch(e) {}
+  if(sess) { console.log('[ONEs] セッション復元: LocalStorage'); return sess; }
+
+  // 2. SessionStorage から
+  try { sess = sessionStorage.getItem('ones_session'); } catch(e) {}
+  if(sess) {
+    console.log('[ONEs] セッション復元: SessionStorage');
+    // LocalStorageにも保存
+    try { localStorage.setItem('ones_session', sess); } catch(e) {}
+    return sess;
+  }
+
+  // 3. Cookie から
+  sess = getCookie('ones_session');
+  if(sess) {
+    console.log('[ONEs] セッション復元: Cookie');
+    // LocalStorageにも保存
+    try { localStorage.setItem('ones_session', sess); } catch(e) {}
+    return sess;
+  }
+
+  return null;
+}
+
+
 
 // LocalStorage 安全な読み込み
 function safeGet(key, defaultVal=null) {
@@ -1610,17 +1715,32 @@ function checkSession(){
     return;
   }
 
-  const sess = safeGet('ones_session');
+  const sess = restoreSession();
   console.log('[ONEs] セッション確認:', sess ? '存在' : 'なし');
 
   if(sess){
     try {
       currentUser = safeJsonParse(sess, null);
-      if(!currentUser || !currentUser.id || !currentUser.name) {
-        console.warn('[ONEs] セッションが不完全です。クリアします');
+
+      // セッションのID、nameのどちらかがあれば復元する（過去のバグ対応）
+      if(!currentUser) {
+        console.warn('[ONEs] セッションのパースに失敗');
+        return;
+      }
+      if(!currentUser.id && !currentUser.name) {
+        console.warn('[ONEs] セッションが完全に空です。クリアします');
         try { localStorage.removeItem('ones_session'); } catch(e) {}
         return;
       }
+      // ID もしくは name がない場合は補完
+      if(!currentUser.id) currentUser.id = 'm' + Date.now();
+      if(!currentUser.name) currentUser.name = 'メンバー';
+      if(!currentUser.role) currentUser.role = 'member';
+      if(!currentUser.emoji) currentUser.emoji = '🙋';
+
+      // 修正情報を保存
+      try { saveSession(currentUser); } catch(e) {}
+
       console.log('[ONEs] 自動ログイン:', currentUser.name);
 
       const inv = document.getElementById('invite-screen');
@@ -1641,7 +1761,7 @@ function checkSession(){
       }
     } catch(e) {
       console.error('[ONEs] セッション読み込みエラー:', e);
-      try { localStorage.removeItem('ones_session'); } catch(err) {}
+      // エラーの場合でもセッションは消さない（次回のリトライで成功する可能性）
     }
   }
 }
@@ -1728,7 +1848,7 @@ function joinWithCode(){
       invitedBy: existingMember.invitedBy,
       joinDate: existingMember.joinDate
     };
-    localStorage.setItem('ones_session', JSON.stringify(currentUser));
+    saveSession(currentUser);
     localStorage.setItem('ones_my_invite_code', raw);
     localStorage.setItem('ones_my_nickname', name);
     localStorage.setItem('ones_my_member_id', existingMember.id);
@@ -1763,7 +1883,7 @@ function joinWithCode(){
 
   // 自動ログイン
   currentUser = {id:newId, name, emoji:'🎉', role:'member', code: newCode, invitedBy: referrer?referrer.name:null, joinDate: new Date().toISOString().slice(0,10)};
-  localStorage.setItem('ones_session', JSON.stringify(currentUser));
+  saveSession(currentUser);
 
   // 2回目以降のログイン用に招待コードとニックネームを保存
   localStorage.setItem('ones_my_invite_code', raw);
@@ -1820,7 +1940,7 @@ async function showAdminLogin(){
     resetLoginAttempts();
     setAdminUnlocked();
     currentUser = {id:'m001', name:'BOSS YASU', emoji:'😊', role:'admin'};
-    localStorage.setItem('ones_session', JSON.stringify(currentUser));
+    saveSession(currentUser);
     document.getElementById('invite-screen').style.display = 'none';
     document.getElementById('body').style.display = '';
     document.getElementById('bnav').style.display = '';
@@ -2802,7 +2922,7 @@ function saveProfile(){
     localStorage.setItem('ones_profile_'+currentUser.id, JSON.stringify({...existing, ...profile}));
     // currentUserのnameも更新
     currentUser.name = nick;
-    localStorage.setItem('ones_session', JSON.stringify(currentUser));
+    saveSession(currentUser);
   }
 
   closeSheet();
