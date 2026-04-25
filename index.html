@@ -2693,6 +2693,20 @@ function shareInviteQR() {
   }
 }
 
+function sharePost(text, url) {
+  var shareText = text || 'ONEsの投稿をシェア';
+  var shareUrl  = url  || 'https://brandyou.love';
+  if(navigator.share) {
+    navigator.share({ title: 'ONEs', text: shareText, url: shareUrl }).catch(function(){});
+  } else {
+    navigator.clipboard.writeText(shareUrl).then(function(){
+      toast('📋 URLをコピーしました');
+    }).catch(function(){
+      toast(shareUrl);
+    });
+  }
+}
+
 /* ══════════ APP RENDERS ══════════ */
 function myAvHtml(size){
   size = size || 'am';
@@ -2748,7 +2762,14 @@ async function renderTL(){
       var excerpt = (d.body || d.excerpt || '').slice(0, 70);
       var isMe = currentUser && (d.author_id === currentUser.id || diaryAuthor === currentUser.name);
       var avHtml = isMe ? myAvHtml('am') : '<div class="av am" style="'+AB+'">'+diaryEmoji+'</div>';
-      h += '<div class="fc"><div class="fch">'+avHtml+'<div class="fui"><div class="fname">'+escHtml(diaryAuthor)+'</div><div class="fsub">'+dateStr+'&nbsp;<span class="fbadge bd">日記</span></div></div></div><div class="fcb"><div class="ftit" onclick="openDiarySheet(\''+esc(d.title)+'\')">'+escHtml(d.title)+'</div><div class="ftxt">'+escHtml(excerpt)+(excerpt.length >= 70 ? '…' : '')+'</div></div><div class="fcf"><div class="fbtn" onclick="likeThis(this)">👍 '+(d.good||0)+'</div><div class="fbtn">💬 '+(d.comments_count||0)+'件</div><div class="fbtn">↗️ シェア</div></div></div>';
+      var userId = currentUser ? currentUser.id : '';
+      var recId = d.id || '';
+      var likeKey = userId ? 'ones_likes_'+userId : '';
+      var likedList = likeKey ? JSON.parse(localStorage.getItem(likeKey)||'[]') : [];
+      var isLiked = recId && likedList.indexOf(recId) !== -1;
+      var likeCount = d.good || 0;
+      var diaryTitleEsc = esc(d.title || '');
+      h += '<div class="fc"><div class="fch">'+avHtml+'<div class="fui"><div class="fname">'+escHtml(diaryAuthor)+'</div><div class="fsub">'+dateStr+'&nbsp;<span class="fbadge bd">日記</span></div></div></div><div class="fcb"><div class="ftit" onclick="openDiarySheet(\''+diaryTitleEsc+'\')">'+escHtml(d.title)+'</div><div class="ftxt">'+escHtml(excerpt)+(excerpt.length >= 70 ? '…' : '')+'</div></div><div class="fcf"><div class="fbtn'+(isLiked?' lk':'')+'" onclick="likeThis(this,\'diaries\',\''+recId+'\')">👍 <span class="like-count">'+likeCount+'</span></div><div class="fbtn" onclick="openDiarySheet(\''+diaryTitleEsc+'\')">💬 '+(d.comments_count||0)+'件</div><div class="fbtn" onclick="sharePost(\''+diaryTitleEsc+'\')">↗️ シェア</div></div></div>';
     });
 
     // 写真（最大3件）
@@ -2764,7 +2785,13 @@ async function renderTL(){
       var caption = captionTxt ? '<div class="ftxt" style="padding:8px 0 4px;">'+escHtml(captionShort)+'</div>' : '';
       var pAuthorEsc = esc(photoAuthor);
       var pAvHtml = isMe ? myAvHtml('am') : '<div class="av am" style="'+AB+';cursor:pointer;" onclick="openUserSheet(\''+pAuthorEsc+'\',\''+photoEmoji+'\')">'+photoEmoji+'</div>';
-      h += '<div class="fc"><div class="fch">'+pAvHtml+'<div class="fui"><div class="fname" '+(isMe?'':'style="cursor:pointer;" onclick="openUserSheet(\''+pAuthorEsc+'\',\''+photoEmoji+'\')"')+'>'+escHtml(photoAuthor)+'</div><div class="fsub">'+timeAgoStr(ts)+'&nbsp;<span class="fbadge" style="background:#fef3c7;color:#92400e;">📷 フォト</span></div></div></div><div class="fcb"><img src="'+photoUrl+'" style="width:100%;max-height:300px;object-fit:cover;border-radius:8px;">'+caption+'</div><div class="fcf"><div class="fbtn" onclick="likeThis(this)">👍 '+(p.good||0)+'</div><div class="fbtn">💬 0件</div><div class="fbtn">↗️ シェア</div></div></div>';
+      var userId = currentUser ? currentUser.id : '';
+      var likeKey = userId ? 'ones_likes_'+userId : '';
+      var likedList = likeKey ? JSON.parse(localStorage.getItem(likeKey)||'[]') : [];
+      var recId = p.id || '';
+      var isLikedP = recId && likedList.indexOf(recId) !== -1;
+      var sharePhotoUrl = p.photo_url || '';
+      h += '<div class="fc"><div class="fch">'+pAvHtml+'<div class="fui"><div class="fname" '+(isMe?'':'style="cursor:pointer;" onclick="openUserSheet(\''+pAuthorEsc+'\',\''+photoEmoji+'\')"')+'>'+escHtml(photoAuthor)+'</div><div class="fsub">'+timeAgoStr(ts)+'&nbsp;<span class="fbadge" style="background:#fef3c7;color:#92400e;">📷 フォト</span></div></div></div><div class="fcb"><img src="'+photoUrl+'" style="width:100%;max-height:300px;object-fit:cover;border-radius:8px;">'+caption+'</div><div class="fcf"><div class="fbtn'+(isLikedP?' lk':'')+'" onclick="likeThis(this,\'photos\',\''+recId+'\')">👍 <span class="like-count">'+(p.good||0)+'</span></div><div class="fbtn" onclick="toast(\'💬 コメント機能は準備中です\')">💬 0件</div><div class="fbtn" onclick="sharePost(\'\',\''+esc(sharePhotoUrl)+'\')">↗️ シェア</div></div></div>';
     });
 
     // つぶやき（最大5件）
@@ -2775,7 +2802,12 @@ async function renderTL(){
       var ts = v.created_at ? new Date(v.created_at).getTime() : (v.ts || (v.tm === 'たった今' ? Date.now() : Date.now() - 60000));
       var isMe = currentUser && (v.author_id === currentUser.id || voiceAuthor === currentUser.name);
       var avHtml = isMe ? myAvHtml('am') : '<div class="av am" style="'+AB+'" onclick="openUserSheet(\''+esc(voiceAuthor)+'\',\''+voiceEmoji+'\')">'+voiceEmoji+'</div>';
-      h += '<div class="fc"><div class="fch">'+avHtml+'<div class="fui"><div class="fname">'+escHtml(voiceAuthor)+'</div><div class="fsub">'+timeAgoStr(ts)+'&nbsp;<span class="fbadge bv">つぶやき</span></div></div></div><div class="fcb"><div class="ftxt" style="padding-bottom:2px;">'+escHtml(voiceBody)+'</div></div><div class="fcf"><div class="fbtn" onclick="likeThis(this)">👍 いいね</div><div class="fbtn">💬 返信</div><div class="fbtn">↗️ シェア</div></div></div>';
+      var userId = currentUser ? currentUser.id : '';
+      var likeKey = userId ? 'ones_likes_'+userId : '';
+      var likedList = likeKey ? JSON.parse(localStorage.getItem(likeKey)||'[]') : [];
+      var recId = v.id || '';
+      var isLikedV = recId && likedList.indexOf(recId) !== -1;
+      h += '<div class="fc"><div class="fch">'+avHtml+'<div class="fui"><div class="fname">'+escHtml(voiceAuthor)+'</div><div class="fsub">'+timeAgoStr(ts)+'&nbsp;<span class="fbadge bv">つぶやき</span></div></div></div><div class="fcb"><div class="ftxt" style="padding-bottom:2px;">'+escHtml(voiceBody)+'</div></div><div class="fcf"><div class="fbtn'+(isLikedV?' lk':'')+'" onclick="likeThis(this,\'voices\',\''+recId+'\')">👍 <span class="like-count">'+(v.good||0)+'</span></div><div class="fbtn" onclick="toast(\'💬 返信機能は準備中です\')">💬 返信</div><div class="fbtn" onclick="sharePost(\''+esc(voiceBody)+'\')">↗️ シェア</div></div></div>';
     });
 
     if(tlEl) tlEl.innerHTML = h || '<div style="padding:40px;text-align:center;color:var(--text3);">まだ投稿がありません<br><span style="font-size:12px;">最初の投稿をしてみましょう！</span></div>';
@@ -2836,7 +2868,11 @@ async function renderDiary(){
       var isMe = currentUser && (d.author_id === currentUser.id || dauthor === currentUser.name);
       var avHtml = isMe ? myAvHtml('as') : '<div class="av as" style="'+AB+'">'+demoji+'</div>';
       var titleEsc = esc(d.title || '');
-      return '<div class="dc"><div class="dct"></div><div class="dcb"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">'+avHtml+'<div><div class="fname" style="font-size:12px;">'+escHtml(dauthor)+'</div><div class="dcm" style="margin-bottom:0;">🗓️ '+dateStr+'</div></div></div><div class="dctit" onclick="openDiarySheet(\''+titleEsc+'\')">'+escHtml(d.title)+'</div><div class="dcex">'+escHtml(excerpt)+'</div></div><div class="dcf"><div class="dcfb" onclick="openDiarySheet(\''+titleEsc+'\')">💬 '+(d.comments_count||0)+'件</div><div class="dcfb">👍 '+(d.good||0)+'</div></div></div>';
+      var userId = currentUser ? currentUser.id : '';
+      var dlikeKey = userId ? 'ones_likes_'+userId : '';
+      var dlikedList = dlikeKey ? JSON.parse(localStorage.getItem(dlikeKey)||'[]') : [];
+      var dIsLiked = d.id && dlikedList.indexOf(d.id) !== -1;
+      return '<div class="dc"><div class="dct"></div><div class="dcb"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">'+avHtml+'<div><div class="fname" style="font-size:12px;">'+escHtml(dauthor)+'</div><div class="dcm" style="margin-bottom:0;">🗓️ '+dateStr+'</div></div></div><div class="dctit" onclick="openDiarySheet(\''+titleEsc+'\')">'+escHtml(d.title)+'</div><div class="dcex">'+escHtml(excerpt)+'</div></div><div class="dcf"><div class="dcfb" onclick="openDiarySheet(\''+titleEsc+'\')">💬 '+(d.comments_count||0)+'件</div><div class="dcfb'+(dIsLiked?' lk':'')+'" onclick="likeThis(this,\'diaries\',\''+d.id+'\')">👍 <span class="like-count">'+(d.good||0)+'</span></div></div></div>';
     }).join('');
   } catch(e) { console.error('[ONEs] renderDiary:', e); }
 }
@@ -2864,7 +2900,11 @@ async function renderVoice(){
       var isMe = currentUser && (v.author_id === currentUser.id || vauthor === currentUser.name);
       var authorEsc = esc(vauthor);
       var avHtml = isMe ? myAvHtml('am') : '<div class="av am" style="'+AB+'" onclick="openUserSheet(\''+authorEsc+'\',\''+vemoji+'\')">'+vemoji+'</div>';
-      return '<div class="fc"><div class="fch">'+avHtml+'<div class="fui"><div class="fname">'+escHtml(vauthor)+'</div><div class="fsub">'+timeAgoStr(ts)+'</div></div></div><div class="fcb"><div class="ftxt" style="padding-bottom:2px;">'+escHtml(vbody)+'</div></div><div class="fcf"><div class="fbtn" onclick="likeThis(this)">👍 いいね</div><div class="fbtn">💬 返信</div><div class="fbtn">↗️ シェア</div></div></div>';
+      var userId = currentUser ? currentUser.id : '';
+      var likeKey = userId ? 'ones_likes_'+userId : '';
+      var likedList = likeKey ? JSON.parse(localStorage.getItem(likeKey)||'[]') : [];
+      var isLiked = v.id && likedList.indexOf(v.id) !== -1;
+      return '<div class="fc"><div class="fch">'+avHtml+'<div class="fui"><div class="fname">'+escHtml(vauthor)+'</div><div class="fsub">'+timeAgoStr(ts)+'</div></div></div><div class="fcb"><div class="ftxt" style="padding-bottom:2px;">'+escHtml(vbody)+'</div></div><div class="fcf"><div class="fbtn'+(isLiked?' lk':'')+'" onclick="likeThis(this,\'voices\',\''+v.id+'\')">👍 <span class="like-count">'+(v.good||0)+'</span></div><div class="fbtn" onclick="toast(\'💬 返信機能は準備中です\')">💬 返信</div><div class="fbtn" onclick="sharePost(\''+esc(vbody)+'\')">↗️ シェア</div></div></div>';
     }).join('');
   } catch(e) { console.error('[ONEs] renderVoice:', e); }
 }
@@ -3317,7 +3357,54 @@ async function postVoiceInline(){
     toast('❌ 投稿に失敗しました');
   }
 }
-function likeThis(el){el.classList.toggle('lk');toast(el.classList.contains('lk')?'👍 いいねしました！':'いいねを取り消しました');}
+async function likeThis(el, tableType, recordId) {
+  try {
+    var isLiked = el.classList.contains('lk');
+    var countEl = el.querySelector('.like-count');
+    var currentCount = countEl ? parseInt(countEl.textContent||'0') : 0;
+
+    if(isLiked) {
+      // いいね取り消し
+      el.classList.remove('lk');
+      var newCount = Math.max(0, currentCount - 1);
+      if(countEl) countEl.textContent = newCount;
+      toast('いいねを取り消しました');
+
+      // Supabaseで減算
+      if(dbReady() && recordId && tableType) {
+        await sb.from(tableType).update({good: newCount}).eq('id', recordId);
+      }
+      // LocalStorageからも削除
+      if(currentUser && recordId) {
+        var likeKey = 'ones_likes_'+currentUser.id;
+        var likes = JSON.parse(localStorage.getItem(likeKey)||'[]');
+        likes = likes.filter(function(x){ return x !== recordId; });
+        localStorage.setItem(likeKey, JSON.stringify(likes));
+      }
+    } else {
+      // いいね追加
+      el.classList.add('lk');
+      var newCount = currentCount + 1;
+      if(countEl) countEl.textContent = newCount;
+      toast('👍 いいねしました！');
+
+      // Supabaseで加算
+      if(dbReady() && recordId && tableType) {
+        await sb.from(tableType).update({good: newCount}).eq('id', recordId);
+      }
+      // LocalStorageにも保存
+      if(currentUser && recordId) {
+        var likeKey = 'ones_likes_'+currentUser.id;
+        var likes = JSON.parse(localStorage.getItem(likeKey)||'[]');
+        if(likes.indexOf(recordId) === -1) likes.push(recordId);
+        localStorage.setItem(likeKey, JSON.stringify(likes));
+      }
+    }
+  } catch(e) {
+    console.error('[ONEs] likeThis:', e);
+    toast('❌ エラーが発生しました');
+  }
+}
 
 /* ══════════ SHEETS ══════════ */
 function openSheet(type){
