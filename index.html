@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -1762,6 +1761,8 @@ function generateInviteQRSmall(code) {
     }
   } catch(e) {}
 }
+
+function shareInviteQR() {
   const code = document.getElementById('my-invite-code')?.textContent || 'ONES-7X3K';
   const url = 'https://brandyou.love?code=' + code;
   if(navigator.share) {
