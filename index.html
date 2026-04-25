@@ -4869,11 +4869,37 @@ const WANMIK_EVENTS = [
   {user:'けんじ',emoji:'🏄',title:'BBQ🔥',date:'2026-05-05',time:'11:00',shared:true},
 ];
 
+function getEventsStorageKey() {
+  var uid = (currentUser && currentUser.id) ? currentUser.id : 'guest';
+  return 'ones_events_' + uid;
+}
 function loadEvents() {
-  return JSON.parse(localStorage.getItem('ones_events') || '[]');
+  try {
+    var key = getEventsStorageKey();
+    var raw = localStorage.getItem(key);
+    // 旧キー互換（初回のみ移行）
+    if(raw === null) {
+      var legacy = localStorage.getItem('ones_events');
+      if(legacy !== null) {
+        localStorage.setItem(key, legacy);
+        raw = legacy;
+      }
+    }
+    var parsed = JSON.parse(raw || '[]');
+    return Array.isArray(parsed) ? parsed : [];
+  } catch(e) {
+    console.warn('[ONEs] loadEvents parse:', e);
+    return [];
+  }
 }
 function saveEvents(evs) {
-  localStorage.setItem('ones_events', JSON.stringify(evs));
+  try {
+    var key = getEventsStorageKey();
+    localStorage.setItem(key, JSON.stringify(Array.isArray(evs) ? evs : []));
+  } catch(e) {
+    console.error('[ONEs] saveEvents:', e);
+    toast('❌ 予定の保存に失敗しました');
+  }
 }
 
 function getEventsForMonth(y, m) {
@@ -5058,40 +5084,46 @@ function openAddEvent() {
 }
 
 function saveEvent() {
-  var titleEl = document.getElementById('ev-title');
-  var dateEl  = document.getElementById('ev-date');
-  var timeEl  = document.getElementById('ev-time');
-  var placeEl = document.getElementById('ev-place');
-  var memoEl  = document.getElementById('ev-memo');
-  var visEl   = document.querySelector('input[name="ev-vis"]:checked');
+  try {
+    var titleEl = document.getElementById('ev-title');
+    var dateEl  = document.getElementById('ev-date');
+    var timeEl  = document.getElementById('ev-time');
+    var placeEl = document.getElementById('ev-place');
+    var memoEl  = document.getElementById('ev-memo');
+    var visEl   = document.querySelector('input[name="ev-vis"]:checked');
 
-  if(!titleEl || !dateEl) { toast('フォームの読み込みエラー'); return; }
+    if(!titleEl){ toast('❌ フォームエラー（title）'); return; }
+    if(!dateEl) { toast('❌ フォームエラー（date）');  return; }
 
-  var title = titleEl.value.trim();
-  var date  = dateEl.value;
-  var time  = timeEl ? timeEl.value : '12:00';
-  var place = placeEl ? placeEl.value.trim() : '';
-  var memo  = memoEl ? memoEl.value.trim() : '';
-  var vis   = visEl ? visEl.value : 'private';
+    var title = titleEl.value.trim();
+    var date  = dateEl.value;
+    var time  = timeEl ? timeEl.value : '12:00';
+    var place = placeEl ? placeEl.value.trim() : '';
+    var memo  = memoEl ? memoEl.value.trim() : '';
+    var vis   = visEl ? visEl.value : 'private';
 
-  if(!title) { toast('タイトルを入力してください'); return; }
-  if(!date)  { toast('日付を選択してください'); return; }
+    if(!title) { toast('タイトルを入力してください'); return; }
+    if(!date)  { toast('日付を選択してください'); return; }
 
-  var events = loadEvents();
-  events.push({
-    id: Date.now().toString(),
-    title: title,
-    date: date,
-    time: time,
-    place: place,
-    memo: memo,
-    shared: vis === 'shared',
-    author: currentUser ? currentUser.name : 'メンバー'
-  });
-  saveEvents(events);
-  closeSheet();
-  toast('📅 予定を登録しました！');
-  renderCalendarPage();
+    var events = loadEvents();
+    events.push({
+      id: Date.now().toString(),
+      title: title,
+      date: date,
+      time: time,
+      place: place,
+      memo: memo,
+      shared: vis === 'shared',
+      author: currentUser ? currentUser.name : 'メンバー'
+    });
+    saveEvents(events);
+    closeSheet();
+    toast('📅 予定を登録しました！');
+    renderCalendarPage();
+  } catch(e) {
+    console.error('[ONEs] saveEvent:', e);
+    toast('❌ 予定の登録に失敗しました');
+  }
 }
 
 function deleteEvent(id) {
@@ -5132,12 +5164,21 @@ function editEvent(id) {
 }
 
 function updateEvent(id) {
-  const title = document.getElementById('ev-title').value.trim();
-  const date = document.getElementById('ev-date').value;
-  const time = document.getElementById('ev-time').value;
-  const place = document.getElementById('ev-place').value.trim();
-  const memo = document.getElementById('ev-memo').value.trim();
-  const vis = document.querySelector('input[name="ev-vis"]:checked').value;
+  const titleEl = document.getElementById('ev-title');
+  const dateEl = document.getElementById('ev-date');
+  const timeEl = document.getElementById('ev-time');
+  const placeEl = document.getElementById('ev-place');
+  const memoEl = document.getElementById('ev-memo');
+  const visEl = document.querySelector('input[name="ev-vis"]:checked');
+
+  if(!titleEl || !dateEl) { toast('フォームの読み込みエラー'); return; }
+
+  const title = titleEl.value.trim();
+  const date = dateEl.value;
+  const time = timeEl ? timeEl.value : '12:00';
+  const place = placeEl ? placeEl.value.trim() : '';
+  const memo = memoEl ? memoEl.value.trim() : '';
+  const vis = visEl ? visEl.value : 'private';
 
   if(!title) { toast('タイトルを入力してください'); return; }
   if(!date) { toast('日付を選択してください'); return; }
