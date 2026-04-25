@@ -148,7 +148,207 @@ function dbReady() {
   return sb !== null && typeof sb !== 'undefined';
 }
 
-console.log('✅ Supabase接続完了 (STEP 1)');
+// ── 投稿系DB関数 ──
+
+// 日記投稿
+async function dbPostDiary(authorId, authorName, authorEmoji, title, body, visibility) {
+  if(!sb) return { data: null, error: 'No connection' };
+  try {
+    const { data, error } = await sb.from('diaries').insert({
+      author_id: authorId, author_name: authorName, author_emoji: authorEmoji,
+      title: title, body: body, visibility: visibility || 'public'
+    }).select().single();
+    return { data, error };
+  } catch(e) { return { data: null, error: e }; }
+}
+
+// 日記取得（全ユーザー）
+async function dbFetchDiaries(limit) {
+  if(!sb) return [];
+  try {
+    const { data } = await sb.from('diaries').select('*').order('created_at', {ascending: false}).limit(limit || 50);
+    return data || [];
+  } catch(e) { return []; }
+}
+
+// つぶやき投稿
+async function dbPostVoice(authorId, authorName, authorEmoji, body) {
+  if(!sb) return { data: null, error: 'No connection' };
+  try {
+    const { data, error } = await sb.from('voices').insert({
+      author_id: authorId, author_name: authorName, author_emoji: authorEmoji, body: body
+    }).select().single();
+    return { data, error };
+  } catch(e) { return { data: null, error: e }; }
+}
+
+// つぶやき取得
+async function dbFetchVoices(limit) {
+  if(!sb) return [];
+  try {
+    const { data } = await sb.from('voices').select('*').order('created_at', {ascending: false}).limit(limit || 50);
+    return data || [];
+  } catch(e) { return []; }
+}
+
+// 写真をStorageにアップロード
+async function dbUploadPhoto(authorId, fileBase64, caption, visibility) {
+  if(!sb) return { data: null, error: 'No connection' };
+  try {
+    // Base64 を Blob に変換
+    const base64Data = fileBase64.split(',')[1] || fileBase64;
+    const byteCharacters = atob(base64Data);
+    const byteArrays = [];
+    for(let i = 0; i < byteCharacters.length; i++) {
+      byteArrays.push(byteCharacters.charCodeAt(i));
+    }
+    const blob = new Blob([new Uint8Array(byteArrays)], {type: 'image/jpeg'});
+    const fileName = authorId + '_' + Date.now() + '.jpg';
+
+    // Storage にアップロード
+    const { data: uploadData, error: uploadError } = await sb.storage
+      .from('Photos').upload(fileName, blob, { contentType: 'image/jpeg', upsert: false });
+
+    if(uploadError) {
+      console.error('[ONEs] photo upload:', uploadError);
+      return { data: null, error: uploadError };
+    }
+
+    // 公開URL取得
+    const { data: urlData } = sb.storage.from('Photos').getPublicUrl(fileName);
+    const photoUrl = urlData.publicUrl;
+
+    return { data: { url: photoUrl, fileName: fileName }, error: null };
+  } catch(e) {
+    console.error('[ONEs] uploadPhoto:', e);
+    return { data: null, error: e };
+  }
+}
+
+// 写真投稿（DBレコード）
+async function dbPostPhoto(authorId, authorName, authorEmoji, photoUrl, caption, visibility) {
+  if(!sb) return { data: null, error: 'No connection' };
+  try {
+    const { data, error } = await sb.from('photos').insert({
+      author_id: authorId, author_name: authorName, author_emoji: authorEmoji,
+      photo_url: photoUrl, caption: caption, visibility: visibility || 'public'
+    }).select().single();
+    return { data, error };
+  } catch(e) { return { data: null, error: e }; }
+}
+
+// 写真取得
+async function dbFetchPhotos(limit) {
+  if(!sb) return [];
+  try {
+    const { data } = await sb.from('photos').select('*').order('created_at', {ascending: false}).limit(limit || 50);
+    return data || [];
+  } catch(e) { return []; }
+}
+
+// プロフィール写真をStorageに保存
+async function dbUploadProfilePhoto(authorId, fileBase64) {
+  if(!sb) return { data: null, error: 'No connection' };
+  try {
+    const base64Data = fileBase64.split(',')[1] || fileBase64;
+    const byteCharacters = atob(base64Data);
+    const byteArrays = [];
+    for(let i = 0; i < byteCharacters.length; i++) {
+      byteArrays.push(byteCharacters.charCodeAt(i));
+    }
+    const blob = new Blob([new Uint8Array(byteArrays)], {type: 'image/jpeg'});
+    const fileName = 'profile_' + authorId + '.jpg';
+
+    // upsert: true で既存ファイルを上書き
+    const { data, error } = await sb.storage
+      .from('Photos').upload(fileName, blob, { contentType: 'image/jpeg', upsert: true });
+
+    if(error) return { data: null, error: error };
+    const { data: urlData } = sb.storage.from('Photos').getPublicUrl(fileName);
+    return { data: { url: urlData.publicUrl + '?t=' + Date.now() }, error: null };
+  } catch(e) { return { data: null, error: e }; }
+}
+
+// コミュニティ作成
+async function dbCreateCommunity(community) {
+  if(!sb) return { data: null, error: 'No connection' };
+  try {
+    const { data, error } = await sb.from('communities').insert({
+      name: community.name, emoji: community.emoji, description: community.description,
+      category: community.category, visibility: community.visibility,
+      owner_id: community.ownerId, owner_name: community.ownerName, member_count: 1
+    }).select().single();
+    return { data, error };
+  } catch(e) { return { data: null, error: e }; }
+}
+
+// コミュニティ取得
+async function dbFetchCommunities() {
+  if(!sb) return [];
+  try {
+    const { data } = await sb.from('communities').select('*').order('created_at', {ascending: false});
+    return data || [];
+  } catch(e) { return []; }
+}
+
+// トピック投稿
+async function dbPostTopic(topic) {
+  if(!sb) return { data: null, error: 'No connection' };
+  try {
+    const { data, error } = await sb.from('topics').insert({
+      community_id: topic.communityId, community_name: topic.communityName,
+      author_id: topic.authorId, author_name: topic.authorName, author_emoji: topic.authorEmoji,
+      category: topic.category, title: topic.title, body: topic.body
+    }).select().single();
+    return { data, error };
+  } catch(e) { return { data: null, error: e }; }
+}
+
+// トピック取得
+async function dbFetchTopics(communityName) {
+  if(!sb) return [];
+  try {
+    const { data } = await sb.from('topics')
+      .select('*').eq('community_name', communityName)
+      .order('created_at', {ascending: false});
+    return data || [];
+  } catch(e) { return []; }
+}
+
+// コメント投稿
+async function dbPostComment(topicId, authorId, authorName, authorEmoji, body) {
+  if(!sb) return { data: null, error: 'No connection' };
+  try {
+    const { data, error } = await sb.from('comments').insert({
+      topic_id: topicId, author_id: authorId, author_name: authorName,
+      author_emoji: authorEmoji, body: body
+    }).select().single();
+    return { data, error };
+  } catch(e) { return { data: null, error: e }; }
+}
+
+// コメント取得
+async function dbFetchComments(topicId) {
+  if(!sb) return [];
+  try {
+    const { data } = await sb.from('comments')
+      .select('*').eq('topic_id', topicId)
+      .order('created_at', {ascending: true});
+    return data || [];
+  } catch(e) { return []; }
+}
+
+// プロフィール更新
+async function dbUpdateProfile(memberId, updates) {
+  if(!sb) return { data: null, error: 'No connection' };
+  try {
+    const { data, error } = await sb.from('members')
+      .update(updates).eq('id', memberId).select().single();
+    return { data, error };
+  } catch(e) { return { data: null, error: e }; }
+}
+
+console.log('✅ Supabase接続完了 (FULL STEP)');
 </script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
@@ -2429,50 +2629,65 @@ function myAvHtml(size){
   return '<div class="av ' + size + '" style="' + AB + '">' + userEmoji + '</div>';
 }
 
-function renderTL(){
+async function renderTL(){
   try {
-    var allD = [].concat(ld('od'), DI);
-    var allV = [].concat(ld('ov'), VC);
+    var tlEl = document.getElementById('tlfeed');
+    if(!tlEl) return;
 
-    // 写真を読み込み
+    // Supabaseから日記、つぶやき、写真を取得
+    var allD = [];
+    var allV = [];
     var allP = [];
-    try {
-      var userId = (currentUser && currentUser.id) ? currentUser.id : null;
-      var userKey = userId ? 'op_'+userId : 'op';
-      var ownPh = JSON.parse(localStorage.getItem(userKey) || '[]');
-      var sharedPh = JSON.parse(localStorage.getItem('ones_shared_photos') || '[]');
-      var seen = {};
-      var combinedPh = ownPh.concat(sharedPh);
-      combinedPh.forEach(function(p){
-        if(!seen[p.id]) { seen[p.id] = 1; allP.push(p); }
-      });
-    } catch(e) { console.error('[ONEs] photo load:', e); }
+
+    if(dbReady()) {
+      try { allD = await dbFetchDiaries(20); } catch(e) {}
+      try { allV = await dbFetchVoices(30); } catch(e) {}
+      try { allP = await dbFetchPhotos(10); } catch(e) {}
+    }
+
+    // フォールバック：何もなければデモデータ
+    if(allD.length === 0) allD = DI.slice();
+    if(allV.length === 0) allV = VC.slice();
 
     var h = '';
 
-    // 日記（最大2件）
-    allD.slice(0,2).forEach(function(d){
-      var diaryAuthor = d.author || ((currentUser && currentUser.name) ? currentUser.name : 'BOSS YASU');
-      h += '<div class="fc"><div class="fch">'+myAvHtml('am')+'<div class="fui"><div class="fname">'+escHtml(diaryAuthor)+'</div><div class="fsub">'+d.date+'&nbsp;<span class="fbadge bd">日記</span></div></div></div><div class="fcb"><div class="ftit" onclick="openDiarySheet(\''+esc(d.title)+'\')">'+d.title+'</div><div class="ftxt">'+d.excerpt.slice(0,70)+'…</div></div><div class="fcf"><div class="fbtn" onclick="likeThis(this)">👍 '+d.good+'</div><div class="fbtn" onclick="openDiarySheet(\''+esc(d.title)+'\')">💬 '+d.comments+'件</div><div class="fbtn">↗️ シェア</div></div></div>';
+    // 日記（最大3件）
+    allD.slice(0, 3).forEach(function(d){
+      var diaryAuthor = d.author_name || d.author || 'メンバー';
+      var diaryEmoji = d.author_emoji || d.authorEmoji || '🙋';
+      var dateStr = d.created_at ? new Date(d.created_at).toLocaleString('ja-JP', {year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit'}) : (d.date || '');
+      var excerpt = (d.body || d.excerpt || '').slice(0, 70);
+      var isMe = currentUser && (d.author_id === currentUser.id || diaryAuthor === currentUser.name);
+      var avHtml = isMe ? myAvHtml('am') : '<div class="av am" style="'+AB+'">'+diaryEmoji+'</div>';
+      h += '<div class="fc"><div class="fch">'+avHtml+'<div class="fui"><div class="fname">'+escHtml(diaryAuthor)+'</div><div class="fsub">'+dateStr+'&nbsp;<span class="fbadge bd">日記</span></div></div></div><div class="fcb"><div class="ftit" onclick="openDiarySheet(\''+esc(d.title)+'\')">'+escHtml(d.title)+'</div><div class="ftxt">'+escHtml(excerpt)+(excerpt.length >= 70 ? '…' : '')+'</div></div><div class="fcf"><div class="fbtn" onclick="likeThis(this)">👍 '+(d.good||0)+'</div><div class="fbtn">💬 '+(d.comments_count||0)+'件</div><div class="fbtn">↗️ シェア</div></div></div>';
     });
 
     // 写真（最大3件）
-    allP.slice(0,3).forEach(function(p){
-      var isMe = p.author === ((currentUser && currentUser.name) ? currentUser.name : 'BOSS YASU');
-      var avHtml = isMe ? myAvHtml('am') : '<div class="av am" style="'+AB+'">'+p.authorEmoji+'</div>';
-      var caption = p.caption ? '<div class="ftxt" style="padding:8px 0 4px;">'+(p.caption.length > 70 ? p.caption.slice(0,70)+'…' : p.caption)+'</div>' : '';
-      h += '<div class="fc"><div class="fch">'+avHtml+'<div class="fui"><div class="fname">'+p.author+'</div><div class="fsub">'+timeAgoStr(p.ts)+'&nbsp;<span class="fbadge" style="background:#fef3c7;color:#92400e;">📷 フォト</span></div></div></div><div class="fcb"><img src="'+p.photo+'" style="width:100%;max-height:300px;object-fit:cover;border-radius:8px;cursor:pointer;" onclick="openPhotoView(\''+p.id+'\')">'+caption+'</div><div class="fcf"><div class="fbtn" onclick="likeThis(this)">👍 '+(p.good||0)+'</div><div class="fbtn">💬 '+((p.comments||[]).length)+'件</div><div class="fbtn">↗️ シェア</div></div></div>';
+    allP.slice(0, 3).forEach(function(p){
+      var photoAuthor = p.author_name || 'メンバー';
+      var photoEmoji = p.author_emoji || '🙋';
+      var photoUrl = p.photo_url || p.photo || '';
+      var ts = p.created_at ? new Date(p.created_at).getTime() : (p.ts || Date.now());
+      var isMe = currentUser && (p.author_id === currentUser.id);
+      var avHtml = isMe ? myAvHtml('am') : '<div class="av am" style="'+AB+'">'+photoEmoji+'</div>';
+      var captionTxt = p.caption || '';
+      var captionShort = captionTxt.length > 70 ? captionTxt.slice(0,70)+'…' : captionTxt;
+      var caption = captionTxt ? '<div class="ftxt" style="padding:8px 0 4px;">'+escHtml(captionShort)+'</div>' : '';
+      h += '<div class="fc"><div class="fch">'+avHtml+'<div class="fui"><div class="fname">'+escHtml(photoAuthor)+'</div><div class="fsub">'+timeAgoStr(ts)+'&nbsp;<span class="fbadge" style="background:#fef3c7;color:#92400e;">📷 フォト</span></div></div></div><div class="fcb"><img src="'+photoUrl+'" style="width:100%;max-height:300px;object-fit:cover;border-radius:8px;cursor:pointer;">'+caption+'</div><div class="fcf"><div class="fbtn" onclick="likeThis(this)">👍 '+(p.good||0)+'</div><div class="fbtn">💬 0件</div><div class="fbtn">↗️ シェア</div></div></div>';
     });
 
-    // つぶやき（最大4件）
-    allV.slice(0,4).forEach(function(v){
-      var isMe = v.u === ((currentUser && currentUser.name) ? currentUser.name : 'BOSS YASU');
-      var avHtml = isMe ? myAvHtml('am') : '<div class="av am" style="'+AB+'" onclick="openUserSheet(\''+esc(v.u)+'\',\''+v.e+'\')">'+v.e+'</div>';
-      h += '<div class="fc"><div class="fch">'+avHtml+'<div class="fui"><div class="fname">'+v.u+'</div><div class="fsub">'+v.tm+'&nbsp;<span class="fbadge bv">つぶやき</span></div></div></div><div class="fcb"><div class="ftxt" style="padding-bottom:2px;">'+v.t+'</div></div><div class="fcf"><div class="fbtn" onclick="likeThis(this)">👍 いいね</div><div class="fbtn">💬 返信</div><div class="fbtn">↗️ シェア</div></div></div>';
+    // つぶやき（最大5件）
+    allV.slice(0, 5).forEach(function(v){
+      var voiceAuthor = v.author_name || v.u || 'メンバー';
+      var voiceEmoji = v.author_emoji || v.e || '🙋';
+      var voiceBody = v.body || v.t || '';
+      var ts = v.created_at ? new Date(v.created_at).getTime() : (v.ts || (v.tm === 'たった今' ? Date.now() : Date.now() - 60000));
+      var isMe = currentUser && (v.author_id === currentUser.id || voiceAuthor === currentUser.name);
+      var avHtml = isMe ? myAvHtml('am') : '<div class="av am" style="'+AB+'" onclick="openUserSheet(\''+esc(voiceAuthor)+'\',\''+voiceEmoji+'\')">'+voiceEmoji+'</div>';
+      h += '<div class="fc"><div class="fch">'+avHtml+'<div class="fui"><div class="fname">'+escHtml(voiceAuthor)+'</div><div class="fsub">'+timeAgoStr(ts)+'&nbsp;<span class="fbadge bv">つぶやき</span></div></div></div><div class="fcb"><div class="ftxt" style="padding-bottom:2px;">'+escHtml(voiceBody)+'</div></div><div class="fcf"><div class="fbtn" onclick="likeThis(this)">👍 いいね</div><div class="fbtn">💬 返信</div><div class="fbtn">↗️ シェア</div></div></div>';
     });
 
-    var tlEl = document.getElementById('tlfeed');
-    if(tlEl) tlEl.innerHTML = h;
+    if(tlEl) tlEl.innerHTML = h || '<div style="padding:40px;text-align:center;color:var(--text3);">まだ投稿がありません<br><span style="font-size:12px;">最初の投稿をしてみましょう！</span></div>';
   } catch(err) {
     console.error('[ONEs] renderTL:', err);
   }
@@ -2507,51 +2722,98 @@ function openPhotoView(photoId) {
 }
 function renderStories(){document.getElementById('strow-inner').innerHTML=FP.slice(0,8).map(u=>`<div class="sit" onclick="openUserSheet('${esc(u.n)}','${u.e}')"><div class="sring"><div class="sinn">${u.e}</div></div><div class="snm">${u.n}</div><div class="stm">${u.t}</div></div>`).join('');}
 function renderMxRow(){document.getElementById('mxrow-inner').innerHTML=USERS.map(u=>`<div class="mxi" onclick="openUserSheet('${esc(u.n)}','${u.e}')"><div class="av am" style="${AB};position:relative;">${u.e}${u.on?'<div class="odot"></div>':''}</div><div class="mn">${u.n}</div></div>`).join('');}
-function renderDiary(){
-  const all=[...ld('od'),...DI];
-  document.getElementById('dlist').innerHTML=all.map(d=>{
-    var dauthor = d.author || ((currentUser && currentUser.name) ? currentUser.name : 'BOSS YASU');
-    return `<div class="dc"><div class="dct"></div><div class="dcb"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">${myAvHtml('as')}<div><div class="fname" style="font-size:12px;">${escHtml(dauthor)}</div><div class="dcm" style="margin-bottom:0;">🗓️ ${d.date}</div></div></div><div class="dctit" onclick="openDiarySheet('${esc(d.title)}')">${d.title}</div><div class="dcex">${d.excerpt}</div></div><div class="dcf"><div class="dcfb" onclick="openDiarySheet('${esc(d.title)}')">💬 ${d.comments||0}件</div><div class="dcfb">👍 ${d.good||0}</div></div></div>`;
-  }).join('');
+async function renderDiary(){
+  try {
+    var dlistEl = document.getElementById('dlist');
+    if(!dlistEl) return;
+
+    var all = [];
+    if(dbReady()) {
+      try { all = await dbFetchDiaries(50); } catch(e) {}
+    }
+    if(all.length === 0) all = DI.slice();
+
+    if(all.length === 0) {
+      dlistEl.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text3);">まだ日記がありません<br><span style="font-size:12px;">最初の日記を書いてみましょう！</span></div>';
+      return;
+    }
+
+    dlistEl.innerHTML = all.map(function(d){
+      var dauthor = d.author_name || d.author || 'メンバー';
+      var demoji = d.author_emoji || d.authorEmoji || '🙋';
+      var dateStr = d.created_at ? new Date(d.created_at).toLocaleString('ja-JP', {year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit'}) : (d.date || '');
+      var excerpt = (d.body || d.excerpt || '');
+      var isMe = currentUser && (d.author_id === currentUser.id || dauthor === currentUser.name);
+      var avHtml = isMe ? myAvHtml('as') : '<div class="av as" style="'+AB+'">'+demoji+'</div>';
+      var titleEsc = esc(d.title || '');
+      return '<div class="dc"><div class="dct"></div><div class="dcb"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">'+avHtml+'<div><div class="fname" style="font-size:12px;">'+escHtml(dauthor)+'</div><div class="dcm" style="margin-bottom:0;">🗓️ '+dateStr+'</div></div></div><div class="dctit" onclick="openDiarySheet(\''+titleEsc+'\')">'+escHtml(d.title)+'</div><div class="dcex">'+escHtml(excerpt)+'</div></div><div class="dcf"><div class="dcfb" onclick="openDiarySheet(\''+titleEsc+'\')">💬 '+(d.comments_count||0)+'件</div><div class="dcfb">👍 '+(d.good||0)+'</div></div></div>';
+    }).join('');
+  } catch(e) { console.error('[ONEs] renderDiary:', e); }
 }
-function renderVoice(){
-  const all=[...ld('ov'),...VC];
-  document.getElementById('vfeed').innerHTML=all.map(v=>{
-    const isMe = v.u === ((currentUser && currentUser.name) ? currentUser.name : 'BOSS YASU');
-    const avHtml = isMe
-      ? myAvHtml('am')
-      : `<div class="av am" style="${AB}" onclick="openUserSheet('${esc(v.u)}','${v.e}')">${v.e}</div>`;
-    return `<div class="fc"><div class="fch">${avHtml}<div class="fui"><div class="fname">${v.u}</div><div class="fsub">${v.tm}</div></div></div><div class="fcb"><div class="ftxt" style="padding-bottom:2px;">${v.t}</div></div><div class="fcf"><div class="fbtn" onclick="likeThis(this)">👍 いいね</div><div class="fbtn">💬 返信</div><div class="fbtn">↗️ シェア</div></div></div>`;
-  }).join('');
+
+async function renderVoice(){
+  try {
+    var vfeedEl = document.getElementById('vfeed');
+    if(!vfeedEl) return;
+
+    var all = [];
+    if(dbReady()) {
+      try { all = await dbFetchVoices(50); } catch(e) {}
+    }
+    if(all.length === 0) all = VC.slice();
+
+    if(all.length === 0) {
+      vfeedEl.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text3);">まだつぶやきがありません</div>';
+      return;
+    }
+
+    vfeedEl.innerHTML = all.map(function(v){
+      var vauthor = v.author_name || v.u || 'メンバー';
+      var vemoji = v.author_emoji || v.e || '🙋';
+      var vbody = v.body || v.t || '';
+      var ts = v.created_at ? new Date(v.created_at).getTime() : (v.ts || Date.now());
+      var isMe = currentUser && (v.author_id === currentUser.id || vauthor === currentUser.name);
+      var authorEsc = esc(vauthor);
+      var avHtml = isMe ? myAvHtml('am') : '<div class="av am" style="'+AB+'" onclick="openUserSheet(\''+authorEsc+'\',\''+vemoji+'\')">'+vemoji+'</div>';
+      return '<div class="fc"><div class="fch">'+avHtml+'<div class="fui"><div class="fname">'+escHtml(vauthor)+'</div><div class="fsub">'+timeAgoStr(ts)+'</div></div></div><div class="fcb"><div class="ftxt" style="padding-bottom:2px;">'+escHtml(vbody)+'</div></div><div class="fcf"><div class="fbtn" onclick="likeThis(this)">👍 いいね</div><div class="fbtn">💬 返信</div><div class="fbtn">↗️ シェア</div></div></div>';
+    }).join('');
+  } catch(e) { console.error('[ONEs] renderVoice:', e); }
 }
 function renderWanmik(){document.getElementById('mxgrid').innerHTML=USERS.map(u=>`<div style="display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;padding:12px 4px;background:#fff;border-radius:12px;box-shadow:var(--shadow);" onclick="openUserSheet('${esc(u.n)}','${u.e}')"><div style="position:relative;"><div class="av al" style="${AB};border-radius:18px;">${u.e}</div>${u.on?'<div style="position:absolute;bottom:2px;right:2px;width:12px;height:12px;background:#33cc44;border-radius:50%;border:2px solid #fff;"></div>':''}</div><div style="font-size:12px;font-weight:700;color:var(--text2);text-align:center;">${u.n}</div></div>`).join('');}
 function renderFP(){document.getElementById('fplist').innerHTML=FP.map(u=>`<div style="display:flex;gap:12px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--og-pale);cursor:pointer;" onclick="openUserSheet('${esc(u.n)}','${u.e}')"><div class="sring" style="width:50px;height:50px;flex-shrink:0;"><div class="sinn" style="font-size:24px;">${u.e}</div></div><div style="flex:1;"><div style="font-size:14px;font-weight:700;">${u.n}</div><div style="font-size:12px;color:var(--text3);">訪問 ${u.t}</div></div><button class="bos" onclick="event.stopPropagation();">プロフィール</button></div>`).join('');}
-function renderCM(){
-  var mk = function(list, id) {
-    var el = document.getElementById(id);
-    if(!el) return;
-    if(!list || list.length === 0) {
-      el.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text3);font-size:13px;">まだコミュニティがありません</div>';
-      return;
-    }
-    el.innerHTML = list.map(function(c){
-      var cnt = (c.cnt || 1).toLocaleString();
-      return '<div class="cmi" onclick="openCmSheet(\''+esc(c.n)+'\')">'+
-             '<div class="cmico">'+c.e+'</div>'+
-             '<div><div class="cn">'+c.n+'</div>'+
-             '<div class="cc">👥 '+cnt+'人参加</div></div>'+
-             '<div style="color:var(--og);font-size:18px;">›</div></div>';
-    }).join('');
-  };
-  mk(CM, 'cmjoined');
-  mk(RCM, 'cmrec');
-
-  // 自分が作ったコミュニティ
-  var myCommunities = [];
+async function renderCM(){
   try {
-    myCommunities = JSON.parse(localStorage.getItem('ones_my_communities') || '[]');
-  } catch(e) { myCommunities = []; }
-  mk(myCommunities, 'cm-mine');
+    var mk = function(list, id) {
+      var el = document.getElementById(id);
+      if(!el) return;
+      if(!list || list.length === 0) {
+        el.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text3);font-size:13px;">まだコミュニティがありません</div>';
+        return;
+      }
+      el.innerHTML = list.map(function(c){
+        var cname = c.n || c.name;
+        var cemoji = c.e || c.emoji;
+        var cnt = (c.cnt || c.member_count || 1).toLocaleString();
+        return '<div class="cmi" onclick="openCmSheet(\''+esc(cname)+'\')">'+
+               '<div class="cmico">'+cemoji+'</div>'+
+               '<div><div class="cn">'+escHtml(cname)+'</div>'+
+               '<div class="cc">👥 '+cnt+'人参加</div></div>'+
+               '<div style="color:var(--og);font-size:18px;">›</div></div>';
+      }).join('');
+    };
+
+    // デモコミュニティ
+    mk(CM, 'cmjoined');
+    mk(RCM, 'cmrec');
+
+    // Supabaseから自分が作ったコミュニティを取得
+    var myCommunities = [];
+    if(dbReady() && currentUser && currentUser.id) {
+      var allCommunities = await dbFetchCommunities();
+      myCommunities = allCommunities.filter(function(c){ return c.owner_id === currentUser.id; });
+    }
+    mk(myCommunities, 'cm-mine');
+  } catch(e) { console.error('[ONEs] renderCM:', e); }
 }
 
 function openCreateCommunity() {
@@ -2606,7 +2868,7 @@ function openCreateCommunity() {
     </div>`);
 }
 
-function createCommunity() {
+async function createCommunity() {
   try {
     var nameEl = document.getElementById('cc-name');
     var emojiEl = document.getElementById('cc-emoji');
@@ -2625,43 +2887,38 @@ function createCommunity() {
     if(!name) { toast('コミュニティ名を入力してください'); return; }
     if(!desc) { toast('説明文を入力してください'); return; }
     if(name.length > 30) { toast('コミュニティ名は30文字以内にしてください'); return; }
-    // HTMLタグ拒否
     if(/<|>|script|javascript:|on\w+=/i.test(name) || /<|>|script|javascript:|on\w+=/i.test(desc)) {
       toast('使用できない文字が含まれています');
       return;
     }
 
     var owner = (currentUser && currentUser.name) ? currentUser.name : 'BOSS YASU';
-    var ownerEmoji = (currentUser && currentUser.emoji) ? currentUser.emoji : '😊';
+    var userId = (currentUser && currentUser.id) ? currentUser.id : null;
 
-    var newCommunity = {
-      n: name,
-      e: emoji,
-      cnt: 1,
-      owner: owner,
-      ownerEmoji: ownerEmoji,
-      since: new Date().getFullYear() + '年' + (new Date().getMonth()+1) + '月',
-      desc: desc,
-      category: category,
-      visibility: vis,
-      createdAt: Date.now()
-    };
-
-    var myCommunities = [];
-    try {
-      myCommunities = JSON.parse(localStorage.getItem('ones_my_communities') || '[]');
-    } catch(e) { myCommunities = []; }
-    myCommunities.unshift(newCommunity);
-
-    try {
-      localStorage.setItem('ones_my_communities', JSON.stringify(myCommunities));
-    } catch(e) {
-      console.error('[ONEs]', e);
-      toast('❌ 保存できませんでした');
+    if(!dbReady() || !userId) {
+      toast('❌ 接続できません');
       return;
     }
 
     closeSheet();
+    toast('🏘️ 作成中...');
+
+    var result = await dbCreateCommunity({
+      name: name,
+      emoji: emoji,
+      description: desc,
+      category: category,
+      visibility: vis,
+      ownerId: userId,
+      ownerName: owner
+    });
+
+    if(result.error) {
+      console.error('[ONEs] community:', result.error);
+      toast('❌ 作成に失敗しました');
+      return;
+    }
+
     toast('🎉 コミュニティ「' + name + '」を作成しました！');
     renderCM();
   } catch(err) {
@@ -2783,55 +3040,83 @@ function postDiary(){
     toast('❌ 投稿に失敗しました');
   }
 }
-function postVoice(text){
+async function postVoice(text){
   try {
     var wsEl = document.getElementById('ws-vc');
     var t = text || (wsEl && wsEl.value ? wsEl.value.trim() : '');
     if(!t){ toast('テキストを入力してください'); return; }
+    if(/<|>|script|javascript:|on\w+=/i.test(t)) {
+      toast('使用できない文字が含まれています'); return;
+    }
     var u = (currentUser && currentUser.name) ? currentUser.name : 'ゲスト';
     var e = (currentUser && currentUser.emoji) ? currentUser.emoji : '🙋';
     var userId = (currentUser && currentUser.id) ? currentUser.id : null;
+
+    // Supabase に保存
+    if(dbReady() && userId) {
+      try {
+        await sb.from('voices').insert({
+          author_id: userId,
+          author_name: u,
+          author_emoji: e,
+          body: t
+        });
+      } catch(err) { console.error('[ONEs] voice DB:', err); }
+    }
+
+    // LocalStorage にも保存
     var userKey = userId ? 'ov_'+userId : 'ov';
     var own = [];
-    try { own = JSON.parse(localStorage.getItem(userKey) || '[]'); } catch(err) { own = []; }
-    own.unshift({u: u, e: e, t: t, tm: 'たった今', authorId: userId});
-    try { localStorage.setItem(userKey, JSON.stringify(own)); } catch(err) { console.error('[ONEs]', err); }
-    var shared = [];
-    try { shared = JSON.parse(localStorage.getItem('ones_shared_voices') || '[]'); } catch(err) { shared = []; }
-    shared.unshift({u: u, e: e, t: t, tm: 'たった今', authorId: userId});
-    try { localStorage.setItem('ones_shared_voices', JSON.stringify(shared)); } catch(err) { console.error('[ONEs]', err); }
+    try { own = JSON.parse(localStorage.getItem(userKey) || '[]'); } catch(err) {}
+    own.unshift({u: u, e: e, t: t, tm: 'たった今', authorId: userId, ts: Date.now()});
+    try { localStorage.setItem(userKey, JSON.stringify(own)); } catch(err) {}
+
     closeSheet();
     toast('💬 つぶやきを投稿しました！');
-    try { if(typeof cur !== 'undefined' && cur === 'voice' && typeof renderVoice === 'function') renderVoice(); } catch(err) { console.error(err); }
-    try { if(typeof renderTL === 'function') renderTL(); } catch(err) { console.error(err); }
+    try { if(typeof cur !== 'undefined' && cur === 'voice' && typeof renderVoice === 'function') renderVoice(); } catch(err) {}
+    try { if(typeof renderTL === 'function') renderTL(); } catch(err) {}
     setTimeout(function(){ try { loadProfilePhoto(); } catch(e) {} }, 50);
   } catch(err) {
     console.error('[ONEs] postVoice:', err);
     toast('❌ 投稿に失敗しました');
   }
 }
-function postVoiceInline(){
+async function postVoiceInline(){
   try {
     var el = document.getElementById('vcin');
     if(!el) return;
     var t = el.value ? el.value.trim() : '';
     if(!t){ toast('テキストを入力してください'); return; }
+    if(/<|>|script|javascript:|on\w+=/i.test(t)) {
+      toast('使用できない文字が含まれています'); return;
+    }
     var u = (currentUser && currentUser.name) ? currentUser.name : 'ゲスト';
     var e = (currentUser && currentUser.emoji) ? currentUser.emoji : '🙋';
     var userId = (currentUser && currentUser.id) ? currentUser.id : null;
+
+    // Supabase
+    if(dbReady() && userId) {
+      try {
+        await sb.from('voices').insert({
+          author_id: userId,
+          author_name: u,
+          author_emoji: e,
+          body: t
+        });
+      } catch(err) { console.error('[ONEs] voice DB:', err); }
+    }
+
+    // LocalStorage
     var userKey = userId ? 'ov_'+userId : 'ov';
     var own = [];
-    try { own = JSON.parse(localStorage.getItem(userKey) || '[]'); } catch(err) { own = []; }
-    own.unshift({u: u, e: e, t: t, tm: 'たった今', authorId: userId});
-    try { localStorage.setItem(userKey, JSON.stringify(own)); } catch(err) { console.error('[ONEs]', err); }
-    var shared = [];
-    try { shared = JSON.parse(localStorage.getItem('ones_shared_voices') || '[]'); } catch(err) { shared = []; }
-    shared.unshift({u: u, e: e, t: t, tm: 'たった今', authorId: userId});
-    try { localStorage.setItem('ones_shared_voices', JSON.stringify(shared)); } catch(err) { console.error('[ONEs]', err); }
+    try { own = JSON.parse(localStorage.getItem(userKey) || '[]'); } catch(err) {}
+    own.unshift({u: u, e: e, t: t, tm: 'たった今', authorId: userId, ts: Date.now()});
+    try { localStorage.setItem(userKey, JSON.stringify(own)); } catch(err) {}
+
     el.value = '';
     toast('💬 つぶやきを投稿しました！');
-    try { if(typeof renderVoice === 'function') renderVoice(); } catch(err) { console.error(err); }
-    try { if(typeof renderTL === 'function') renderTL(); } catch(err) { console.error(err); }
+    try { if(typeof renderVoice === 'function') renderVoice(); } catch(err) {}
+    try { if(typeof renderTL === 'function') renderTL(); } catch(err) {}
     setTimeout(function(){ try { loadProfilePhoto(); } catch(e) {} }, 50);
   } catch(err) {
     console.error('[ONEs] postVoiceInline:', err);
@@ -2929,7 +3214,7 @@ function handlePhotoSelect(event) {
 }
 
 // 写真を投稿
-function postPhoto() {
+async function postPhoto() {
   try {
     if(!window._selectedPhoto) {
       toast('写真を選択してください');
@@ -2950,9 +3235,56 @@ function postPhoto() {
     var e = (currentUser && currentUser.emoji) ? currentUser.emoji : '🙋';
     var userId = (currentUser && currentUser.id) ? currentUser.id : null;
 
+    toast('📤 アップロード中...');
+
+    // Supabase Storage にアップロード
+    var photoUrl = window._selectedPhoto; // フォールバック
+    if(dbReady() && userId) {
+      try {
+        // dataURL を Blob に変換
+        var dataUrl = window._selectedPhoto;
+        var byteString = atob(dataUrl.split(',')[1]);
+        var mimeString = dataUrl.split(',')[0].split(':')[1].split(';')[0];
+        var ab = new ArrayBuffer(byteString.length);
+        var ia = new Uint8Array(ab);
+        for(var i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+        var blob = new Blob([ab], {type: mimeString});
+
+        var fileName = userId + '/' + Date.now() + '.jpg';
+        var uploadResult = await sb.storage.from('Photos').upload(fileName, blob, {
+          contentType: 'image/jpeg',
+          upsert: false
+        });
+
+        if(uploadResult.error) {
+          console.error('[ONEs] storage upload:', uploadResult.error);
+          // それでも続行（dataUrlで保存）
+        } else {
+          // パブリックURLを取得
+          var urlResult = sb.storage.from('Photos').getPublicUrl(fileName);
+          if(urlResult.data && urlResult.data.publicUrl) {
+            photoUrl = urlResult.data.publicUrl;
+          }
+        }
+
+        // photos テーブルに保存
+        await sb.from('photos').insert({
+          author_id: userId,
+          author_name: u,
+          author_emoji: e,
+          photo_url: photoUrl,
+          caption: caption,
+          visibility: vis
+        });
+      } catch(err) {
+        console.error('[ONEs] photo upload:', err);
+      }
+    }
+
+    // LocalStorage にも保存（フォールバック）
     var newPhoto = {
       id: 'ph' + Date.now(),
-      photo: window._selectedPhoto,
+      photo: photoUrl,
       caption: caption,
       author: u,
       authorEmoji: e,
@@ -2963,24 +3295,11 @@ function postPhoto() {
       comments: []
     };
 
-    // ユーザー別保存
     var userKey = userId ? 'op_'+userId : 'op';
     var own = [];
-    try { own = JSON.parse(localStorage.getItem(userKey) || '[]'); } catch(err) { own = []; }
+    try { own = JSON.parse(localStorage.getItem(userKey) || '[]'); } catch(err) {}
     own.unshift(newPhoto);
-    try { localStorage.setItem(userKey, JSON.stringify(own)); } catch(err) {
-      console.error('[ONEs] photo save:', err);
-      toast('❌ 容量不足のため保存できません');
-      return;
-    }
-
-    // 共有タイムライン
-    if(vis !== 'private') {
-      var shared = [];
-      try { shared = JSON.parse(localStorage.getItem('ones_shared_photos') || '[]'); } catch(err) { shared = []; }
-      shared.unshift(newPhoto);
-      try { localStorage.setItem('ones_shared_photos', JSON.stringify(shared)); } catch(err) {}
-    }
+    try { localStorage.setItem(userKey, JSON.stringify(own)); } catch(err) {}
 
     window._selectedPhoto = null;
     closeSheet();
@@ -2994,23 +3313,43 @@ function postPhoto() {
 }
 function openDiarySheet(title){const all=[...ld('od'),...DI];const d=all.find(x=>x.title===title)||{title,excerpt:'',comments:0,good:0,date:''};var dsAuthor = d.author || ((currentUser && currentUser.name) ? currentUser.name : 'BOSS YASU');showSheet(d.title,`<div><div style="font-size:11px;color:var(--text3);margin-bottom:10px;">🗓️ ${d.date||'---'}&nbsp;👤 ${escHtml(dsAuthor)}</div><div style="font-size:14px;color:var(--text);line-height:1.8;margin-bottom:16px;">${d.excerpt}</div><div style="background:var(--og-pale);border-radius:12px;padding:14px;"><div style="font-weight:700;color:var(--og3);margin-bottom:10px;font-size:13px;">💬 コメント（${d.comments}件）</div>${d.comments>0?`<div style="display:flex;gap:10px;margin-bottom:10px;"><div class="av as" style="${AB}">🌸</div><div style="flex:1;background:#fff;border-radius:10px;padding:10px;"><div style="font-size:12px;font-weight:700;color:var(--og3);">さくらんぼ</div><div style="font-size:13px;color:var(--text);margin-top:3px;">素敵な内容ですね！参考になりました😊</div></div></div>`:'<div style="font-size:13px;color:var(--text3);margin-bottom:10px;">まだコメントはありません</div>'}<div style="display:flex;gap:8px;"><div class="av ax" style="${AB}">😊</div><textarea style="flex:1;background:#fff;border:1.5px solid var(--og-border);border-radius:10px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none;resize:none;height:60px;" placeholder="コメントを書く..."></textarea></div><div style="display:flex;justify-content:flex-end;margin-top:8px;"><button class="bos" onclick="toast('💬 コメントしました！')">送信</button></div></div></div>`);}
 function openUserSheet(name,emoji){showSheet(name+'さん',`<div style="text-align:center;padding:14px 0;"><div style="width:80px;height:80px;border-radius:20px;${AB};display:flex;align-items:center;justify-content:center;font-size:46px;margin:0 auto 10px;border:3px solid var(--og-border);">${emoji}</div><div style="font-size:20px;font-weight:700;color:var(--og3);margin-bottom:4px;">${name}</div><div style="font-size:12px;color:var(--text3);margin-bottom:16px;">ワンミク 🤝</div><div style="display:flex;gap:10px;justify-content:center;"><button class="bo" onclick="openComposeMsg('${name}')">💌 メッセージ</button><button class="bg" onclick="closeSheet()">閉じる</button></div></div>`);}
-function openCmSheet(name){
-  // ユーザー作成コミュニティも含めて検索
-  var myCommunities = [];
-  try { myCommunities = JSON.parse(localStorage.getItem('ones_my_communities') || '[]'); } catch(e){}
-  var allCommunities = CM.concat(RCM, myCommunities);
-  var c = allCommunities.find(function(x){ return x.n === name; }) ||
-          {n:name, e:'🏘️', cnt:1, owner:'不明', ownerEmoji:'👤', since:'-', desc:''};
-  var cntDisplay = (c.cnt || 1).toLocaleString();
+async function openCmSheet(name){
+  try {
+    // Supabaseから取得
+    var c = null;
+    if(dbReady()) {
+      var allCommunities = await dbFetchCommunities();
+      var sup = allCommunities.find(function(x){ return x.name === name; });
+      if(sup) {
+        c = {
+          n: sup.name, e: sup.emoji || '🏘️', cnt: sup.member_count || 1,
+          owner: sup.owner_name, ownerEmoji: '👤',
+          since: sup.created_at ? new Date(sup.created_at).getFullYear()+'年'+(new Date(sup.created_at).getMonth()+1)+'月' : '-',
+          desc: sup.description || ''
+        };
+      }
+    }
 
-  // トピックを取得
-  var topicsKey = 'ones_topics_' + name;
-  var topics = [];
-  try { topics = JSON.parse(localStorage.getItem(topicsKey) || '[]'); } catch(e){}
+    // デモコミュニティから検索
+    if(!c) {
+      var allDemo = CM.concat(RCM);
+      c = allDemo.find(function(x){ return x.n === name; });
+    }
 
-  var topicsHtml = '';
+    if(!c) {
+      c = {n:name, e:'🏘️', cnt:1, owner:'不明', ownerEmoji:'👤', since:'-', desc:''};
+    }
+
+    var cntDisplay = (c.cnt || 1).toLocaleString();
+
+    // トピックを Supabase から取得
+    var topics = [];
+    if(dbReady()) {
+      try { topics = await dbFetchTopics(name); } catch(e) {}
+    }
+
   if(topics.length === 0) {
-    topicsHtml = '<div style="background:var(--og-pale);border-radius:10px;padding:16px;text-align:center;color:var(--text3);font-size:13px;margin-bottom:6px;">まだトピックがありません<br><span style="font-size:11px;">「＋ トピックを投稿」から最初の話題を作りましょう</span></div>';
+    var topicsHtml = '<div style="background:var(--og-pale);border-radius:10px;padding:16px;text-align:center;color:var(--text3);font-size:13px;margin-bottom:6px;">まだトピックがありません<br><span style="font-size:11px;">「＋ トピックを投稿」から最初の話題を作りましょう</span></div>';
   } else {
     topicsHtml = topics.map(function(t){
       var icon = t.category === '質問' ? '❓' : (t.category === '報告' ? '📊' : '💡');
@@ -3047,6 +3386,10 @@ function openCmSheet(name){
       </div>
       ${topicsHtml}
     </div>`);
+  } catch(e) {
+    console.error('[ONEs] openCmSheet:', e);
+    toast('❌ 読み込みエラー');
+  }
 }
 
 // トピック投稿フォーム
@@ -3076,7 +3419,7 @@ function openCreateTopic(communityName) {
     </div>`);
 }
 
-function postTopic(communityName) {
+async function postTopic(communityName) {
   try {
     var catEl = document.getElementById('tp-category');
     var titleEl = document.getElementById('tp-title');
@@ -3096,28 +3439,28 @@ function postTopic(communityName) {
 
     var author = (currentUser && currentUser.name) ? currentUser.name : 'ゲスト';
     var authorEmoji = (currentUser && currentUser.emoji) ? currentUser.emoji : '🙋';
+    var userId = (currentUser && currentUser.id) ? currentUser.id : null;
 
-    var topicsKey = 'ones_topics_' + communityName;
-    var topics = [];
-    try { topics = JSON.parse(localStorage.getItem(topicsKey) || '[]'); } catch(e){}
-
-    var newTopic = {
-      id: 't' + Date.now(),
-      category: category,
-      title: title,
-      body: body,
-      author: author,
-      authorEmoji: authorEmoji,
-      ts: Date.now(),
-      good: 0,
-      comments: []
-    };
-    topics.unshift(newTopic);
-
-    try { localStorage.setItem(topicsKey, JSON.stringify(topics)); }
-    catch(e) { toast('❌ 保存できませんでした'); return; }
+    if(!dbReady() || !userId) { toast('❌ 接続できません'); return; }
 
     closeSheet();
+    toast('💬 投稿中...');
+
+    var result = await dbPostTopic({
+      communityName: communityName,
+      authorId: userId,
+      authorName: author,
+      authorEmoji: authorEmoji,
+      category: category,
+      title: title,
+      body: body
+    });
+
+    if(result.error) {
+      toast('❌ 投稿に失敗しました');
+      return;
+    }
+
     toast('💬 トピックを投稿しました！');
     setTimeout(function(){ openCmSheet(communityName); }, 200);
   } catch(err) {
@@ -3127,59 +3470,65 @@ function postTopic(communityName) {
 }
 
 // トピック詳細を開く
-function openTopicSheet(communityName, topicId) {
-  var topicsKey = 'ones_topics_' + communityName;
-  var topics = [];
-  try { topics = JSON.parse(localStorage.getItem(topicsKey) || '[]'); } catch(e){}
-  var topic = topics.find(function(t){ return t.id === topicId; });
-  if(!topic) { toast('トピックが見つかりません'); return; }
+async function openTopicSheet(communityName, topicId) {
+  try {
+    if(!dbReady()) { toast('❌ 接続できません'); return; }
 
-  var icon = topic.category === '質問' ? '❓' : (topic.category === '報告' ? '📊' : '💡');
-  var commentsHtml = '';
-  if(!topic.comments || topic.comments.length === 0) {
-    commentsHtml = '<div style="font-size:12px;color:var(--text3);text-align:center;padding:14px;">まだコメントはありません</div>';
-  } else {
-    commentsHtml = topic.comments.map(function(cm){
-      return '<div style="display:flex;gap:10px;margin-bottom:10px;">'+
-             '<div class="av as" style="background:linear-gradient(135deg,#a8ddb8,#3fa865);display:flex;align-items:center;justify-content:center;flex-shrink:0;">'+(cm.authorEmoji||'🙋')+'</div>'+
-             '<div style="flex:1;background:#fff;border-radius:10px;padding:10px;border:1px solid var(--og-border);">'+
-             '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">'+
-             '<div style="font-size:12px;font-weight:700;color:var(--og3);">'+escHtml(cm.author)+'</div>'+
-             '<div style="font-size:10px;color:var(--text3);">'+timeAgoStr(cm.ts)+'</div></div>'+
-             '<div style="font-size:13px;color:var(--text);line-height:1.6;">'+escHtml(cm.body)+'</div></div></div>';
-    }).join('');
-  }
+    // トピックを取得
+    var topicResult = await sb.from('topics').select('*').eq('id', topicId).maybeSingle();
+    if(!topicResult.data) { toast('トピックが見つかりません'); return; }
+    var topic = topicResult.data;
 
-  showSheet(icon+' '+topic.title, `
-    <div>
-      <!-- 投稿者 -->
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-        <div class="av am" style="background:linear-gradient(135deg,#a8ddb8,#3fa865);display:flex;align-items:center;justify-content:center;font-size:24px;">${topic.authorEmoji||'🙋'}</div>
-        <div>
-          <div style="font-size:14px;font-weight:700;color:var(--og3);">${escHtml(topic.author)}</div>
-          <div style="font-size:11px;color:var(--text3);">${timeAgoStr(topic.ts)} · ${topic.category}</div>
+    // コメントを取得
+    var comments = await dbFetchComments(topicId);
+
+    var icon = topic.category === '質問' ? '❓' : (topic.category === '報告' ? '📊' : '💡');
+    var topicAuthor = topic.author_name || 'メンバー';
+    var topicEmoji = topic.author_emoji || '🙋';
+    var topicTs = topic.created_at ? new Date(topic.created_at).getTime() : Date.now();
+
+    var commentsHtml = '';
+    if(!comments || comments.length === 0) {
+      commentsHtml = '<div style="font-size:12px;color:var(--text3);text-align:center;padding:14px;">まだコメントはありません</div>';
+    } else {
+      commentsHtml = comments.map(function(cm){
+        var cmTs = cm.created_at ? new Date(cm.created_at).getTime() : Date.now();
+        return '<div style="display:flex;gap:10px;margin-bottom:10px;">'+
+               '<div class="av as" style="background:linear-gradient(135deg,#a8ddb8,#3fa865);display:flex;align-items:center;justify-content:center;flex-shrink:0;">'+(cm.author_emoji||'🙋')+'</div>'+
+               '<div style="flex:1;background:#fff;border-radius:10px;padding:10px;border:1px solid var(--og-border);">'+
+               '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">'+
+               '<div style="font-size:12px;font-weight:700;color:var(--og3);">'+escHtml(cm.author_name||'')+'</div>'+
+               '<div style="font-size:10px;color:var(--text3);">'+timeAgoStr(cmTs)+'</div></div>'+
+               '<div style="font-size:13px;color:var(--text);line-height:1.6;">'+escHtml(cm.body)+'</div></div></div>';
+      }).join('');
+    }
+
+    showSheet(icon+' '+topic.title, `
+      <div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+          <div class="av am" style="background:linear-gradient(135deg,#a8ddb8,#3fa865);display:flex;align-items:center;justify-content:center;font-size:24px;">${topicEmoji}</div>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:var(--og3);">${escHtml(topicAuthor)}</div>
+            <div style="font-size:11px;color:var(--text3);">${timeAgoStr(topicTs)} · ${topic.category}</div>
+          </div>
         </div>
-      </div>
-      <!-- 本文 -->
-      <div style="background:var(--og-pale);border-radius:12px;padding:14px;font-size:14px;color:var(--text);line-height:1.7;margin-bottom:16px;white-space:pre-wrap;">${escHtml(topic.body)}</div>
-      <!-- いいねボタン -->
-      <div style="display:flex;gap:8px;margin-bottom:16px;">
-        <button class="bos" style="flex:1;" onclick="likeTopic('${esc(communityName)}','${topic.id}')">👍 いいね (${topic.good||0})</button>
-      </div>
-      <!-- コメント -->
-      <div style="font-weight:700;font-size:13px;color:var(--og3);margin-bottom:8px;">💬 コメント (${(topic.comments||[]).length}件)</div>
-      <div style="background:var(--og-pale);border-radius:12px;padding:12px;margin-bottom:10px;">
-        ${commentsHtml}
-      </div>
-      <!-- コメント入力 -->
-      <div class="er">
-        <textarea id="cm-body" class="eta" style="min-height:60px;" placeholder="コメントを書く..." maxlength="500"></textarea>
-      </div>
-      <button class="bo" style="width:100%;" onclick="postTopicComment('${esc(communityName)}','${topic.id}')">送信する</button>
-    </div>`);
+        <div style="background:var(--og-pale);border-radius:12px;padding:14px;font-size:14px;color:var(--text);line-height:1.7;margin-bottom:16px;white-space:pre-wrap;">${escHtml(topic.body)}</div>
+        <div style="font-weight:700;font-size:13px;color:var(--og3);margin-bottom:8px;">💬 コメント (${comments.length}件)</div>
+        <div style="background:var(--og-pale);border-radius:12px;padding:12px;margin-bottom:10px;">
+          ${commentsHtml}
+        </div>
+        <div class="er">
+          <textarea id="cm-body" class="eta" style="min-height:60px;" placeholder="コメントを書く..." maxlength="500"></textarea>
+        </div>
+        <button class="bo" style="width:100%;" onclick="postTopicComment('${esc(communityName)}','${topic.id}')">送信する</button>
+      </div>`);
+  } catch(err) {
+    console.error('[ONEs] openTopicSheet:', err);
+    toast('❌ 読み込みエラー');
+  }
 }
 
-function postTopicComment(communityName, topicId) {
+async function postTopicComment(communityName, topicId) {
   try {
     var bodyEl = document.getElementById('cm-body');
     if(!bodyEl) return;
@@ -3192,23 +3541,15 @@ function postTopicComment(communityName, topicId) {
 
     var author = (currentUser && currentUser.name) ? currentUser.name : 'ゲスト';
     var authorEmoji = (currentUser && currentUser.emoji) ? currentUser.emoji : '🙋';
+    var userId = (currentUser && currentUser.id) ? currentUser.id : null;
 
-    var topicsKey = 'ones_topics_' + communityName;
-    var topics = [];
-    try { topics = JSON.parse(localStorage.getItem(topicsKey) || '[]'); } catch(e){}
-    var idx = topics.findIndex(function(t){ return t.id === topicId; });
-    if(idx === -1) { toast('トピックが見つかりません'); return; }
+    if(!dbReady() || !userId) { toast('❌ 接続できません'); return; }
 
-    if(!topics[idx].comments) topics[idx].comments = [];
-    topics[idx].comments.push({
-      author: author,
-      authorEmoji: authorEmoji,
-      body: body,
-      ts: Date.now()
-    });
-
-    try { localStorage.setItem(topicsKey, JSON.stringify(topics)); }
-    catch(e) { toast('❌ 保存できませんでした'); return; }
+    var result = await dbPostComment(topicId, userId, author, authorEmoji, body);
+    if(result.error) {
+      toast('❌ 送信に失敗しました');
+      return;
+    }
 
     toast('💬 コメントしました！');
     setTimeout(function(){ openTopicSheet(communityName, topicId); }, 200);
@@ -3266,44 +3607,92 @@ function openMsgSheet(from,emoji,text){showSheet(from+'さんのメッセージ'
 function openComposeMsg(to){showSheet('新しいメッセージ',`<div><div class="er"><label class="el">宛先</label><input class="ei" type="text" value="${to||''}" placeholder="ニックネームを入力"></div><div class="er"><label class="el">件名</label><input class="ei" type="text" placeholder="件名を入力"></div><div class="er"><label class="el">本文</label><textarea class="eta" placeholder="メッセージを入力してください..."></textarea></div><button class="bo" style="width:100%;" onclick="toast('メッセージを送信しました！');closeSheet()">送信する</button></div>`);}
 function openEditProfile(){const nick=document.getElementById('pvnick').textContent;const loc=document.getElementById('pvloc').textContent;const job=document.getElementById('pvjob').textContent;const status=document.getElementById('mpstatus').textContent;showSheet('プロフィールを編集',`<div><div class="er"><label class="el">ニックネーム</label><input id="ep-nick" class="ei" type="text" value="${nick}"></div><div class="er"><label class="el">ひとこと</label><input id="ep-st" class="ei" type="text" value="${status}"></div><div class="er"><label class="el">居住地</label><input id="ep-loc" class="ei" type="text" value="${loc}"></div><div class="er"><label class="el">職業</label><input id="ep-job" class="ei" type="text" value="${job}"></div><button class="bo" style="width:100%;" onclick="saveProfile()">保存する</button></div>`);}
 function openEditBio(){const cur=document.getElementById('pvbio').innerText;showSheet('自己紹介を編集',`<div><div class="er"><label class="el">自己紹介文</label><textarea id="ep-bio" class="eta" style="min-height:150px;">${cur}</textarea></div><button class="bo" style="width:100%;" onclick="saveBio()">保存する</button></div>`);}
-function saveProfile(){
-  const nick=document.getElementById('ep-nick').value;
-  const st=document.getElementById('ep-st').value;
-  const loc=document.getElementById('ep-loc').value;
-  const job=document.getElementById('ep-job').value;
+async function saveProfile(){
+  try {
+    const nick = document.getElementById('ep-nick').value.trim();
+    const st = document.getElementById('ep-st').value.trim();
+    const loc = document.getElementById('ep-loc').value.trim();
+    const job = document.getElementById('ep-job').value.trim();
 
-  document.getElementById('pvnick').textContent=nick;
-  document.getElementById('pvloc').textContent=loc;
-  document.getElementById('pvjob').textContent=job;
-  document.getElementById('mpname').textContent=nick;
-  document.getElementById('mpstatus').textContent=st;
+    if(!nick) { toast('ニックネームを入力してください'); return; }
+    if(/<|>|script|javascript:|on\w+=/i.test(nick + st + loc + job)) {
+      toast('使用できない文字が含まれています'); return;
+    }
 
-  // ユーザーごとにプロフィールを保存
-  if(currentUser && currentUser.id) {
-    const profile = { nick, status: st, loc, job };
-    const existing = JSON.parse(localStorage.getItem('ones_profile_'+currentUser.id) || '{}');
-    localStorage.setItem('ones_profile_'+currentUser.id, JSON.stringify({...existing, ...profile}));
-    // currentUserのnameも更新
-    currentUser.name = nick;
-    saveSession(currentUser);
+    // 画面更新
+    var pvnick = document.getElementById('pvnick');
+    var pvloc = document.getElementById('pvloc');
+    var pvjob = document.getElementById('pvjob');
+    var mpname = document.getElementById('mpname');
+    var mpstatus = document.getElementById('mpstatus');
+    if(pvnick) pvnick.textContent = nick;
+    if(pvloc) pvloc.textContent = loc;
+    if(pvjob) pvjob.textContent = job;
+    if(mpname) mpname.textContent = nick;
+    if(mpstatus) mpstatus.textContent = st;
+
+    // currentUser を更新
+    if(currentUser) {
+      currentUser.name = nick;
+      saveSession(currentUser);
+    }
+
+    // LocalStorage にも保存（フォールバック）
+    if(currentUser && currentUser.id) {
+      var existing = JSON.parse(localStorage.getItem('ones_profile_'+currentUser.id) || '{}');
+      var profile = { nick: nick, status: st, loc: loc, job: job };
+      localStorage.setItem('ones_profile_'+currentUser.id, JSON.stringify(Object.assign(existing, profile)));
+    }
+
+    // Supabase に保存
+    if(dbReady() && currentUser && currentUser.id) {
+      var updateResult = await sb.from('members').update({
+        name: nick,
+        bio: st,
+        location: loc,
+        job: job
+      }).eq('id', currentUser.id);
+
+      if(updateResult.error) {
+        console.error('[ONEs] saveProfile DB:', updateResult.error);
+      }
+    }
+
+    closeSheet();
+    toast('✅ プロフィールを保存しました');
+  } catch(err) {
+    console.error('[ONEs] saveProfile:', err);
+    toast('❌ 保存に失敗しました');
   }
-
-  closeSheet();
-  toast('✅ プロフィールを保存しました');
 }
-function saveBio(){
-  const bio=document.getElementById('ep-bio').value;
-  document.getElementById('pvbio').innerHTML=bio.replace(/\n/g,'<br>');
+async function saveBio(){
+  try {
+    var bio = document.getElementById('ep-bio').value.trim();
+    if(/<|>|script|javascript:|on\w+=/i.test(bio)) {
+      toast('使用できない文字が含まれています'); return;
+    }
 
-  // ユーザーごとに保存
-  if(currentUser && currentUser.id) {
-    const existing = JSON.parse(localStorage.getItem('ones_profile_'+currentUser.id) || '{}');
-    existing.bio = bio.replace(/\n/g,'<br>');
-    localStorage.setItem('ones_profile_'+currentUser.id, JSON.stringify(existing));
+    var pvbio = document.getElementById('pvbio');
+    if(pvbio) pvbio.innerHTML = escHtml(bio).replace(/\n/g,'<br>');
+
+    // LocalStorage
+    if(currentUser && currentUser.id) {
+      var existing = JSON.parse(localStorage.getItem('ones_profile_'+currentUser.id) || '{}');
+      existing.bio = bio;
+      localStorage.setItem('ones_profile_'+currentUser.id, JSON.stringify(existing));
+    }
+
+    // Supabase
+    if(dbReady() && currentUser && currentUser.id) {
+      await sb.from('members').update({ bio: bio }).eq('id', currentUser.id);
+    }
+
+    closeSheet();
+    toast('✅ 自己紹介を保存しました');
+  } catch(err) {
+    console.error('[ONEs] saveBio:', err);
+    toast('❌ 保存に失敗しました');
   }
-
-  closeSheet();
-  toast('✅ 自己紹介を保存しました');
 }
 
 function showSheet(title,html){document.getElementById('shtit').textContent=title;document.getElementById('shbody').innerHTML=html;document.getElementById('sbg').classList.add('show');requestAnimationFrame(()=>document.getElementById('sh').classList.add('open'));}
@@ -3390,6 +3779,16 @@ function handlePhotoUpload(event) {
 
         toast('📷 プロフィール写真を更新しました！');
         console.log('[ONEs] 写真保存完了 - userId:', userId, ', userName:', userName);
+
+        // Supabase の members テーブルにも保存
+        if(typeof dbReady === 'function' && dbReady() && currentUser && currentUser.id) {
+          try {
+            sb.from('members').update({photo: compressedDataUrl}).eq('id', currentUser.id).then(function(r){
+              if(r.error) console.error('[ONEs] photo to DB:', r.error);
+              else console.log('[ONEs] photo synced to Supabase');
+            });
+          } catch(e) { console.error('[ONEs] photo DB:', e); }
+        }
       } catch(err) {
         console.error('[ONEs] 保存エラー:', err);
         toast('❌ 保存できませんでした');
