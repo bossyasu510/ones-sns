@@ -1786,6 +1786,10 @@ function enterApp(){
   document.getElementById('bnav').style.display='';
   document.getElementById('fab').style.display='';
   initApp();
+  // 確実に写真を読み込み（複数回呼ぶ）
+  setTimeout(function(){ try { loadProfilePhoto(); } catch(e) { console.error(e); } }, 200);
+  setTimeout(function(){ try { loadProfilePhoto(); } catch(e) {} }, 500);
+  setTimeout(function(){ try { loadProfilePhoto(); } catch(e) {} }, 1000);
 }
 
 async function showAdminLogin(){
@@ -2865,24 +2869,33 @@ function handlePhotoUpload(event) {
       const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
 
       try {
-        // LocalStorageに保存（ユーザー別と現在セッション用の両方に保存）
         var userId = (currentUser && currentUser.id) ? currentUser.id : 'm001';
-        var photoKey = 'ones_profile_photo_'+userId;
+        var userName = (currentUser && currentUser.name) ? currentUser.name : null;
 
-        try { localStorage.setItem(photoKey, compressedDataUrl); } catch(e) { console.error('save user photo:', e); }
-        // 現在セッション用にも保存（ログイン状態でロード時にすぐ表示できる）
+        // 1. ユーザーIDで保存
+        try { localStorage.setItem('ones_profile_photo_'+userId, compressedDataUrl); } catch(e) { console.error(e); }
+        // 2. 現在セッション用
         try { localStorage.setItem('ones_current_photo', compressedDataUrl); } catch(e) {}
+        // 3. ニックネーム別
+        if(userName) {
+          try { localStorage.setItem('ones_photo_by_name_'+userName, compressedDataUrl); } catch(e) {}
+        }
+        // 4. メンバーデータ自体に写真を埋め込み（永続性最大）
+        try {
+          var members = JSON.parse(localStorage.getItem('ones_members') || '[]');
+          var idx = members.findIndex(function(m){ return m.id === userId; });
+          if(idx !== -1) {
+            members[idx].photo = compressedDataUrl;
+            localStorage.setItem('ones_members', JSON.stringify(members));
+            console.log('[ONEs] メンバーデータに写真保存:', userId);
+          }
+        } catch(e) { console.error('メンバー写真保存:', e); }
 
         // 全アバターに反映
         applyProfilePhoto(compressedDataUrl);
 
-        // 念のためサインインしているニックネーム別にも保存（互換性のため）
-        if(currentUser && currentUser.name) {
-          try { localStorage.setItem('ones_photo_by_name_'+currentUser.name, compressedDataUrl); } catch(e) {}
-        }
-
         toast('📷 プロフィール写真を更新しました！');
-        console.log('[ONEs] 写真保存完了:', photoKey);
+        console.log('[ONEs] 写真保存完了 - userId:', userId, ', userName:', userName);
       } catch(err) {
         console.error('[ONEs] 保存エラー:', err);
         toast('❌ 保存できませんでした');
@@ -2947,49 +2960,59 @@ function applyProfilePhoto(dataUrl) {
 function loadProfilePhoto() {
   try {
     var saved = null;
+    var src = '';
 
     // 1. ユーザーIDで検索
     if(currentUser && currentUser.id) {
-      var photoKey = 'ones_profile_photo_'+currentUser.id;
-      saved = localStorage.getItem(photoKey);
-      if(saved) {
-        console.log('[ONEs] 写真読み込み (userId):', photoKey);
-      }
+      saved = localStorage.getItem('ones_profile_photo_'+currentUser.id);
+      if(saved) src = 'userId';
     }
 
-    // 2. ニックネームで検索（ID変わってもニックネームが同じなら復元）
+    // 2. メンバーデータから検索（最優先永続データ）
+    if(!saved && currentUser && currentUser.id) {
+      try {
+        var members = JSON.parse(localStorage.getItem('ones_members') || '[]');
+        var member = members.find(function(m){ return m.id === currentUser.id; });
+        if(member && member.photo) {
+          saved = member.photo;
+          src = 'members data';
+          // キャッシュ
+          try { localStorage.setItem('ones_profile_photo_'+currentUser.id, saved); } catch(e){}
+        }
+      } catch(e) {}
+    }
+
+    // 3. ニックネームで検索
     if(!saved && currentUser && currentUser.name) {
       saved = localStorage.getItem('ones_photo_by_name_'+currentUser.name);
       if(saved) {
-        console.log('[ONEs] 写真読み込み (name):', currentUser.name);
-        // 新しいIDで再保存
+        src = 'name';
         if(currentUser.id) {
           try { localStorage.setItem('ones_profile_photo_'+currentUser.id, saved); } catch(e) {}
         }
       }
     }
 
-    // 3. BOSS YASUの旧キー
+    // 4. BOSS YASUの旧キー
     if(!saved && currentUser && currentUser.id === 'm001') {
       saved = localStorage.getItem('ones_profile_photo');
       if(saved) {
-        console.log('[ONEs] 写真読み込み (旧キー)');
+        src = 'legacy';
         try { localStorage.setItem('ones_profile_photo_m001', saved); } catch(e){}
       }
     }
 
-    // 4. 現在セッション用の保存場所
+    // 5. 現在セッション用
     if(!saved) {
       saved = localStorage.getItem('ones_current_photo');
-      if(saved) {
-        console.log('[ONEs] 写真読み込み (current)');
-      }
+      if(saved) src = 'current';
     }
 
     if(saved) {
+      console.log('[ONEs] 写真読み込み成功 from', src);
       applyProfilePhoto(saved);
     } else {
-      console.log('[ONEs] 写真なし - emojiを表示');
+      console.log('[ONEs] 写真なし - emojiを表示 (currentUser:', currentUser ? currentUser.id : 'null', ')');
       resetProfilePhoto();
     }
   } catch(e) {
