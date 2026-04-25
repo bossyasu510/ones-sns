@@ -972,6 +972,17 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
           <div class="mps" onclick="nav('invite',null)"><div class="n" id="mp-inv-count">5</div><div class="l">招待数</div></div>
         </div>
       </div>
+
+      <!-- ログアウトボタン（目立つ位置） -->
+      <div style="margin:14px 12px;display:flex;gap:10px;">
+        <button onclick="openEditProfile()" style="flex:1;padding:14px;background:#fff;border:2px solid var(--og);color:var(--og-dark);border-radius:14px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 2px 8px rgba(30,110,58,0.08);">
+          ✏️ プロフィール編集
+        </button>
+        <button onclick="logoutApp()" style="flex:1;padding:14px;background:#fff;border:2px solid #e53e3e;color:#e53e3e;border-radius:14px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 2px 8px rgba(229,62,62,0.08);">
+          🚪 ログアウト
+        </button>
+      </div>
+
       <div class="psec">
         <div class="psh"><span class="t">👤 基本情報</span><a href="#" onclick="openEditProfile();return false;">編集</a></div>
         <div class="psb">
