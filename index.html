@@ -537,6 +537,17 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
 .cd.oth{color:#c0ddc8;}
 .cd.hev:not(.tod)::after{content:'';display:block;width:4px;height:4px;background:var(--og);border-radius:50%;margin:1px auto 0;}
 
+/* ── CHARACTER DESIGN ACCENT ── */
+.chr-card{margin:0 12px 10px;border-radius:14px;overflow:hidden;box-shadow:var(--shadow);border:1.5px solid var(--og-border);background:linear-gradient(135deg,#0f2a3c,#1f4d6d);}
+.chr-wrap{position:relative;display:flex;align-items:stretch;min-height:112px;}
+.chr-main{flex:1;padding:12px 12px 12px 14px;color:#fff;}
+.chr-kicker{font-size:10px;letter-spacing:.06em;font-weight:700;opacity:.85;margin-bottom:4px;}
+.chr-title{font-size:15px;font-weight:900;line-height:1.3;margin-bottom:3px;}
+.chr-sub{font-size:11px;opacity:.92;line-height:1.45;}
+.chr-art{width:98px;flex-shrink:0;position:relative;background:radial-gradient(circle at 70% 20%,rgba(255,255,255,.28),rgba(255,255,255,0));}
+.chr-art img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;display:block;}
+.chr-fallback{position:absolute;inset:0;display:none;align-items:center;justify-content:center;font-size:28px;color:#fff;background:linear-gradient(135deg,#2b6287,#1a3f5a);}
+
 /* ── BUTTONS ── */
 .bo{background:linear-gradient(135deg,#4cb87a 0%,#218a4a 100%);color:#fff;border:none;padding:12px 24px;border-radius:24px;font-size:14px;font-weight:700;font-family:inherit;box-shadow:0 3px 12px rgba(30,110,58,.3);transition:all .2s;cursor:pointer;}
 .bo:active{transform:scale(.97);}
@@ -591,17 +602,6 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
 .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 20px;border-radius:24px;font-size:13px;font-weight:600;z-index:999;box-shadow:0 4px 16px rgba(0,0,0,.3);white-space:nowrap;animation:tin .25s ease,tout .3s ease 1.9s forwards;pointer-events:none;}
 @keyframes tin{from{opacity:0;transform:translateX(-50%) translateY(10px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
 @keyframes tout{to{opacity:0;transform:translateX(-50%) translateY(10px);}}
-
-/* ── MIO GUIDE ── */
-.mio-guide{margin:0 12px 10px;background:linear-gradient(135deg,#fff,#f4fdf7);border:1.5px solid var(--og-border);border-radius:12px;padding:10px;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow);}
-.mio-av{width:40px;height:40px;border-radius:12px;flex-shrink:0;background:linear-gradient(135deg,#a8ddb8,#3fa865);display:flex;align-items:center;justify-content:center;font-size:20px;border:2px solid #fff;}
-.mio-guide-title{font-size:12px;font-weight:800;color:var(--og3);line-height:1.35;}
-.mio-guide-desc{font-size:11px;color:var(--text3);line-height:1.45;}
-#mio-fab{position:fixed;bottom:calc(var(--nav-h) + var(--sb) + 78px);right:16px;z-index:191;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#5ac486,#2b9a55);color:#fff;font-size:24px;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(30,110,58,.35);cursor:pointer;}
-#mio-fab:active{transform:scale(.94);}
-@media (min-width:1180px){
-  #mio-fab{right:calc((100vw - 1100px)/2 + 16px);}
-}
 
 /* ══════════════════════════════
    ── INVITE SYSTEM STYLES ──
@@ -928,15 +928,24 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
   </div>
 </header>
 
-<div id="mio-force" onclick="openMioGuide()" style="position:fixed;top:74px;right:12px;z-index:99999;background:#ff4d4f;color:#fff;padding:8px 12px;border-radius:999px;font-size:12px;font-weight:900;box-shadow:0 4px 14px rgba(0,0,0,.28);cursor:pointer;display:flex;align-items:center;gap:6px;">
-  <span>⏱️</span><span>MIO</span>
-</div>
-
 <div id="body" style="display:none;">
   <div id="maincol">
 
     <!-- HOME -->
     <div class="pg on" id="pg-home">
+      <div class="chr-card" aria-label="クロノ・ミオ ビジュアル">
+        <div class="chr-wrap">
+          <div class="chr-main">
+            <div class="chr-kicker">NEW CHARACTER</div>
+            <div class="chr-title">クロノ・ミオ</div>
+            <div class="chr-sub">日常の失敗をちょっと修正。<br>ONEsの体験をそっとナビゲートします。</div>
+          </div>
+          <div class="chr-art">
+            <img src="/Users/yasuse3boss/.cursor/projects/Users-yasuse3boss-Desktop-ones-sns/assets/20251229_010621119_iOS-6f5823d2-d218-44cc-86fc-45683621fc37.png" alt="クロノ・ミオ" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div class="chr-fallback">⏱️</div>
+          </div>
+        </div>
+      </div>
       <div id="strow">
         <div class="sh">最近の足あと <a href="#" onclick="nav('footprint',null);return false;">全部見る</a></div>
         <div class="srow" id="strow-inner"></div>
@@ -958,14 +967,6 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
           <button class="wab" onclick="openSheet('voice')">💬 つぶやき</button>
           <button class="wab" onclick="openSheet('photo')">📷 フォト</button>
         </div>
-      </div>
-      <div class="mio-guide" onclick="openMioGuide()" role="button" aria-label="クロノ・ミオのガイドを開く">
-        <div class="mio-av">⏱️</div>
-        <div style="flex:1;min-width:0;">
-          <div class="mio-guide-title">クロノ・ミオがサポート中</div>
-          <div class="mio-guide-desc">タップでミオの使い方を確認できます</div>
-        </div>
-        <button class="bos" onclick="event.stopPropagation();openMioGuide()">見る</button>
       </div>
       <div class="sh" style="padding-top:4px;">タイムライン</div>
       <div id="tlfeed"></div>
@@ -1448,7 +1449,6 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
 </nav>
 
 <button id="fab" style="display:none;" onclick="openSheet('diary')">＋</button>
-<button id="mio-fab" onclick="openMioGuide()">⏱️</button>
 <div id="sov"><div class="sovhd"><input id="soin" type="search" placeholder="日記・コミュニティ・ひとを検索" autocomplete="off"><span class="socan" onclick="closeSearch()">キャンセル</span></div><div class="sobd" id="sobd"><div class="sohi">🔍<br><br>キーワードを入力</div></div></div>
 <div id="sbg" onclick="closeSheet()"></div>
 <div id="sh"><div class="shdl"></div><div class="shhd"><div class="shtit" id="shtit">タイトル</div><button class="shx" onclick="closeSheet()">✕</button></div><div id="shbody"></div></div>
@@ -1556,20 +1556,6 @@ function sv(k,v){
   try { localStorage.setItem(k,JSON.stringify(v)); } catch(e) { console.error(e); }
 }
 function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(function(){t.remove();},2200);}
-function openMioGuide(){
-  showSheet('⏱️ クロノ・ミオ ガイド', '<div>'+
-    '<div style="display:flex;gap:10px;align-items:center;background:linear-gradient(135deg,#f7fcf9,#edf8f1);border:1.5px solid var(--og-border);border-radius:12px;padding:12px;margin-bottom:10px;">'+
-      '<div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#a8ddb8,#3fa865);display:flex;align-items:center;justify-content:center;font-size:22px;border:2px solid #fff;flex-shrink:0;">⏱️</div>'+
-      '<div><div style="font-size:13px;font-weight:800;color:var(--og3);line-height:1.4;">クロノ・ミオが案内します</div><div style="font-size:11px;color:var(--text3);">空状態や完了時に優しくサポートします。</div></div>'+
-    '</div>'+
-    '<div style="font-size:12px;color:var(--text3);line-height:1.9;">'+
-      '・ホーム上部にミオカードを常時表示<br>'+
-      '・右下の⏱️ボタンからいつでも表示<br>'+
-      '・投稿/保存の完了案内に段階追加可能'+
-    '</div>'+
-  '</div>');
-}
-
 
 /* ══════════ セキュリティ ══════════ */
 
