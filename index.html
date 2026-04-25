@@ -589,16 +589,6 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
 
 /* ── TOAST ── */
 .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 20px;border-radius:24px;font-size:13px;font-weight:600;z-index:999;box-shadow:0 4px 16px rgba(0,0,0,.3);white-space:nowrap;animation:tin .25s ease,tout .3s ease 1.9s forwards;pointer-events:none;}
-.mio-toast{white-space:normal;min-width:220px;max-width:min(92vw,360px);padding:10px 12px;border-radius:14px;background:rgba(20,24,28,.96);}
-.mio-toast-inner{display:flex;align-items:center;gap:10px;}
-.mio-av{width:34px;height:34px;border-radius:10px;overflow:hidden;flex-shrink:0;background:linear-gradient(135deg,#a8ddb8,#3fa865);display:flex;align-items:center;justify-content:center;font-size:16px;border:1.5px solid rgba(255,255,255,.35);}
-.mio-av img{width:100%;height:100%;object-fit:cover;display:block;}
-.mio-tx{font-size:12px;line-height:1.45;font-weight:700;}
-.mio-empty{background:linear-gradient(135deg,#f7fcf9,#edf8f1);border:1.5px solid var(--og-border);border-radius:14px;padding:14px 12px;display:flex;align-items:center;gap:10px;max-width:420px;margin:0 auto;}
-.mio-empty .mio-av{width:42px;height:42px;border-radius:12px;font-size:20px;border:2px solid #fff;box-shadow:0 2px 8px rgba(30,110,58,.15);}
-.mio-empty-title{font-size:13px;font-weight:800;color:var(--og3);line-height:1.35;}
-.mio-empty-desc{font-size:11px;color:var(--text3);line-height:1.5;margin-top:2px;}
-.mio-empty .bos{padding:6px 10px;font-size:11px;border-radius:14px;box-shadow:none;}
 @keyframes tin{from{opacity:0;transform:translateX(-50%) translateY(10px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
 @keyframes tout{to{opacity:0;transform:translateX(-50%) translateY(10px);}}
 
@@ -920,7 +910,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
     <div class="dn" onclick="logoutApp()" style="color:rgba(255,200,200,.9);">🚪 ログアウト</div>
   </nav>
   <button class="hd-icon" onclick="openSearch()" style="margin-left:auto;">🔍</button>
-  <button class="hd-icon" onclick="nav('notice',null)">🔔<div class="hb" id="hd-notice-badge">7</div></button>
+  <button class="hd-icon" onclick="nav('notice',null)">🔔<div class="hb">7</div></button>
   <div id="hd-av" onclick="nav('mypage',null)">
     <img id="hd-av-img" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:50%;">
     <span id="hd-av-emoji">😊</span>
@@ -995,9 +985,9 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
         <div class="psh"><span class="t">👤 基本情報</span><a href="#" onclick="openEditProfile();return false;">編集</a></div>
         <div class="psb">
           <div class="pr"><div class="pk">ニックネーム</div><div class="pv" id="pvnick">BOSS YASU</div></div>
-          <div class="pr"><div class="pk">性別</div><div class="pv" id="pvgender">未設定</div></div>
-          <div class="pr"><div class="pk">居住地</div><div class="pv" id="pvloc">未設定</div></div>
-          <div class="pr"><div class="pk">職業</div><div class="pv" id="pvjob">未設定</div></div>
+          <div class="pr"><div class="pk">性別</div><div class="pv">男性</div></div>
+          <div class="pr"><div class="pk">居住地</div><div class="pv" id="pvloc">愛知県 名古屋市</div></div>
+          <div class="pr"><div class="pk">職業</div><div class="pv" id="pvjob">IT会社経営</div></div>
           <div class="pr"><div class="pk">招待者</div><div class="pv">🌱 創設メンバー（管理者）</div></div>
           <div class="pr"><div class="pk">登録日</div><div class="pv">2005年4月3日</div></div>
         </div>
@@ -1414,7 +1404,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
       </div>
     </div>
     <div class="sc">
-      <div class="sch">🔔 お知らせ <span id="side-notice-badge" style="background:#e53e3e;color:#fff;border-radius:8px;padding:0 5px;font-size:10px;font-weight:900;">7</span></div>
+      <div class="sch">🔔 お知らせ <span style="background:#e53e3e;color:#fff;border-radius:8px;padding:0 5px;font-size:10px;font-weight:900;">7</span></div>
       <div class="scb" id="snt"></div>
     </div>
   </aside>
@@ -1542,32 +1532,6 @@ function sv(k,v){
   try { localStorage.setItem(k,JSON.stringify(v)); } catch(e) { console.error(e); }
 }
 function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(function(){t.remove();},2200);}
-function mioImageUrl(){
-  try { return localStorage.getItem('ones_mio_image') || '/Users/yasuse3boss/.cursor/projects/Users-yasuse3boss-Desktop-ones-sns/assets/20251229_010621119_iOS-6f5823d2-d218-44cc-86fc-45683621fc37.png'; } catch(e){}
-  return '/Users/yasuse3boss/.cursor/projects/Users-yasuse3boss-Desktop-ones-sns/assets/20251229_010621119_iOS-6f5823d2-d218-44cc-86fc-45683621fc37.png';
-}
-function mioAvatarHTML(extraClass){
-  var cls = extraClass ? 'mio-av '+extraClass : 'mio-av';
-  return '<div class="'+cls+'"><img src="'+mioImageUrl()+'" alt="クロノ・ミオ" loading="lazy" onerror="this.style.display=\'none\';this.parentElement.textContent=\'⏱️\'"></div>';
-}
-function mioToast(msg){
-  var t=document.createElement('div');
-  t.className='toast mio-toast';
-  t.innerHTML='<div class="mio-toast-inner">'+mioAvatarHTML('')+'<div class="mio-tx">'+(msg||'ミオがサポートします')+'</div></div>';
-  document.body.appendChild(t);
-  setTimeout(function(){ t.remove(); }, 2400);
-}
-function mioEmptyState(title,desc,actionLabel,actionJs){
-  var action = actionLabel && actionJs ? '<button class="bos" onclick="'+actionJs+'">'+actionLabel+'</button>' : '';
-  return '<div class="mio-empty">'+
-    mioAvatarHTML('')+
-    '<div style="flex:1;min-width:0;">'+
-      '<div class="mio-empty-title">'+(title||'クロノ・ミオが待機中')+'</div>'+
-      '<div class="mio-empty-desc">'+(desc||'ここから始めてみよう。')+'</div>'+
-    '</div>'+
-    action+
-  '</div>';
-}
 
 
 /* ══════════ セキュリティ ══════════ */
@@ -2846,7 +2810,7 @@ async function renderTL(){
       h += '<div class="fc"><div class="fch">'+avHtml+'<div class="fui"><div class="fname">'+escHtml(voiceAuthor)+'</div><div class="fsub">'+timeAgoStr(ts)+'&nbsp;<span class="fbadge bv">つぶやき</span></div></div></div><div class="fcb"><div class="ftxt" style="padding-bottom:2px;">'+escHtml(voiceBody)+'</div></div><div class="fcf"><div class="fbtn'+(isLikedV?' lk':'')+'" onclick="likeThis(this,\'voices\',\''+recId+'\')">👍 <span class="like-count">'+(v.good||0)+'</span></div><div class="fbtn" onclick="toast(\'💬 返信機能は準備中です\')">💬 返信</div><div class="fbtn" onclick="sharePost(\''+esc(voiceBody)+'\')">↗️ シェア</div></div></div>';
     });
 
-    if(tlEl) tlEl.innerHTML = h || '<div style="padding:20px 12px;">'+mioEmptyState('投稿はまだ0件です','最初の投稿でタイムラインを動かそう。','日記を書く','openSheet(\\\'diary\\\')')+'</div>';
+    if(tlEl) tlEl.innerHTML = h || '<div style="padding:40px;text-align:center;color:var(--text3);">まだ投稿がありません<br><span style="font-size:12px;">最初の投稿をしてみましょう！</span></div>';
   } catch(err) {
     console.error('[ONEs] renderTL:', err);
   }
@@ -2892,7 +2856,7 @@ async function renderDiary(){
     }
 
     if(all.length === 0) {
-      dlistEl.innerHTML = '<div style="padding:16px 12px;">'+mioEmptyState('日記がまだありません','3秒で下書き気分でOK。まず1本。','日記を書く','openSheet(\\\'diary\\\')')+'</div>';
+      dlistEl.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text3);">まだ日記がありません<br><span style="font-size:12px;">最初の日記を書いてみましょう！</span></div>';
       return;
     }
 
@@ -2924,7 +2888,7 @@ async function renderVoice(){
     }
 
     if(all.length === 0) {
-      vfeedEl.innerHTML = '<div style="padding:16px 12px;">'+mioEmptyState('つぶやきはまだありません','短いひとことから始めよう。','つぶやく','openSheet(\\\'voice\\\')')+'</div>';
+      vfeedEl.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text3);">まだつぶやきがありません</div>';
       return;
     }
 
@@ -2945,51 +2909,75 @@ async function renderVoice(){
   } catch(e) { console.error('[ONEs] renderVoice:', e); }
 }
 async function renderWanmik(){
-  var grid=document.getElementById('mxgrid');
+  var grid = document.getElementById('mxgrid');
   if(!grid) return;
-  grid.innerHTML='<div style="padding:30px;text-align:center;color:var(--text3);grid-column:1/-1;">読み込み中...</div>';
-  var accepted=[],pending_sent=[],pending_recv=[];
-  if(dbReady()&&currentUser&&currentUser.id){
-    try{ var r1=await sb.from('wanmik').select('*').eq('from_id',currentUser.id).eq('status','accepted'); if(!r1.error) accepted=[...accepted,...(r1.data||[])]; }catch(e){ console.warn(e); }
-    try{ var r2=await sb.from('wanmik').select('*').eq('to_id',currentUser.id).eq('status','accepted'); if(!r2.error) accepted=[...accepted,...(r2.data||[])]; }catch(e){ console.warn(e); }
-    try{ var rps=await sb.from('wanmik').select('*').eq('from_id',currentUser.id).eq('status','pending'); if(!rps.error) pending_sent=rps.data||[]; }catch(e){ console.warn(e); }
-    try{ var rpr=await sb.from('wanmik').select('*').eq('to_id',currentUser.id).eq('status','pending'); if(!rpr.error) pending_recv=rpr.data||[]; }catch(e){ console.warn(e); }
+  grid.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text3);grid-column:1/-1;">読み込み中...</div>';
+
+  var accepted = [], pending_sent = [], pending_recv = [];
+  var wanmikQuerySuccess = false;
+
+  if(dbReady() && currentUser && currentUser.id){
+    try {
+      var r1 = await sb.from('wanmik').select('*').eq('from_id',currentUser.id).eq('status','accepted');
+      if(!r1.error) { accepted = [...accepted, ...(r1.data||[])]; wanmikQuerySuccess = true; }
+    } catch(e){ console.warn('[ONEs] wanmik r1:', e); }
+    try {
+      var r2 = await sb.from('wanmik').select('*').eq('to_id',currentUser.id).eq('status','accepted');
+      if(!r2.error) { accepted = [...accepted, ...(r2.data||[])]; wanmikQuerySuccess = true; }
+    } catch(e){ console.warn('[ONEs] wanmik r2:', e); }
+    try {
+      var rps = await sb.from('wanmik').select('*').eq('from_id',currentUser.id).eq('status','pending');
+      if(!rps.error) { pending_sent = rps.data || []; wanmikQuerySuccess = true; }
+    } catch(e){ console.warn('[ONEs] wanmik rps:', e); }
+    try {
+      var rpr = await sb.from('wanmik').select('*').eq('to_id',currentUser.id).eq('status','pending');
+      if(!rpr.error) { pending_recv = rpr.data || []; wanmikQuerySuccess = true; }
+    } catch(e){ console.warn('[ONEs] wanmik rpr:', e); }
   }
-  var html='';
-  if(pending_recv.length>0){
-    html+='<div style="grid-column:1/-1;background:linear-gradient(135deg,#fef9e7,#fdf4d3);border:1.5px solid #f4d03f;border-radius:12px;padding:12px 14px;margin-bottom:4px;">';
-    html+='<div style="font-size:13px;font-weight:700;color:#7d6608;margin-bottom:10px;">🔔 ワンミク申請が届いています（'+pending_recv.length+'件）</div>';
+
+  if(dbReady() && currentUser && currentUser.id && !wanmikQuerySuccess){
+    grid.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3);grid-column:1/-1;">ワンミク機能は準備中です</div>';
+    return;
+  }
+
+  var html = '';
+  if(pending_recv.length > 0){
+    html += '<div style="grid-column:1/-1;background:linear-gradient(135deg,#fef9e7,#fdf4d3);border:1.5px solid #f4d03f;border-radius:12px;padding:12px 14px;margin-bottom:4px;">';
+    html += '<div style="font-size:13px;font-weight:700;color:#7d6608;margin-bottom:10px;">🔔 ワンミク申請が届いています（'+pending_recv.length+'件）</div>';
     pending_recv.forEach(function(w){
-      html+='<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid rgba(0,0,0,.06);">';
-      html+='<div class="av am" style="'+AB+';flex-shrink:0;">'+(w.from_emoji||'🙋')+'</div>';
-      html+='<div style="flex:1;"><div style="font-size:13px;font-weight:700;">'+escHtml(w.from_name||'')+'</div><div style="font-size:11px;color:var(--text3);">ワンミク申請中</div></div>';
-      html+='<div style="display:flex;gap:6px;">';
-      html+='<button onclick="approveWanmik(\''+w.id+'\')" style="background:linear-gradient(135deg,#4cb87a,#218a4a);color:#fff;border:none;padding:8px 14px;border-radius:20px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;">✅ 承認</button>';
-      html+='<button onclick="rejectWanmik(\''+w.id+'\')" style="background:var(--og-pale);color:var(--text3);border:1.5px solid var(--og-border);padding:8px 14px;border-radius:20px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;">✕ 断る</button>';
-      html+='</div></div>';
+      html += '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid rgba(0,0,0,.06);">';
+      html += '<div class="av am" style="'+AB+';flex-shrink:0;">'+(w.from_emoji||'🙋')+'</div>';
+      html += '<div style="flex:1;"><div style="font-size:13px;font-weight:700;">'+escHtml(w.from_name||'')+'</div><div style="font-size:11px;color:var(--text3);">ワンミク申請中</div></div>';
+      html += '<div style="display:flex;gap:6px;">';
+      html += '<button onclick="approveWanmik(\''+w.id+'\')" style="background:linear-gradient(135deg,#4cb87a,#218a4a);color:#fff;border:none;padding:8px 14px;border-radius:20px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;">✅ 承認</button>';
+      html += '<button onclick="rejectWanmik(\''+w.id+'\')" style="background:var(--og-pale);color:var(--text3);border:1.5px solid var(--og-border);padding:8px 14px;border-radius:20px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;">✕ 断る</button>';
+      html += '</div></div>';
     });
-    html+='</div>';
+    html += '</div>';
   }
+
   accepted.forEach(function(w){
-    var name=w.from_id===currentUser.id?w.to_name:w.from_name;
-    var emoji=w.from_id===currentUser.id?(w.to_emoji||'🙋'):(w.from_emoji||'🙋');
-    html+='<div style="display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;padding:12px 4px;background:#fff;border-radius:12px;box-shadow:var(--shadow);" onclick="openUserSheet(\''+esc(name)+'\',\''+emoji+'\')">';
-    html+='<div style="position:relative;"><div class="av al" style="'+AB+';border-radius:18px;">'+emoji+'</div>';
-    html+='<div style="position:absolute;bottom:2px;right:2px;width:12px;height:12px;background:#33cc44;border-radius:50%;border:2px solid #fff;"></div></div>';
-    html+='<div style="font-size:12px;font-weight:700;color:var(--text2);text-align:center;">'+escHtml(name)+'</div></div>';
+    var name  = w.from_id===currentUser.id ? w.to_name  : w.from_name;
+    var emoji = w.from_id===currentUser.id ? (w.to_emoji||'🙋') : (w.from_emoji||'🙋');
+    html += '<div style="display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;padding:12px 4px;background:#fff;border-radius:12px;box-shadow:var(--shadow);" onclick="openUserSheet(\''+esc(name)+'\',\''+emoji+'\')">';
+    html += '<div style="position:relative;"><div class="av al" style="'+AB+';border-radius:18px;">'+emoji+'</div>';
+    html += '<div style="position:absolute;bottom:2px;right:2px;width:12px;height:12px;background:#33cc44;border-radius:50%;border:2px solid #fff;"></div></div>';
+    html += '<div style="font-size:12px;font-weight:700;color:var(--text2);text-align:center;">'+escHtml(name)+'</div></div>';
   });
+
   pending_sent.forEach(function(w){
-    html+='<div style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 4px;background:#fff;border-radius:12px;box-shadow:var(--shadow);opacity:.55;">';
-    html+='<div class="av al" style="'+AB+';border-radius:18px;">'+(w.to_emoji||'🙋')+'</div>';
-    html+='<div style="font-size:11px;font-weight:700;color:var(--text3);text-align:center;">'+escHtml(w.to_name||'')+'</div>';
-    html+='<div style="font-size:10px;color:var(--og);background:var(--og-pale);padding:2px 8px;border-radius:10px;">申請中</div></div>';
+    html += '<div style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 4px;background:#fff;border-radius:12px;box-shadow:var(--shadow);opacity:.55;">';
+    html += '<div class="av al" style="'+AB+';border-radius:18px;">'+(w.to_emoji||'🙋')+'</div>';
+    html += '<div style="font-size:11px;font-weight:700;color:var(--text3);text-align:center;">'+escHtml(w.to_name||'')+'</div>';
+    html += '<div style="font-size:10px;color:var(--og);background:var(--og-pale);padding:2px 8px;border-radius:10px;">申請中</div></div>';
   });
-  if(accepted.length===0&&pending_sent.length===0&&pending_recv.length===0){
-    html+='<div style="padding:10px 4px;grid-column:1/-1;">'+mioEmptyState('ワンミクはまだ0人です','気になるメンバーに申請してみよう。','メンバーを見る','nav(\\\'home\\\',null)')+'</div>';
+
+  if(accepted.length===0 && pending_sent.length===0 && pending_recv.length===0){
+    html += '<div style="padding:40px;text-align:center;color:var(--text3);grid-column:1/-1;">まだワンミクがいません<br><span style="font-size:12px;">メンバーのプロフィールから申請しましょう</span></div>';
   }
-  grid.innerHTML=html;
-  var sh=document.querySelector('#pg-wanmik .sh');
-  if(sh) sh.innerHTML='ワンミク（'+accepted.length+'人）';
+  grid.innerHTML = html;
+  var sh = document.querySelector('#pg-wanmik .sh');
+  if(sh) sh.innerHTML = 'ワンミク（'+accepted.length+'人）';
   var mpw = document.querySelector('.mps .n');
   if(mpw) mpw.textContent = accepted.length;
 }
@@ -3000,7 +2988,7 @@ async function renderCM(){
       var el = document.getElementById(id);
       if(!el) return;
       if(!list || list.length === 0) {
-        el.innerHTML = '<div style="padding:12px 2px;">'+mioEmptyState('コミュニティがまだありません','新しく作って最初の主催者になろう。','作成する','openCreateCommunity()')+'</div>';
+        el.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text3);font-size:13px;">まだコミュニティがありません</div>';
         return;
       }
       el.innerHTML = list.map(function(c){
@@ -3142,139 +3130,31 @@ async function createCommunity() {
   }
 }
 function renderMsgs(){document.getElementById('msglist').innerHTML=MSG.map(m=>`<div class="mlit ${m.u?'unrd':''}" onclick="openMsgSheet('${esc(m.f)}','${m.e}','${esc(m.t)}')"><div class="av as" style="${AB}">${m.e}</div><div style="flex:1;min-width:0;"><div class="mlfrom">${m.f}</div><div class="mlprev">${m.t}</div></div><div class="mldate">${m.d}</div></div>`).join('');}
-function renderNT(id,list){
-  const el=document.getElementById(id);
-  if(!el) return;
-  el.innerHTML=(list||[]).map(n=>{
-    if(n && n.html) return n.html;
-    return `<div class="nti"><div class="ntd ${n.type||'old'}"></div><div><div class="ntt">${n.t}</div><div class="ntm">${n.tm}</div></div></div>`;
-  }).join('');
-}
-
-var NOTICE_CACHE = [];
-function noticeSeenKey(){
-  var uid = (currentUser && currentUser.id) ? currentUser.id : 'guest';
-  return 'ones_notice_seen_at_' + uid;
-}
-function getNoticeSeenAt(){
-  try { return parseInt(localStorage.getItem(noticeSeenKey()) || '0', 10) || 0; } catch(e){ return 0; }
-}
-function setNoticeSeenAt(ts){
-  try { localStorage.setItem(noticeSeenKey(), String(ts || Date.now())); } catch(e){}
-}
-function updateNoticeBadges(unread){
-  var count = Math.max(0, unread || 0);
-  var hd = document.getElementById('hd-notice-badge');
-  var side = document.getElementById('side-notice-badge');
-  if(hd){
-    hd.textContent = String(count);
-    hd.style.display = count > 0 ? 'flex' : 'none';
-  }
-  if(side){
-    side.textContent = String(count);
-    side.style.display = count > 0 ? '' : 'none';
-  }
-}
-async function fetchNoticeItems(){
-  var now = Date.now();
-  var base = (NT || []).map(function(n, i){
-    return {
-      type: n.type || 'old',
-      t: n.t || '',
-      tm: n.tm || '',
-      ts: now - ((i + 1) * 600000)
-    };
-  });
-  if(dbReady() && currentUser && currentUser.id){
-    try {
-      var r = await sb.from('wanmik').select('*').eq('to_id',currentUser.id).eq('status','pending');
-      var list = r.data || [];
-      list.forEach(function(w, i){
-        var ts = w.created_at ? new Date(w.created_at).getTime() : (now - (i * 1000));
-        base.unshift({
-          type:'new',
-          ts: ts,
-          html: '<div class="nti" style="background:var(--og-pale);border-radius:10px;padding:10px 12px;margin-bottom:8px;">'+
-            '<div class="ntd"></div>'+
-            '<div style="flex:1;">'+
-              '<div class="ntt"><strong>'+escHtml(w.from_name||'')+'</strong>さんからワンミク申請が届いています</div>'+
-              '<div class="ntm">'+timeAgoStr(ts)+'</div>'+
-              '<div style="display:flex;gap:8px;margin-top:8px;">'+
-                '<button onclick="approveWanmik(\''+w.id+'\')" style="background:var(--og);color:#fff;border:none;padding:7px 16px;border-radius:16px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;">✅ 承認する</button>'+
-                '<button onclick="rejectWanmik(\''+w.id+'\')" style="background:var(--og-pale);color:var(--text3);border:1.5px solid var(--og-border);padding:7px 16px;border-radius:16px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;">✕ 断る</button>'+
-              '</div>'+
-            '</div></div>'
-        });
-      });
-    } catch(e){ console.error('[ONEs] fetchNoticeItems:', e); }
-  }
-  base.sort(function(a,b){ return (b.ts||0) - (a.ts||0); });
-  return base;
-}
-function countUnreadNotices(list){
-  var seenAt = getNoticeSeenAt();
-  return (list || []).filter(function(n){ return (n.ts || 0) > seenAt; }).length;
-}
-async function syncNoticeUI(markAsRead){
-  NOTICE_CACHE = await fetchNoticeItems();
-  renderNT('ntlist', NOTICE_CACHE);
-  renderNT('snt', NOTICE_CACHE.slice(0,5));
-  if(markAsRead) setNoticeSeenAt(Date.now());
-  var unread = countUnreadNotices(NOTICE_CACHE);
-  updateNoticeBadges(unread);
-}
+function renderNT(id,list){const el=document.getElementById(id);if(!el)return;el.innerHTML=list.map(n=>`<div class="nti"><div class="ntd ${n.type||'old'}"></div><div><div class="ntt">${n.t}</div><div class="ntm">${n.tm}</div></div></div>`).join('');}
 async function loadWanmikNotices(){
-  try { await syncNoticeUI(false); } catch(e){ console.error('[ONEs] loadWanmikNotices:',e); }
+  if(!dbReady() || !currentUser || !currentUser.id) return;
+  try {
+    var r = await sb.from('wanmik').select('*').eq('to_id',currentUser.id).eq('status','pending');
+    var list = r.data || [];
+    if(list.length === 0) return;
+    var el = document.getElementById('ntlist');
+    if(!el) return;
+    var notices = list.map(function(w){
+      return '<div class="nti" style="background:var(--og-pale);border-radius:10px;padding:10px 12px;margin-bottom:8px;">'+
+        '<div class="ntd new"></div>'+
+        '<div style="flex:1;">'+
+          '<div class="ntt"><strong>'+escHtml(w.from_name||'')+'</strong>さんからワンミク申請が届いています</div>'+
+          '<div style="display:flex;gap:8px;margin-top:8px;">'+
+            '<button onclick="approveWanmik(\''+w.id+'\')" style="background:var(--og);color:#fff;border:none;padding:7px 16px;border-radius:16px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;">✅ 承認する</button>'+
+            '<button onclick="rejectWanmik(\''+w.id+'\')" style="background:var(--og-pale);color:var(--text3);border:1.5px solid var(--og-border);padding:7px 16px;border-radius:16px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;">✕ 断る</button>'+
+          '</div>'+
+        '</div></div>';
+    }).join('');
+    el.innerHTML = notices + el.innerHTML;
+  } catch(e){ console.error('[ONEs] loadWanmikNotices:',e); }
 }
 function renderMpDiary(){const all=[...ld('od'),...DI];document.getElementById('mpdiary').innerHTML=all.slice(0,4).map(d=>`<div style="padding:8px 0;border-bottom:1px solid var(--og-pale);cursor:pointer;" onclick="openDiarySheet('${esc(d.title)}')"><div style="font-size:13px;font-weight:700;color:var(--og3);">${d.title}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${d.date}&nbsp;💬${d.comments||0}&nbsp;👍${d.good||0}</div></div>`).join('');}
-function miniCalShift(delta){
-  calMonth += delta;
-  if(calMonth < 0){ calMonth = 11; calYear--; }
-  if(calMonth > 11){ calMonth = 0; calYear++; }
-  calSelectedDay = null;
-  renderCal();
-  if(cur === 'calendar'){
-    try { renderCalendarPage(); } catch(e) { console.error(e); }
-  }
-}
-function miniCalOpenDay(day){
-  calSelectedDay = day;
-  nav('calendar',null);
-  setTimeout(function(){
-    try { calSelectDay(day); } catch(e) { console.error(e); }
-  }, 0);
-}
-function renderCal(){
-  var el = document.getElementById('calel');
-  if(!el) return;
-  var y = calYear;
-  var m = calMonth;
-  var first = new Date(y,m,1).getDay();
-  var last = new Date(y,m+1,0).getDate();
-  var today = new Date();
-  var myEvents = loadEvents();
-  var h = '<div class="calhd">'+
-    '<button onclick="miniCalShift(-1)">◀</button>'+
-    '<span class="calt">'+y+'年'+(m+1)+'月</span>'+
-    '<button onclick="miniCalShift(1)">▶</button>'+
-    '</div><div class="calg">';
-  ['日','月','火','水','木','金','土'].forEach(function(d){ h += '<div class="cdow">'+d+'</div>'; });
-  for(var i=0; i<first; i++) h += '<div class="cd oth"></div>';
-  for(var d=1; d<=last; d++){
-    var dateStr = y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
-    var isToday = today.getFullYear()===y && today.getMonth()===m && today.getDate()===d;
-    var isSel = calSelectedDay === d;
-    var hasMyEv = myEvents.some(function(e){ return (e.date||'').replace(/\//g,'-')===dateStr; });
-    var hasWanmikEv = WANMIK_EVENTS.some(function(e){ return (e.date||'').replace(/\//g,'-')===dateStr; });
-    var cls = 'cd';
-    if(isToday) cls += ' tod';
-    if(isSel && !isToday) cls += ' cal-day-sel';
-    if(hasMyEv || hasWanmikEv) cls += ' hev';
-    h += '<div class="'+cls+'" onclick="miniCalOpenDay('+d+')">'+d+'</div>';
-  }
-  h += '</div>';
-  el.innerHTML = h;
-}
+function renderCal(){const y=2024,m=2,first=new Date(y,m,1).getDay(),last=new Date(y,m+1,0).getDate(),tod=15,ev=[8,10,15,22];let h=`<div class="calhd"><button>◀</button><span class="calt">${y}年${m+1}月</span><button>▶</button></div><div class="calg">`;['日','月','火','水','木','金','土'].forEach(d=>{h+=`<div class="cdow">${d}</div>`;});for(let i=0;i<first;i++)h+=`<div class="cd oth"></div>`;for(let d=1;d<=last;d++){const c=d===tod?'tod':ev.includes(d)?'hev':'';h+=`<div class="cd ${c}">${d}</div>`;}h+='</div>';document.getElementById('calel').innerHTML=h;}
 function renderSide(){
   const sfp=document.getElementById('sfp');
   if(sfp)sfp.innerHTML=FP.slice(0,10).map(u=>`<div style="text-align:center;cursor:pointer;" onclick="openUserSheet('${esc(u.n)}','${u.e}')"><div style="width:36px;height:36px;border-radius:8px;${AB};display:flex;align-items:center;justify-content:center;font-size:20px;border:1.5px solid var(--og-border);margin:0 auto 2px;">${u.e}</div><div style="font-size:9px;color:var(--text3);">${u.n}</div></div>`).join('');
@@ -3310,11 +3190,7 @@ function nav(name,el){
     try { if(name==='footprint' && typeof renderFP === 'function') renderFP(); } catch(e) { console.error(e); }
     try { if(name==='community' && typeof renderCM === 'function') renderCM(); } catch(e) { console.error(e); }
     try { if(name==='message' && typeof renderMsgs === 'function') renderMsgs(); } catch(e) { console.error(e); }
-    if(name==='notice'){
-      try {
-        syncNoticeUI(true);
-      } catch(e){ console.error(e); }
-    }
+    if(name==='notice'){ try { renderNT('ntlist',NT); loadWanmikNotices(); } catch(e){} }
   if(name==='mypage'){
     renderMpDiary();
     try { renderMypagePhotos(); } catch(e) { console.error(e); }
@@ -3388,7 +3264,7 @@ async function postDiary(){
       return;
     }
 
-    mioToast('日記を投稿したよ。ナイススタート！');
+    toast('📔 日記を投稿しました！');
     try { if(typeof renderTL === 'function') renderTL(); } catch(err) {}
     try { if(typeof renderDiary === 'function') renderDiary(); } catch(err) {}
     setTimeout(function(){ try { loadProfilePhoto(); } catch(e) {} }, 50);
@@ -3429,7 +3305,7 @@ async function postVoice(text){
     try { localStorage.setItem(userKey, JSON.stringify(own)); } catch(err) {}
 
     closeSheet();
-    mioToast('つぶやき完了。いい流れです！');
+    toast('💬 つぶやきを投稿しました！');
     try { if(typeof cur !== 'undefined' && cur === 'voice' && typeof renderVoice === 'function') renderVoice(); } catch(err) {}
     try { if(typeof renderTL === 'function') renderTL(); } catch(err) {}
     setTimeout(function(){ try { loadProfilePhoto(); } catch(e) {} }, 50);
@@ -3471,7 +3347,7 @@ async function postVoiceInline(){
     try { localStorage.setItem(userKey, JSON.stringify(own)); } catch(err) {}
 
     el.value = '';
-    mioToast('つぶやき完了。いい流れです！');
+    toast('💬 つぶやきを投稿しました！');
     try { if(typeof renderVoice === 'function') renderVoice(); } catch(err) {}
     try { if(typeof renderTL === 'function') renderTL(); } catch(err) {}
     setTimeout(function(){ try { loadProfilePhoto(); } catch(e) {} }, 50);
@@ -3698,7 +3574,7 @@ async function postPhoto() {
 
     window._selectedPhoto = null;
     closeSheet();
-    mioToast('写真を投稿したよ。雰囲気が伝わる！');
+    toast('📷 写真を投稿しました！');
     try { if(typeof renderTL === 'function') renderTL(); } catch(err) {}
     try { if(typeof renderMypagePhotos === 'function') renderMypagePhotos(); } catch(err) {}
     setTimeout(function(){ try { loadProfilePhoto(); } catch(e) {} }, 50);
@@ -3802,7 +3678,6 @@ async function approveWanmik(wanmikId){
     if(r.error){ toast('❌ 承認に失敗しました'); return; }
     toast('🤝 ワンミク成立！');
     renderWanmik();
-    try { await syncNoticeUI(false); } catch(e){}
   } catch(e){ toast('❌ エラーが発生しました'); }
 }
 
@@ -3813,7 +3688,6 @@ async function rejectWanmik(wanmikId){
     if(r.error){ toast('❌ 処理に失敗しました'); return; }
     toast('申請を断りました');
     renderWanmik();
-    try { await syncNoticeUI(false); } catch(e){}
   } catch(e){ toast('❌ エラーが発生しました'); }
 }
 async function openCmSheet(name){
@@ -4108,56 +3982,65 @@ function escHtml(str) {
 }
 function openMsgSheet(from,emoji,text){showSheet(from+'さんのメッセージ',`<div><div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;"><div class="av am" style="${AB}">${emoji}</div><div><div style="font-weight:700;color:var(--og3);">${from}</div><div style="font-size:11px;color:var(--text3);">ワンミク</div></div></div><div style="background:var(--og-pale);border-radius:12px;padding:14px;font-size:14px;color:var(--text);line-height:1.7;margin-bottom:16px;">${text}</div><textarea style="width:100%;background:var(--og-pale);border:1.5px solid var(--og-border);border-radius:12px;padding:12px;font-size:14px;font-family:inherit;outline:none;resize:none;height:90px;margin-bottom:10px;" placeholder="返信を入力..."></textarea><button class="bo" style="width:100%;" onclick="toast('返信を送信しました！');closeSheet()">送信する</button></div>`);}
 function openComposeMsg(to){showSheet('新しいメッセージ',`<div><div class="er"><label class="el">宛先</label><input class="ei" type="text" value="${to||''}" placeholder="ニックネームを入力"></div><div class="er"><label class="el">件名</label><input class="ei" type="text" placeholder="件名を入力"></div><div class="er"><label class="el">本文</label><textarea class="eta" placeholder="メッセージを入力してください..."></textarea></div><button class="bo" style="width:100%;" onclick="toast('メッセージを送信しました！');closeSheet()">送信する</button></div>`);}
-function openEditProfile(){
-  const nick = document.getElementById('pvnick').textContent;
-  const loc = document.getElementById('pvloc').textContent;
-  const job = document.getElementById('pvjob').textContent;
-  const gender = document.getElementById('pvgender').textContent;
-  const status = document.getElementById('mpstatus').textContent;
-  const gOpts = ['未設定','男性','女性','その他','回答しない'];
-  const gSel = gOpts.map(g=>`<option${g===gender?' selected':''}>${g}</option>`).join('');
-  showSheet('プロフィールを編集',`<div>
-    <div class="er"><label class="el">ニックネーム</label><input id="ep-nick" class="ei" type="text" value="${nick}"></div>
-    <div class="er"><label class="el">ひとこと</label><input id="ep-st" class="ei" type="text" value="${status}"></div>
-    <div class="er"><label class="el">性別</label><select id="ep-gender" class="ei">${gSel}</select></div>
-    <div class="er"><label class="el">居住地</label><input id="ep-loc" class="ei" type="text" placeholder="例：愛知県 名古屋市" value="${loc==='未設定'?'':loc}"></div>
-    <div class="er"><label class="el">職業</label><input id="ep-job" class="ei" type="text" placeholder="例：IT会社経営" value="${job==='未設定'?'':job}"></div>
-    <button class="bo" style="width:100%;" onclick="saveProfile()">保存する</button>
-  </div>`);
-}
+function openEditProfile(){const nick=document.getElementById('pvnick').textContent;const loc=document.getElementById('pvloc').textContent;const job=document.getElementById('pvjob').textContent;const status=document.getElementById('mpstatus').textContent;showSheet('プロフィールを編集',`<div><div class="er"><label class="el">ニックネーム</label><input id="ep-nick" class="ei" type="text" value="${nick}"></div><div class="er"><label class="el">ひとこと</label><input id="ep-st" class="ei" type="text" value="${status}"></div><div class="er"><label class="el">居住地</label><input id="ep-loc" class="ei" type="text" value="${loc}"></div><div class="er"><label class="el">職業</label><input id="ep-job" class="ei" type="text" value="${job}"></div><button class="bo" style="width:100%;" onclick="saveProfile()">保存する</button></div>`);}
 function openEditBio(){const cur=document.getElementById('pvbio').innerText;showSheet('自己紹介を編集',`<div><div class="er"><label class="el">自己紹介文</label><textarea id="ep-bio" class="eta" style="min-height:150px;">${cur}</textarea></div><button class="bo" style="width:100%;" onclick="saveBio()">保存する</button></div>`);}
 async function saveProfile(){
   try {
     const nick = document.getElementById('ep-nick').value.trim();
     const st = document.getElementById('ep-st').value.trim();
-    const gender = document.getElementById('ep-gender').value;
     const loc = document.getElementById('ep-loc').value.trim();
     const job = document.getElementById('ep-job').value.trim();
-    if(!nick){ toast('ニックネームを入力してください'); return; }
-    if(/<|>|script|javascript:|on\w+=/i.test(nick+st+loc+job)){ toast('使用できない文字が含まれています'); return; }
-    const pvnick=document.getElementById('pvnick');
-    const pvgender=document.getElementById('pvgender');
-    const pvloc=document.getElementById('pvloc');
-    const pvjob=document.getElementById('pvjob');
-    const mpname=document.getElementById('mpname');
-    const mpstatus=document.getElementById('mpstatus');
-    if(pvnick) pvnick.textContent=nick;
-    if(pvgender) pvgender.textContent=gender||'未設定';
-    if(pvloc) pvloc.textContent=loc||'未設定';
-    if(pvjob) pvjob.textContent=job||'未設定';
-    if(mpname) mpname.textContent=nick;
-    if(mpstatus) mpstatus.textContent=st;
-    if(currentUser){ currentUser.name=nick; saveSession(currentUser); }
-    if(currentUser&&currentUser.id){
-      const existing=JSON.parse(localStorage.getItem('ones_profile_'+currentUser.id)||'{}');
-      localStorage.setItem('ones_profile_'+currentUser.id, JSON.stringify(Object.assign(existing,{nick,status:st,gender,loc,job})));
+
+    if(!nick) { toast('ニックネームを入力してください'); return; }
+    if(/<|>|script|javascript:|on\w+=/i.test(nick + st + loc + job)) {
+      toast('使用できない文字が含まれています'); return;
     }
-    if(dbReady()&&currentUser&&currentUser.id){
-      await sb.from('members').update({name:nick,bio:st,gender:gender,location:loc,job:job}).eq('id',currentUser.id);
+
+    // 画面更新
+    var pvnick = document.getElementById('pvnick');
+    var pvloc = document.getElementById('pvloc');
+    var pvjob = document.getElementById('pvjob');
+    var mpname = document.getElementById('mpname');
+    var mpstatus = document.getElementById('mpstatus');
+    if(pvnick) pvnick.textContent = nick;
+    if(pvloc) pvloc.textContent = loc;
+    if(pvjob) pvjob.textContent = job;
+    if(mpname) mpname.textContent = nick;
+    if(mpstatus) mpstatus.textContent = st;
+
+    // currentUser を更新
+    if(currentUser) {
+      currentUser.name = nick;
+      saveSession(currentUser);
     }
+
+    // LocalStorage にも保存（フォールバック）
+    if(currentUser && currentUser.id) {
+      var existing = JSON.parse(localStorage.getItem('ones_profile_'+currentUser.id) || '{}');
+      var profile = { nick: nick, status: st, loc: loc, job: job };
+      localStorage.setItem('ones_profile_'+currentUser.id, JSON.stringify(Object.assign(existing, profile)));
+    }
+
+    // Supabase に保存
+    if(dbReady() && currentUser && currentUser.id) {
+      var updateResult = await sb.from('members').update({
+        name: nick,
+        bio: st,
+        location: loc,
+        job: job
+      }).eq('id', currentUser.id);
+
+      if(updateResult.error) {
+        console.error('[ONEs] saveProfile DB:', updateResult.error);
+      }
+    }
+
     closeSheet();
-    mioToast('プロフィールを保存したよ。');
-  } catch(err){ console.error('[ONEs] saveProfile:',err); toast('❌ 保存に失敗しました'); }
+    toast('✅ プロフィールを保存しました');
+  } catch(err) {
+    console.error('[ONEs] saveProfile:', err);
+    toast('❌ 保存に失敗しました');
+  }
 }
 async function saveBio(){
   try {
@@ -4182,7 +4065,7 @@ async function saveBio(){
     }
 
     closeSheet();
-    mioToast('自己紹介を保存したよ。');
+    toast('✅ 自己紹介を保存しました');
   } catch(err) {
     console.error('[ONEs] saveBio:', err);
     toast('❌ 保存に失敗しました');
@@ -4923,15 +4806,30 @@ function getEventsStorageKey() {
 }
 function loadEvents() {
   try {
-    var data=localStorage.getItem('ones_events');
-    if(!data) return [];
-    return JSON.parse(data);
-  } catch(e){ console.error('[ONEs] loadEvents:',e); return []; }
+    var key = getEventsStorageKey();
+    var raw = localStorage.getItem(key);
+    if(raw === null) {
+      var legacy = localStorage.getItem('ones_events');
+      if(legacy !== null) {
+        localStorage.setItem(key, legacy);
+        raw = legacy;
+      }
+    }
+    var parsed = JSON.parse(raw || '[]');
+    return Array.isArray(parsed) ? parsed : [];
+  } catch(e) {
+    console.warn('[ONEs] loadEvents parse:', e);
+    return [];
+  }
 }
 function saveEvents(evs) {
   try {
-    localStorage.setItem('ones_events',JSON.stringify(evs||[]));
-  } catch(e){ console.error('[ONEs] saveEvents:',e); toast('❌ 保存に失敗しました'); }
+    var key = getEventsStorageKey();
+    localStorage.setItem(key, JSON.stringify(Array.isArray(evs) ? evs : []));
+  } catch(e) {
+    console.error('[ONEs] saveEvents:', e);
+    toast('❌ 予定の保存に失敗しました');
+  }
 }
 
 function getEventsForMonth(y, m) {
@@ -5022,34 +4920,39 @@ function calNext() {
 }
 
 function renderEventsList(day) {
-  var el=document.getElementById('cal-events-list');
+  const el = document.getElementById('cal-events-list');
   if(!el) return;
-  var myEvents=loadEvents();
-  var filtered=[];
+
+  let events;
   if(day) {
-    var dateStr=calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
-    filtered=myEvents.filter(function(e){ return (e.date||'').replace(/\//g,'-')===dateStr; });
+    events = getEventsForDay(calYear, calMonth, day);
   } else {
-    filtered=myEvents.filter(function(e){
-      var d=new Date((e.date||'').replace(/\//g,'-'));
-      return !isNaN(d)&&d.getFullYear()===calYear&&d.getMonth()===calMonth;
-    });
+    events = getEventsForMonth(calYear, calMonth).filter(e => !WANMIK_EVENTS.includes(e));
   }
-  if(!filtered.length){
-    el.innerHTML='<div style="padding:12px 2px;">'+mioEmptyState('予定はまだありません','ミオと一緒に最初の予定を入れよう。','予定を追加','openAddEvent()')+'</div>';
+
+  const myEvents = loadEvents();
+  const myEventsFiltered = day
+    ? myEvents.filter(e => e.date === `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`)
+    : myEvents.filter(e => { const d=new Date(e.date); return d.getFullYear()===calYear&&d.getMonth()===calMonth; });
+
+  if(!myEventsFiltered.length) {
+    el.innerHTML = `<div style="padding:16px;text-align:center;color:var(--text3);">予定がありません<br><button class="bos" style="margin-top:10px;" onclick="openAddEvent()">＋ 予定を追加</button></div>`;
     return;
   }
-  el.innerHTML=filtered.map(function(e){
-    return '<div class="ev-item">'+
-      '<div class="ev-dot mine"></div>'+
-      '<div style="flex:1;">'+
-        '<div class="ev-title">'+escHtml(e.title)+'</div>'+
-        '<div class="ev-meta">📅 '+e.date+' '+(e.time||'')+' '+(e.place?'📍'+escHtml(e.place):'')+'</div>'+
-        (e.shared?'<span class="ev-share">👥 ワンミクに公開</span>':'<span style="font-size:10px;color:var(--text3);">🔒 非公開</span>')+
-      '</div>'+
-      '<div onclick="deleteEvent(\''+e.id+'\')" style="color:var(--text3);font-size:18px;cursor:pointer;padding:4px;">×</div>'+
-    '</div>';
-  }).join('');
+
+  el.innerHTML = myEventsFiltered.map(e => `
+    <div class="ev-item">
+      <div class="ev-dot mine"></div>
+      <div style="flex:1;">
+        <div class="ev-title">${e.title}</div>
+        <div class="ev-meta">📅 ${e.date} ${e.time||''} ${e.place?'📍'+e.place:''}</div>
+        ${e.shared ? '<span class="ev-share">👥 ワンミクに公開</span>' : '<span style="font-size:10px;color:var(--text3);">🔒 非公開</span>'}
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <div onclick="editEvent('${e.id}')" style="color:var(--og);font-size:12px;font-weight:700;cursor:pointer;padding:4px 8px;background:var(--og-pale);border-radius:8px;">編集</div>
+        <div onclick="deleteEvent('${e.id}')" style="color:var(--text3);font-size:18px;cursor:pointer;padding:4px;">×</div>
+      </div>
+    </div>`).join('');
 }
 
 function renderWanmikEvents() {
@@ -5112,35 +5015,45 @@ function openAddEvent() {
 
 function saveEvent() {
   try {
-    var titleEl=document.getElementById('ev-title');
-    var dateEl=document.getElementById('ev-date');
-    var timeEl=document.getElementById('ev-time');
-    var placeEl=document.getElementById('ev-place');
-    var memoEl=document.getElementById('ev-memo');
-    var visEl=document.querySelector('input[name="ev-vis"]:checked');
-    if(!titleEl||!dateEl){ toast('❌ フォームエラー'); return; }
-    var title=titleEl.value.trim();
-    var rawDate=dateEl.value;
-    var date=rawDate.replace(/\//g,'-');
-    var time=timeEl?timeEl.value:'12:00';
-    var place=placeEl?placeEl.value.trim():'';
-    var memo=memoEl?memoEl.value.trim():'';
-    var vis=visEl?visEl.value:'private';
-    if(!title){ toast('タイトルを入力してください'); return; }
-    if(!date||!/^\d{4}-\d{2}-\d{2}$/.test(date)){ toast('日付の形式が正しくありません: '+rawDate); return; }
-    var events=loadEvents();
-    var newEvent={
-      id:Date.now().toString(), title:title, date:date, time:time,
-      place:place, memo:memo, shared:vis==='shared',
-      author:currentUser?currentUser.name:'メンバー'
-    };
-    events.push(newEvent);
+    var titleEl = document.getElementById('ev-title');
+    var dateEl  = document.getElementById('ev-date');
+    var timeEl  = document.getElementById('ev-time');
+    var placeEl = document.getElementById('ev-place');
+    var memoEl  = document.getElementById('ev-memo');
+    var visEl   = document.querySelector('input[name="ev-vis"]:checked');
+
+    if(!titleEl){ toast('❌ フォームエラー（title）'); return; }
+    if(!dateEl) { toast('❌ フォームエラー（date）');  return; }
+
+    var title = titleEl.value.trim();
+    var date  = dateEl.value;
+    var time  = timeEl ? timeEl.value : '12:00';
+    var place = placeEl ? placeEl.value.trim() : '';
+    var memo  = memoEl ? memoEl.value.trim() : '';
+    var vis   = visEl ? visEl.value : 'private';
+
+    if(!title) { toast('タイトルを入力してください'); return; }
+    if(!date)  { toast('日付を選択してください'); return; }
+
+    var events = loadEvents();
+    events.push({
+      id: Date.now().toString(),
+      title: title,
+      date: date,
+      time: time,
+      place: place,
+      memo: memo,
+      shared: vis === 'shared',
+      author: currentUser ? currentUser.name : 'メンバー'
+    });
     saveEvents(events);
     closeSheet();
-    mioToast('予定「'+title+'」を登録したよ。');
-    console.log('[ONEs] 予定保存:',newEvent);
+    toast('📅 予定を登録しました！');
     renderCalendarPage();
-  } catch(err){ console.error('[ONEs] saveEvent error:',err); toast('❌ 保存に失敗しました: '+err.message); }
+  } catch(e) {
+    console.error('[ONEs] saveEvent:', e);
+    toast('❌ 予定の登録に失敗しました');
+  }
 }
 
 function deleteEvent(id) {
@@ -5504,7 +5417,6 @@ function initApp(){
       const pvbio = document.getElementById('pvbio');
       const mpstatus = document.getElementById('mpstatus');
 
-      const pvgender2=document.getElementById('pvgender'); if(pvgender2) pvgender2.textContent=savedProf.gender||'未設定';
       if(pvloc) pvloc.textContent = savedProf.loc || '未設定';
       if(pvjob) pvjob.textContent = savedProf.job || '未設定';
       if(pvbio) pvbio.innerHTML = savedProf.bio || '<span style="color:var(--text3);">プロフィールを編集して自己紹介を書きましょう ✏️</span>';
@@ -5622,7 +5534,7 @@ function initApp(){
   try { renderTL(); } catch(e) { console.error('[ONEs] renderTL:', e); }
   try { renderStories(); } catch(e) { console.error('[ONEs] renderStories:', e); }
   try { renderMxRow(); } catch(e) { console.error('[ONEs] renderMxRow:', e); }
-  try { syncNoticeUI(false); } catch(e) { console.error('[ONEs] syncNoticeUI:', e); }
+  try { renderNT('ntlist',NT); } catch(e) { console.error('[ONEs] renderNT:', e); }
   try { renderMpDiary(); } catch(e) { console.error('[ONEs] renderMpDiary:', e); }
   try { renderSide(); } catch(e) { console.error('[ONEs] renderSide:', e); }
   try { renderCal(); } catch(e) { console.error('[ONEs] renderCal:', e); }
