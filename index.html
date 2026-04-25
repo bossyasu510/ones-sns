@@ -2287,19 +2287,54 @@ function renderAdmPending(){
 }
 
 /* ══════════ INVITE PAGE ══════════ */
-function renderInvitePage(){
-  const m=getMembers();
-  const invited=m.filter(x=>x.invitedById==='m001');
-  document.getElementById('my-invited-list').innerHTML=invited.length?invited.map(u=>`
-    <div class="inv-tree-item">
-      <div class="inv-tree-icon">${u.emoji}</div>
-      <div style="flex:1;">
-        <div class="inv-tree-name">${u.name}</div>
-        <div class="inv-tree-date">${u.joinDate} / <span class="${u.status==='active'?'':u.status==='pending'?'':''}">
-          ${u.status==='active'?'✅ 参加中':'⏳ 承認待ち'}</span></div>
-      </div>
-      <div class="inv-tree-arrow">›</div>
-    </div>`).join(''):'<div style="color:var(--text3);font-size:13px;padding:8px 0;">まだ招待していません</div>';
+async function renderInvitePage(){
+  try {
+    var listEl = document.getElementById('my-invited-list');
+    if(!listEl) return;
+
+    listEl.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:8px 0;">読み込み中...</div>';
+
+    // Supabaseから自分が招待した人を取得
+    var invited = [];
+    if(dbReady() && currentUser && currentUser.id) {
+      var result = await sb.from('members')
+        .select('*')
+        .eq('invited_by_id', currentUser.id)
+        .order('join_date', {ascending: false});
+      if(result.data) invited = result.data;
+    }
+
+    // 招待数の表示も更新
+    var usedCnt = document.getElementById('inv-used-cnt');
+    var activeCnt = document.getElementById('inv-active-cnt');
+    if(usedCnt) usedCnt.textContent = invited.length;
+    if(activeCnt) activeCnt.textContent = invited.filter(function(x){ return x.status === 'active'; }).length;
+
+    // マイページの招待数も更新
+    var mpInvCount = document.getElementById('mp-inv-count');
+    if(mpInvCount) mpInvCount.textContent = invited.length;
+
+    if(invited.length === 0) {
+      listEl.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:16px 0;text-align:center;">まだ誰も招待していません<br><span style="font-size:11px;">招待コードを友達にシェアしましょう</span></div>';
+      return;
+    }
+
+    listEl.innerHTML = invited.map(function(u){
+      var statusText = u.status === 'active' ? '✅ 参加中' : (u.status === 'pending' ? '⏳ 承認待ち' : '❌ 退会');
+      return '<div class="inv-tree-item">'+
+        '<div class="inv-tree-icon">'+(u.emoji || '🙋')+'</div>'+
+        '<div style="flex:1;">'+
+          '<div class="inv-tree-name">'+escHtml(u.name)+'</div>'+
+          '<div class="inv-tree-date">'+(u.join_date || '-')+' / <span>'+statusText+'</span></div>'+
+        '</div>'+
+        '<div class="inv-tree-arrow">›</div>'+
+      '</div>';
+    }).join('');
+  } catch(e) {
+    console.error('[ONEs] renderInvitePage:', e);
+    var listEl = document.getElementById('my-invited-list');
+    if(listEl) listEl.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:8px 0;">読み込みエラー</div>';
+  }
 }
 
 function copyInviteCode(){
@@ -4342,17 +4377,49 @@ function initApp(){
       if(refInfo) refInfo.textContent = '管理者 / 2005年4月3日';
       if(refBadge) refBadge.textContent = '🌳 ルートメンバー';
       if(refAvatar) refAvatar.textContent = '🌱';
-    } else if(currentUser.invitedBy) {
-      // 招待された人
-      if(refName) refName.textContent = currentUser.invitedBy;
-      if(refInfo) refInfo.textContent = '紹介者 / ' + (currentUser.joinDate || new Date().toISOString().slice(0,10));
-      if(refBadge) refBadge.textContent = '🤝 あなたを招待した方';
-      if(refAvatar) {
-        // 招待者の絵文字を取得
-        const members = JSON.parse(localStorage.getItem('ones_members') || '[]');
-        const referrer = members.find(m => m.name === currentUser.invitedBy);
-        refAvatar.textContent = (referrer && referrer.emoji) ? referrer.emoji : '🙋';
-      }
+    } else {
+      // 招待された人 - Supabase から最新情報を取得
+      (async function(){
+        try {
+          var inviterName = currentUser.invitedBy;
+
+          // Supabaseから最新のmembers情報を取得して招待者を探す
+          if(dbReady() && currentUser.id) {
+            var memResult = await sb.from('members').select('*').eq('id', currentUser.id).maybeSingle();
+            if(memResult.data) {
+              inviterName = memResult.data.invited_by || inviterName;
+              currentUser.invitedBy = inviterName;
+              saveSession(currentUser);
+            }
+          }
+
+          if(inviterName) {
+            if(refName) refName.textContent = inviterName;
+            if(refInfo) refInfo.textContent = '紹介者 / ' + (currentUser.joinDate || new Date().toISOString().slice(0,10));
+            if(refBadge) refBadge.textContent = '🤝 あなたを招待した方';
+
+            // 招待者の絵文字を取得
+            if(refAvatar) {
+              var inviterEmoji = '🙋';
+              if(dbReady()) {
+                var inviterResult = await sb.from('members').select('emoji').eq('name', inviterName).maybeSingle();
+                if(inviterResult.data && inviterResult.data.emoji) {
+                  inviterEmoji = inviterResult.data.emoji;
+                }
+              }
+              refAvatar.textContent = inviterEmoji;
+            }
+          } else {
+            // 招待者情報がない場合
+            if(refName) refName.textContent = '不明';
+            if(refInfo) refInfo.textContent = '招待者情報なし';
+            if(refBadge) refBadge.textContent = '';
+            if(refAvatar) refAvatar.textContent = '👤';
+          }
+        } catch(e) {
+          console.error('[ONEs] referrer load error:', e);
+        }
+      })();
     }
   }
 
