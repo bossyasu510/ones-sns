@@ -1378,6 +1378,10 @@ function logoutApp(){
   location.reload();
 }
 function checkSession(){
+  // QRコード経由の場合は既存セッションを無視
+  const params = new URLSearchParams(window.location.search);
+  if(params.get('code')) return;
+
   const sess = localStorage.getItem('ones_session');
   if(sess){
     currentUser = JSON.parse(sess);
@@ -2775,18 +2779,29 @@ checkSession();
   const params = new URLSearchParams(window.location.search);
   const code = params.get('code');
   if(code) {
+    // 既存のセッションを強制クリア（QR経由の新規参加優先）
+    localStorage.removeItem('ones_session');
+
+    // 招待画面を強制表示
+    const inv = document.getElementById('invite-screen');
+    const body = document.getElementById('body');
+    const bnav = document.getElementById('bnav');
+    const fab = document.getElementById('fab');
+    if(inv) inv.style.display = '';
+    if(inv) inv.classList.remove('hidden');
+    if(body) body.style.display = 'none';
+    if(bnav) bnav.style.display = 'none';
+    if(fab) fab.style.display = 'none';
+
     const input = document.getElementById('inv-code-input');
     if(input) {
       input.value = code.toUpperCase();
-      // コードが入力されたことを視覚的に示す
       input.style.borderColor = '#3a9e5f';
       input.style.background = '#edf8f1';
-      // ニックネーム欄にフォーカスを移動
       setTimeout(()=>{
         const nameInput = document.getElementById('inv-name-input');
         if(nameInput) nameInput.focus();
       }, 300);
-      // トースト表示
       setTimeout(()=>{
         toast('✅ 招待コードを読み込みました！\nニックネームを入力してください');
       }, 500);
