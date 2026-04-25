@@ -1208,9 +1208,53 @@ const MSG=[{f:'さくらんぼ',e:'🌸',t:'こんにちは！先日の交流会
 /* ══════════ UTILS ══════════ */
 function esc(s){return(s||'').replace(/'/g,"\\'")}
 function pad(n){return String(n).padStart(2,'0')}
-function ld(k){return JSON.parse(localStorage.getItem(k)||'[]')}
-function sv(k,v){localStorage.setItem(k,JSON.stringify(v))}
-function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2200);}
+function ld(k){
+  try {
+    var userId = (typeof currentUser !== 'undefined' && currentUser && currentUser.id) ? currentUser.id : null;
+    if(k === 'od') {
+      // 日記：ユーザー別＋共有
+      var userKey = userId ? 'od_'+userId : 'od';
+      var own = [];
+      var shared = [];
+      try { own = JSON.parse(localStorage.getItem(userKey) || '[]'); } catch(e) { own = []; }
+      try { shared = JSON.parse(localStorage.getItem('ones_shared_diaries') || '[]'); } catch(e) { shared = []; }
+      var seen = {};
+      var combined = own.concat(shared);
+      var result = [];
+      for(var i=0; i<combined.length; i++) {
+        var d = combined[i];
+        var key = (d.title||'') + '|' + (d.date||'');
+        if(!seen[key]) { seen[key] = 1; result.push(d); }
+      }
+      return result;
+    }
+    if(k === 'ov') {
+      // つぶやき：ユーザー別＋共有
+      var userKey = userId ? 'ov_'+userId : 'ov';
+      var own = [];
+      var shared = [];
+      try { own = JSON.parse(localStorage.getItem(userKey) || '[]'); } catch(e) { own = []; }
+      try { shared = JSON.parse(localStorage.getItem('ones_shared_voices') || '[]'); } catch(e) { shared = []; }
+      var seen = {};
+      var combined = own.concat(shared);
+      var result = [];
+      for(var i=0; i<combined.length; i++) {
+        var v = combined[i];
+        var key = (v.u||'') + '|' + (v.t||'') + '|' + (v.tm||'');
+        if(!seen[key]) { seen[key] = 1; result.push(v); }
+      }
+      return result;
+    }
+    return JSON.parse(localStorage.getItem(k) || '[]');
+  } catch(e) {
+    console.error('[ONEs] ld error:', e);
+    return [];
+  }
+}
+function sv(k,v){
+  try { localStorage.setItem(k,JSON.stringify(v)); } catch(e) { console.error(e); }
+}
+function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(function(){t.remove();},2200);}
 
 
 /* ══════════ セキュリティ ══════════ */
@@ -2126,30 +2170,38 @@ function renderSide(){
 /* ══════════ NAV ══════════ */
 let cur='home';
 function nav(name,el){
-  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
-  const pg=document.getElementById('pg-'+name);if(pg)pg.classList.add('on');
-  cur=name;
-  document.querySelectorAll('.bi').forEach(b=>b.classList.remove('on'));
-  const bmap={home:'bn-home',wanmik:'bn-wanmik',calendar:'bn-calendar',invite:'bn-invite',message:'bn-message',mypage:'bn-mypage'};
-  if(bmap[name])document.getElementById(bmap[name]).classList.add('on');
-  if(el&&el.classList&&el.classList.contains('bi'))el.classList.add('on');
-  document.querySelectorAll('.dn').forEach(d=>d.classList.remove('on'));
-  if(el&&el.classList&&el.classList.contains('dn'))el.classList.add('on');
-  else document.querySelectorAll('.dn').forEach(d=>{if(d.getAttribute('onclick')&&d.getAttribute('onclick').includes("'"+name+"'"))d.classList.add('on');});
-  if(name==='diary')renderDiary();
-  if(name==='voice')renderVoice();
-  if(name==='wanmik')renderWanmik();
-  if(name==='footprint')renderFP();
-  if(name==='community')renderCM();
-  if(name==='message')renderMsgs();
-  if(name==='notice')renderNT('ntlist',NT);
+  try {
+    document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+    const pg=document.getElementById('pg-'+name);
+    if(pg) pg.classList.add('on');
+    cur=name;
+    document.querySelectorAll('.bi').forEach(b=>b.classList.remove('on'));
+    const bmap={home:'bn-home',wanmik:'bn-wanmik',calendar:'bn-calendar',invite:'bn-invite',message:'bn-message',mypage:'bn-mypage'};
+    if(bmap[name]) {
+      const btn = document.getElementById(bmap[name]);
+      if(btn && btn.classList) btn.classList.add('on');
+    }
+    if(el && el.classList && el.classList.contains('bi')) el.classList.add('on');
+    document.querySelectorAll('.dn').forEach(d=>d.classList.remove('on'));
+    if(el && el.classList && el.classList.contains('dn')) el.classList.add('on');
+    else document.querySelectorAll('.dn').forEach(d=>{
+      if(d.getAttribute('onclick') && d.getAttribute('onclick').indexOf("'"+name+"'") !== -1) d.classList.add('on');
+    });
+
+    try { if(name==='diary' && typeof renderDiary === 'function') renderDiary(); } catch(e) { console.error(e); }
+    try { if(name==='voice' && typeof renderVoice === 'function') renderVoice(); } catch(e) { console.error(e); }
+    try { if(name==='wanmik' && typeof renderWanmik === 'function') renderWanmik(); } catch(e) { console.error(e); }
+    try { if(name==='footprint' && typeof renderFP === 'function') renderFP(); } catch(e) { console.error(e); }
+    try { if(name==='community' && typeof renderCM === 'function') renderCM(); } catch(e) { console.error(e); }
+    try { if(name==='message' && typeof renderMsgs === 'function') renderMsgs(); } catch(e) { console.error(e); }
+    try { if(name==='notice' && typeof renderNT === 'function') renderNT('ntlist',NT); } catch(e) { console.error(e); }
   if(name==='mypage'){
     renderMpDiary();
     const myCode = (currentUser && currentUser.code) ? currentUser.code : 'ONES-7X3K';
     const tryQR2 = (attempts) => {
       if(typeof qrcode !== 'undefined') {
-        generateInviteQR(myCode);
-        generateInviteQRSmall(myCode);
+        try { generateInviteQR(myCode); } catch(e) { console.error(e); }
+        try { generateInviteQRSmall(myCode); } catch(e) { console.error(e); }
       } else if(attempts > 0) {
         setTimeout(()=>tryQR2(attempts-1), 300);
       }
@@ -2157,21 +2209,23 @@ function nav(name,el){
     setTimeout(()=>tryQR2(10), 200);
   }
   if(name==='invite'){
-    renderInvitePage();
-    // QRライブラリ読み込み待ち
+    try { renderInvitePage(); } catch(e) { console.error(e); }
     const myCode = (currentUser && currentUser.code) ? currentUser.code : 'ONES-7X3K';
     const tryQR = (attempts) => {
       if(typeof qrcode !== 'undefined') {
-        generateInviteQR(myCode);
+        try { generateInviteQR(myCode); } catch(e) { console.error(e); }
       } else if(attempts > 0) {
         setTimeout(()=>tryQR(attempts-1), 300);
       }
     };
     setTimeout(()=>tryQR(10), 200);
   }
-  if(name==='calendar')renderCalendarPage();
-  if(name==='help')renderHelpPage();
+  if(name==='calendar') { try { renderCalendarPage(); } catch(e) { console.error(e); } }
+  if(name==='help') { try { renderHelpPage(); } catch(e) { console.error(e); } }
   window.scrollTo(0,0);
+  } catch(navErr) {
+    console.error('[ONEs] nav error:', navErr);
+  }
 }
 
 /* ══════════ ACTIONS ══════════ */
