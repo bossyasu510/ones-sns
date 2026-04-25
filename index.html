@@ -1390,16 +1390,27 @@ function logoutApp(){
 function checkSession(){
   // QRコード経由の場合は既存セッションを無視
   const params = new URLSearchParams(window.location.search);
-  if(params.get('code')) return;
+  if(params.get('code')) {
+    console.log('[ONEs] QRコード経由のため自動ログインをスキップ');
+    return;
+  }
 
   const sess = localStorage.getItem('ones_session');
+  console.log('[ONEs] セッション確認:', sess ? '存在' : 'なし');
+
   if(sess){
-    currentUser = JSON.parse(sess);
-    document.getElementById('invite-screen').style.display='none';
-    document.getElementById('body').style.display='';
-    document.getElementById('bnav').style.display='';
-    document.getElementById('fab').style.display='';
-    initApp();
+    try {
+      currentUser = JSON.parse(sess);
+      console.log('[ONEs] 自動ログイン:', currentUser.name);
+      document.getElementById('invite-screen').style.display='none';
+      document.getElementById('body').style.display='';
+      document.getElementById('bnav').style.display='';
+      document.getElementById('fab').style.display='';
+      initApp();
+    } catch(e) {
+      console.error('[ONEs] セッション読み込みエラー:', e);
+      localStorage.removeItem('ones_session');
+    }
   }
 }
 
@@ -1972,15 +1983,44 @@ function nav(name,el){
 }
 
 /* ══════════ ACTIONS ══════════ */
-function postDiary(){const ttl=document.getElementById('ws-ttl').value.trim();const bdy=document.getElementById('ws-bdy').value.trim();if(!ttl&&!bdy){toast('タイトルか本文を入力してください');return;}const t=ttl||bdy.slice(0,20)+'…';const now=new Date();const ds=`${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 ${pad(now.getHours())}:${pad(now.getMinutes())}`;const s=ld('od');s.unshift({title:t,date:ds,excerpt:bdy||'（本文なし）',comments:0,good:0});sv('od',s);closeSheet();toast('📔 日記を投稿しました！');renderTL();}
+function postDiary(){
+  const ttl=document.getElementById('ws-ttl').value.trim();
+  const bdy=document.getElementById('ws-bdy').value.trim();
+  if(!ttl&&!bdy){toast('タイトルか本文を入力してください');return;}
+  const t=ttl||bdy.slice(0,20)+'…';
+  const now=new Date();
+  const ds=`${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  const author = currentUser?.name || 'ゲスト';
+  const authorEmoji = currentUser?.emoji || '🙋';
+  // ユーザー別に日記を保存
+  const userKey = currentUser?.id ? 'od_'+currentUser.id : 'od';
+  const all = JSON.parse(localStorage.getItem(userKey) || '[]');
+  all.unshift({title:t,date:ds,excerpt:bdy||'（本文なし）',comments:0,good:0,author:author,authorEmoji:authorEmoji,authorId:currentUser?.id});
+  localStorage.setItem(userKey, JSON.stringify(all));
+  // 共有日記タイムラインにも追加
+  const sharedKey = 'ones_shared_diaries';
+  const shared = JSON.parse(localStorage.getItem(sharedKey) || '[]');
+  shared.unshift({title:t,date:ds,excerpt:bdy||'（本文なし）',comments:0,good:0,author:author,authorEmoji:authorEmoji,authorId:currentUser?.id});
+  localStorage.setItem(sharedKey, JSON.stringify(shared));
+  closeSheet();
+  toast('📔 日記を投稿しました！');
+  renderTL();
+  if(typeof renderDiary === 'function') renderDiary();
+}
 function postVoice(text){
   const t=text||document.getElementById('ws-vc')?.value.trim();
   if(!t){toast('テキストを入力してください');return;}
-  const s=ld('ov');
   const u = currentUser?.name || 'ゲスト';
   const e = currentUser?.emoji || '🙋';
-  s.unshift({u, e, t, tm:'たった今'});
-  sv('ov',s);
+  // ユーザー別＋共有
+  const userKey = currentUser?.id ? 'ov_'+currentUser.id : 'ov';
+  const own = JSON.parse(localStorage.getItem(userKey) || '[]');
+  own.unshift({u, e, t, tm:'たった今', authorId:currentUser?.id});
+  localStorage.setItem(userKey, JSON.stringify(own));
+  // 共有タイムライン
+  const shared = JSON.parse(localStorage.getItem('ones_shared_voices') || '[]');
+  shared.unshift({u, e, t, tm:'たった今', authorId:currentUser?.id});
+  localStorage.setItem('ones_shared_voices', JSON.stringify(shared));
   closeSheet();
   toast('💬 つぶやきを投稿しました！');
   if(cur==='voice')renderVoice();
@@ -1990,11 +2030,15 @@ function postVoiceInline(){
   const el=document.getElementById('vcin');
   const t=el.value.trim();
   if(!t){toast('テキストを入力してください');return;}
-  const s=ld('ov');
   const u = currentUser?.name || 'ゲスト';
   const e = currentUser?.emoji || '🙋';
-  s.unshift({u, e, t, tm:'たった今'});
-  sv('ov',s);
+  const userKey = currentUser?.id ? 'ov_'+currentUser.id : 'ov';
+  const own = JSON.parse(localStorage.getItem(userKey) || '[]');
+  own.unshift({u, e, t, tm:'たった今', authorId:currentUser?.id});
+  localStorage.setItem(userKey, JSON.stringify(own));
+  const shared = JSON.parse(localStorage.getItem('ones_shared_voices') || '[]');
+  shared.unshift({u, e, t, tm:'たった今', authorId:currentUser?.id});
+  localStorage.setItem('ones_shared_voices', JSON.stringify(shared));
   el.value='';
   toast('💬 つぶやきを投稿しました！');
   renderVoice();
@@ -2100,18 +2144,59 @@ function handlePhotoUpload(event) {
     return;
   }
 
+  toast('📷 写真を処理中...');
+
   const reader = new FileReader();
   reader.onload = function(e) {
-    const dataUrl = e.target.result;
+    const img = new Image();
+    img.onload = function() {
+      // Canvas で 400x400 にリサイズ＋圧縮
+      const canvas = document.createElement('canvas');
+      const maxSize = 400;
+      let width = img.width;
+      let height = img.height;
 
-    // LocalStorageに保存
-    const photoKey = currentUser && currentUser.id ? 'ones_profile_photo_'+currentUser.id : 'ones_profile_photo';
-    localStorage.setItem(photoKey, dataUrl);
+      if(width > height) {
+        if(width > maxSize) {
+          height = Math.round(height * maxSize / width);
+          width = maxSize;
+        }
+      } else {
+        if(height > maxSize) {
+          width = Math.round(width * maxSize / height);
+          height = maxSize;
+        }
+      }
 
-    // 全アバターに反映
-    applyProfilePhoto(dataUrl);
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
 
-    toast('📷 プロフィール写真を更新しました！');
+      // JPEGで圧縮（品質0.8）
+      const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+
+      try {
+        // LocalStorageに保存
+        const photoKey = currentUser && currentUser.id ? 'ones_profile_photo_'+currentUser.id : 'ones_profile_photo';
+        localStorage.setItem(photoKey, compressedDataUrl);
+
+        // 全アバターに反映
+        applyProfilePhoto(compressedDataUrl);
+
+        toast('📷 プロフィール写真を更新しました！');
+      } catch(err) {
+        console.error('保存エラー:', err);
+        toast('❌ 保存できませんでした。容量を確認してください');
+      }
+    };
+    img.onerror = function() {
+      toast('❌ 画像を読み込めませんでした');
+    };
+    img.src = e.target.result;
+  };
+  reader.onerror = function() {
+    toast('❌ ファイルを読み込めませんでした');
   };
   reader.readAsDataURL(file);
 }
