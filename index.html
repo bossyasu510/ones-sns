@@ -2645,9 +2645,7 @@ async function renderTL(){
       try { allP = await dbFetchPhotos(10); } catch(e) {}
     }
 
-    // フォールバック：何もなければデモデータ
-    if(allD.length === 0) allD = DI.slice();
-    if(allV.length === 0) allV = VC.slice();
+    // 本物のデータのみ表示（デモデータは表示しない）
 
     var h = '';
 
@@ -2731,7 +2729,6 @@ async function renderDiary(){
     if(dbReady()) {
       try { all = await dbFetchDiaries(50); } catch(e) {}
     }
-    if(all.length === 0) all = DI.slice();
 
     if(all.length === 0) {
       dlistEl.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text3);">まだ日記がありません<br><span style="font-size:12px;">最初の日記を書いてみましょう！</span></div>';
@@ -2760,7 +2757,6 @@ async function renderVoice(){
     if(dbReady()) {
       try { all = await dbFetchVoices(50); } catch(e) {}
     }
-    if(all.length === 0) all = VC.slice();
 
     if(all.length === 0) {
       vfeedEl.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text3);">まだつぶやきがありません</div>';
@@ -3006,7 +3002,7 @@ function nav(name,el){
 }
 
 /* ══════════ ACTIONS ══════════ */
-function postDiary(){
+async function postDiary(){
   try {
     var ttlEl = document.getElementById('ws-ttl');
     var bdyEl = document.getElementById('ws-bdy');
@@ -3015,28 +3011,35 @@ function postDiary(){
     var bdy = bdyEl.value ? bdyEl.value.trim() : '';
     if(!ttl && !bdy){ toast('タイトルか本文を入力してください'); return; }
     var t = ttl || bdy.slice(0,20)+'…';
-    var now = new Date();
-    var ds = now.getFullYear()+'年'+(now.getMonth()+1)+'月'+now.getDate()+'日 '+pad(now.getHours())+':'+pad(now.getMinutes());
+    if(/<|>|script|javascript:|on\w+=/i.test(ttl) || /<|>|script|javascript:|on\w+=/i.test(bdy)) {
+      toast('使用できない文字が含まれています'); return;
+    }
     var author = (currentUser && currentUser.name) ? currentUser.name : 'ゲスト';
     var authorEmoji = (currentUser && currentUser.emoji) ? currentUser.emoji : '🙋';
     var userId = (currentUser && currentUser.id) ? currentUser.id : null;
-    var userKey = userId ? 'od_'+userId : 'od';
-    var all = [];
-    try { all = JSON.parse(localStorage.getItem(userKey) || '[]'); } catch(err) { all = []; }
-    var entry = {title: t, date: ds, excerpt: bdy || '（本文なし）', comments: 0, good: 0, author: author, authorEmoji: authorEmoji, authorId: userId};
-    all.unshift(entry);
-    try { localStorage.setItem(userKey, JSON.stringify(all)); } catch(err) { console.error('[ONEs] diary save:', err); }
-    var shared = [];
-    try { shared = JSON.parse(localStorage.getItem('ones_shared_diaries') || '[]'); } catch(err) { shared = []; }
-    shared.unshift(entry);
-    try { localStorage.setItem('ones_shared_diaries', JSON.stringify(shared)); } catch(err) { console.error('[ONEs] shared diary:', err); }
+
+    if(!dbReady() || !userId) {
+      toast('❌ 接続できません');
+      return;
+    }
+
     closeSheet();
+    toast('📔 投稿中...');
+
+    var result = await dbPostDiary(userId, author, authorEmoji, t, bdy || '（本文なし）', 'public');
+
+    if(result.error) {
+      console.error('[ONEs] postDiary:', result.error);
+      toast('❌ 投稿に失敗しました: ' + (result.error.message || ''));
+      return;
+    }
+
     toast('📔 日記を投稿しました！');
-    try { if(typeof renderTL === 'function') renderTL(); } catch(err) { console.error(err); }
-    try { if(typeof renderDiary === 'function') renderDiary(); } catch(err) { console.error(err); }
+    try { if(typeof renderTL === 'function') renderTL(); } catch(err) {}
+    try { if(typeof renderDiary === 'function') renderDiary(); } catch(err) {}
     setTimeout(function(){ try { loadProfilePhoto(); } catch(e) {} }, 50);
   } catch(err) {
-    console.error('[ONEs] postDiary:', err);
+    console.error('[ONEs] postDiary error:', err);
     toast('❌ 投稿に失敗しました');
   }
 }
