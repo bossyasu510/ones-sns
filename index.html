@@ -2372,6 +2372,12 @@ function nav(name,el){
   if(name==='calendar') { try { renderCalendarPage(); } catch(e) { console.error(e); } }
   if(name==='help') { try { renderHelpPage(); } catch(e) { console.error(e); } }
   window.scrollTo(0,0);
+
+  // ページ切り替え後にプロフィール写真を再適用
+  setTimeout(function(){
+    try { loadProfilePhoto(); } catch(e) {}
+  }, 50);
+
   } catch(navErr) {
     console.error('[ONEs] nav error:', navErr);
   }
@@ -2406,6 +2412,7 @@ function postDiary(){
     toast('📔 日記を投稿しました！');
     try { if(typeof renderTL === 'function') renderTL(); } catch(err) { console.error(err); }
     try { if(typeof renderDiary === 'function') renderDiary(); } catch(err) { console.error(err); }
+    setTimeout(function(){ try { loadProfilePhoto(); } catch(e) {} }, 50);
   } catch(err) {
     console.error('[ONEs] postDiary:', err);
     toast('❌ 投稿に失敗しました');
@@ -2432,6 +2439,7 @@ function postVoice(text){
     toast('💬 つぶやきを投稿しました！');
     try { if(typeof cur !== 'undefined' && cur === 'voice' && typeof renderVoice === 'function') renderVoice(); } catch(err) { console.error(err); }
     try { if(typeof renderTL === 'function') renderTL(); } catch(err) { console.error(err); }
+    setTimeout(function(){ try { loadProfilePhoto(); } catch(e) {} }, 50);
   } catch(err) {
     console.error('[ONEs] postVoice:', err);
     toast('❌ 投稿に失敗しました');
@@ -2459,6 +2467,7 @@ function postVoiceInline(){
     toast('💬 つぶやきを投稿しました！');
     try { if(typeof renderVoice === 'function') renderVoice(); } catch(err) { console.error(err); }
     try { if(typeof renderTL === 'function') renderTL(); } catch(err) { console.error(err); }
+    setTimeout(function(){ try { loadProfilePhoto(); } catch(e) {} }, 50);
   } catch(err) {
     console.error('[ONEs] postVoiceInline:', err);
     toast('❌ 投稿に失敗しました');
@@ -2478,6 +2487,28 @@ function openCmSheet(name){
   var c = allCommunities.find(function(x){ return x.n === name; }) ||
           {n:name, e:'🏘️', cnt:1, owner:'不明', ownerEmoji:'👤', since:'-', desc:''};
   var cntDisplay = (c.cnt || 1).toLocaleString();
+
+  // トピックを取得
+  var topicsKey = 'ones_topics_' + name;
+  var topics = [];
+  try { topics = JSON.parse(localStorage.getItem(topicsKey) || '[]'); } catch(e){}
+
+  var topicsHtml = '';
+  if(topics.length === 0) {
+    topicsHtml = '<div style="background:var(--og-pale);border-radius:10px;padding:16px;text-align:center;color:var(--text3);font-size:13px;margin-bottom:6px;">まだトピックがありません<br><span style="font-size:11px;">「＋ トピックを投稿」から最初の話題を作りましょう</span></div>';
+  } else {
+    topicsHtml = topics.map(function(t){
+      var icon = t.category === '質問' ? '❓' : (t.category === '報告' ? '📊' : '💡');
+      var cmtCount = (t.comments || []).length;
+      return '<div style="background:#fff;border:1.5px solid var(--og-border);border-radius:10px;padding:12px;margin-bottom:6px;cursor:pointer;" onclick="openTopicSheet(\''+esc(name)+'\',\''+t.id+'\')">'+
+             '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">'+
+             '<span style="font-size:11px;background:var(--og-pale);color:var(--og3);padding:2px 8px;border-radius:10px;font-weight:600;">'+icon+' '+t.category+'</span>'+
+             '<span style="font-size:11px;color:var(--text3);">'+timeAgoStr(t.ts)+'</span></div>'+
+             '<div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">'+escHtml(t.title)+'</div>'+
+             '<div style="font-size:12px;color:var(--text3);">👤 '+escHtml(t.author)+' · 💬 '+cmtCount+'件</div></div>';
+    }).join('');
+  }
+
   showSheet(c.e+' '+name,`
     <div>
       <!-- 主催者情報 -->
@@ -2493,14 +2524,228 @@ function openCmSheet(name){
       <div style="font-size:13px;color:var(--text);line-height:1.7;margin-bottom:10px;">${c.desc||name+'についての情報交換コミュニティです。'}</div>
       <!-- 参加人数 -->
       <div style="font-size:13px;color:var(--text3);margin-bottom:14px;">👥 ${cntDisplay}人が参加中</div>
+
       <!-- トピック -->
-      <div style="font-weight:700;font-size:13px;color:var(--og3);margin-bottom:8px;">📌 最新トピック</div>
-      ${['【質問】初心者におすすめのツールは？ (23件)','【報告】先月の成果報告スレッド (41件)','【情報共有】便利なリソースまとめ (15件)'].map(t=>`
-        <div style="background:var(--og-pale);border-radius:10px;padding:12px;font-size:13px;margin-bottom:6px;cursor:pointer;" onclick="toast('トピックを開きました')">${t}</div>`).join('')}
-      <div style="margin-top:14px;">
-        <button class="bo" style="width:100%;" onclick="toast('コミュニティに参加申請しました！');closeSheet()">参加する</button>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div style="font-weight:700;font-size:13px;color:var(--og3);">📌 トピック (${topics.length}件)</div>
+        <button class="bos" style="font-size:12px;padding:6px 12px;" onclick="openCreateTopic('${esc(name)}')">＋ 投稿</button>
       </div>
+      ${topicsHtml}
     </div>`);
+}
+
+// トピック投稿フォーム
+function openCreateTopic(communityName) {
+  showSheet('💬 新しいトピックを投稿', `
+    <div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:14px;">
+        「${escHtml(communityName)}」に新しい話題を投稿します
+      </div>
+      <div class="er">
+        <label class="el">カテゴリー</label>
+        <select id="tp-category" class="ei">
+          <option value="質問">❓ 質問・相談</option>
+          <option value="報告">📊 報告・成果</option>
+          <option value="情報共有">💡 情報共有</option>
+        </select>
+      </div>
+      <div class="er">
+        <label class="el">タイトル <span style="color:#e53e3e;">*</span></label>
+        <input id="tp-title" class="ei" type="text" placeholder="例：初心者におすすめのツールは？" maxlength="50">
+      </div>
+      <div class="er">
+        <label class="el">内容 <span style="color:#e53e3e;">*</span></label>
+        <textarea id="tp-body" class="eta" style="min-height:120px;" placeholder="詳しい内容を書いてください..." maxlength="1000"></textarea>
+      </div>
+      <button class="bo" style="width:100%;" onclick="postTopic('${esc(communityName)}')">投稿する</button>
+    </div>`);
+}
+
+function postTopic(communityName) {
+  try {
+    var catEl = document.getElementById('tp-category');
+    var titleEl = document.getElementById('tp-title');
+    var bodyEl = document.getElementById('tp-body');
+    if(!catEl || !titleEl || !bodyEl) return;
+
+    var category = catEl.value;
+    var title = titleEl.value.trim();
+    var body = bodyEl.value.trim();
+
+    if(!title) { toast('タイトルを入力してください'); return; }
+    if(!body) { toast('内容を入力してください'); return; }
+    if(/<|>|script|javascript:|on\w+=/i.test(title) || /<|>|script|javascript:|on\w+=/i.test(body)) {
+      toast('使用できない文字が含まれています');
+      return;
+    }
+
+    var author = (currentUser && currentUser.name) ? currentUser.name : 'ゲスト';
+    var authorEmoji = (currentUser && currentUser.emoji) ? currentUser.emoji : '🙋';
+
+    var topicsKey = 'ones_topics_' + communityName;
+    var topics = [];
+    try { topics = JSON.parse(localStorage.getItem(topicsKey) || '[]'); } catch(e){}
+
+    var newTopic = {
+      id: 't' + Date.now(),
+      category: category,
+      title: title,
+      body: body,
+      author: author,
+      authorEmoji: authorEmoji,
+      ts: Date.now(),
+      good: 0,
+      comments: []
+    };
+    topics.unshift(newTopic);
+
+    try { localStorage.setItem(topicsKey, JSON.stringify(topics)); }
+    catch(e) { toast('❌ 保存できませんでした'); return; }
+
+    closeSheet();
+    toast('💬 トピックを投稿しました！');
+    setTimeout(function(){ openCmSheet(communityName); }, 200);
+  } catch(err) {
+    console.error('[ONEs] postTopic:', err);
+    toast('❌ 投稿に失敗しました');
+  }
+}
+
+// トピック詳細を開く
+function openTopicSheet(communityName, topicId) {
+  var topicsKey = 'ones_topics_' + communityName;
+  var topics = [];
+  try { topics = JSON.parse(localStorage.getItem(topicsKey) || '[]'); } catch(e){}
+  var topic = topics.find(function(t){ return t.id === topicId; });
+  if(!topic) { toast('トピックが見つかりません'); return; }
+
+  var icon = topic.category === '質問' ? '❓' : (topic.category === '報告' ? '📊' : '💡');
+  var commentsHtml = '';
+  if(!topic.comments || topic.comments.length === 0) {
+    commentsHtml = '<div style="font-size:12px;color:var(--text3);text-align:center;padding:14px;">まだコメントはありません</div>';
+  } else {
+    commentsHtml = topic.comments.map(function(cm){
+      return '<div style="display:flex;gap:10px;margin-bottom:10px;">'+
+             '<div class="av as" style="background:linear-gradient(135deg,#a8ddb8,#3fa865);display:flex;align-items:center;justify-content:center;flex-shrink:0;">'+(cm.authorEmoji||'🙋')+'</div>'+
+             '<div style="flex:1;background:#fff;border-radius:10px;padding:10px;border:1px solid var(--og-border);">'+
+             '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">'+
+             '<div style="font-size:12px;font-weight:700;color:var(--og3);">'+escHtml(cm.author)+'</div>'+
+             '<div style="font-size:10px;color:var(--text3);">'+timeAgoStr(cm.ts)+'</div></div>'+
+             '<div style="font-size:13px;color:var(--text);line-height:1.6;">'+escHtml(cm.body)+'</div></div></div>';
+    }).join('');
+  }
+
+  showSheet(icon+' '+topic.title, `
+    <div>
+      <!-- 投稿者 -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <div class="av am" style="background:linear-gradient(135deg,#a8ddb8,#3fa865);display:flex;align-items:center;justify-content:center;font-size:24px;">${topic.authorEmoji||'🙋'}</div>
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--og3);">${escHtml(topic.author)}</div>
+          <div style="font-size:11px;color:var(--text3);">${timeAgoStr(topic.ts)} · ${topic.category}</div>
+        </div>
+      </div>
+      <!-- 本文 -->
+      <div style="background:var(--og-pale);border-radius:12px;padding:14px;font-size:14px;color:var(--text);line-height:1.7;margin-bottom:16px;white-space:pre-wrap;">${escHtml(topic.body)}</div>
+      <!-- いいねボタン -->
+      <div style="display:flex;gap:8px;margin-bottom:16px;">
+        <button class="bos" style="flex:1;" onclick="likeTopic('${esc(communityName)}','${topic.id}')">👍 いいね (${topic.good||0})</button>
+      </div>
+      <!-- コメント -->
+      <div style="font-weight:700;font-size:13px;color:var(--og3);margin-bottom:8px;">💬 コメント (${(topic.comments||[]).length}件)</div>
+      <div style="background:var(--og-pale);border-radius:12px;padding:12px;margin-bottom:10px;">
+        ${commentsHtml}
+      </div>
+      <!-- コメント入力 -->
+      <div class="er">
+        <textarea id="cm-body" class="eta" style="min-height:60px;" placeholder="コメントを書く..." maxlength="500"></textarea>
+      </div>
+      <button class="bo" style="width:100%;" onclick="postTopicComment('${esc(communityName)}','${topic.id}')">送信する</button>
+    </div>`);
+}
+
+function postTopicComment(communityName, topicId) {
+  try {
+    var bodyEl = document.getElementById('cm-body');
+    if(!bodyEl) return;
+    var body = bodyEl.value.trim();
+    if(!body) { toast('コメントを入力してください'); return; }
+    if(/<|>|script|javascript:|on\w+=/i.test(body)) {
+      toast('使用できない文字が含まれています');
+      return;
+    }
+
+    var author = (currentUser && currentUser.name) ? currentUser.name : 'ゲスト';
+    var authorEmoji = (currentUser && currentUser.emoji) ? currentUser.emoji : '🙋';
+
+    var topicsKey = 'ones_topics_' + communityName;
+    var topics = [];
+    try { topics = JSON.parse(localStorage.getItem(topicsKey) || '[]'); } catch(e){}
+    var idx = topics.findIndex(function(t){ return t.id === topicId; });
+    if(idx === -1) { toast('トピックが見つかりません'); return; }
+
+    if(!topics[idx].comments) topics[idx].comments = [];
+    topics[idx].comments.push({
+      author: author,
+      authorEmoji: authorEmoji,
+      body: body,
+      ts: Date.now()
+    });
+
+    try { localStorage.setItem(topicsKey, JSON.stringify(topics)); }
+    catch(e) { toast('❌ 保存できませんでした'); return; }
+
+    toast('💬 コメントしました！');
+    setTimeout(function(){ openTopicSheet(communityName, topicId); }, 200);
+  } catch(err) {
+    console.error('[ONEs] postTopicComment:', err);
+    toast('❌ 送信に失敗しました');
+  }
+}
+
+function likeTopic(communityName, topicId) {
+  try {
+    var topicsKey = 'ones_topics_' + communityName;
+    var topics = [];
+    try { topics = JSON.parse(localStorage.getItem(topicsKey) || '[]'); } catch(e){}
+    var idx = topics.findIndex(function(t){ return t.id === topicId; });
+    if(idx === -1) return;
+    topics[idx].good = (topics[idx].good || 0) + 1;
+    try { localStorage.setItem(topicsKey, JSON.stringify(topics)); } catch(e){}
+    toast('👍 いいねしました！');
+    setTimeout(function(){ openTopicSheet(communityName, topicId); }, 200);
+  } catch(err) {
+    console.error(err);
+  }
+}
+
+// 経過時間を表示するヘルパー
+function timeAgoStr(ts) {
+  if(!ts) return 'たった今';
+  var diff = Date.now() - ts;
+  var sec = Math.floor(diff / 1000);
+  var min = Math.floor(sec / 60);
+  var hour = Math.floor(min / 60);
+  var day = Math.floor(hour / 24);
+  if(sec < 30) return 'たった今';
+  if(sec < 60) return sec + '秒前';
+  if(min < 60) return min + '分前';
+  if(hour < 24) return hour + '時間前';
+  if(day === 1) return '昨日';
+  if(day < 7) return day + '日前';
+  if(day < 30) return Math.floor(day/7) + '週間前';
+  return Math.floor(day/30) + 'ヶ月前';
+}
+
+// HTML エスケープ
+function escHtml(str) {
+  if(str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
 }
 function openMsgSheet(from,emoji,text){showSheet(from+'さんのメッセージ',`<div><div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;"><div class="av am" style="${AB}">${emoji}</div><div><div style="font-weight:700;color:var(--og3);">${from}</div><div style="font-size:11px;color:var(--text3);">ワンミク</div></div></div><div style="background:var(--og-pale);border-radius:12px;padding:14px;font-size:14px;color:var(--text);line-height:1.7;margin-bottom:16px;">${text}</div><textarea style="width:100%;background:var(--og-pale);border:1.5px solid var(--og-border);border-radius:12px;padding:12px;font-size:14px;font-family:inherit;outline:none;resize:none;height:90px;margin-bottom:10px;" placeholder="返信を入力..."></textarea><button class="bo" style="width:100%;" onclick="toast('返信を送信しました！');closeSheet()">送信する</button></div>`);}
 function openComposeMsg(to){showSheet('新しいメッセージ',`<div><div class="er"><label class="el">宛先</label><input class="ei" type="text" value="${to||''}" placeholder="ニックネームを入力"></div><div class="er"><label class="el">件名</label><input class="ei" type="text" placeholder="件名を入力"></div><div class="er"><label class="el">本文</label><textarea class="eta" placeholder="メッセージを入力してください..."></textarea></div><button class="bo" style="width:100%;" onclick="toast('メッセージを送信しました！');closeSheet()">送信する</button></div>`);}
@@ -2673,9 +2918,42 @@ function applyProfilePhoto(dataUrl) {
 }
 
 function loadProfilePhoto() {
-  const photoKey = currentUser && currentUser.id ? 'ones_profile_photo_'+currentUser.id : 'ones_profile_photo';
-  const saved = localStorage.getItem(photoKey);
-  if (saved) applyProfilePhoto(saved);
+  try {
+    var photoKey = (currentUser && currentUser.id) ? 'ones_profile_photo_'+currentUser.id : 'ones_profile_photo';
+    var saved = localStorage.getItem(photoKey);
+
+    // ユーザー固有のキーで見つからない場合、共通キーも確認（旧データ対応）
+    if(!saved && currentUser && currentUser.id === 'm001') {
+      saved = localStorage.getItem('ones_profile_photo');
+      if(saved) {
+        // 旧データを新形式に移行
+        try { localStorage.setItem(photoKey, saved); } catch(e){}
+      }
+    }
+
+    if(saved) {
+      applyProfilePhoto(saved);
+    } else {
+      // 写真がない場合はemojiを表示する
+      resetProfilePhoto();
+    }
+  } catch(e) {
+    console.error('[ONEs] loadProfilePhoto:', e);
+  }
+}
+
+function resetProfilePhoto() {
+  // 全アバターを emoji に戻す
+  var emojis = ['profile-photo-emoji', 'home-av-emoji', 'hd-av-emoji', 'side-av-emoji'];
+  var imgs = ['profile-photo-img', 'home-av-img', 'hd-av-img', 'side-av-img'];
+  emojis.forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.style.display = '';
+  });
+  imgs.forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.style.display = 'none';
+  });
 }
 
 
@@ -3535,9 +3813,23 @@ function initApp(){
     }
   }
 
-  renderTL();renderStories();renderMxRow();renderNT('ntlist',NT);renderMpDiary();renderSide();renderCal();
-  renderSelectedTags();
-  loadProfilePhoto();
+  // プロフィール写真を最優先で読み込み（描画より先）
+  try { loadProfilePhoto(); } catch(e) { console.error('[ONEs] loadProfilePhoto:', e); }
+
+  // 各レンダリングを個別に try-catch で保護
+  try { renderTL(); } catch(e) { console.error('[ONEs] renderTL:', e); }
+  try { renderStories(); } catch(e) { console.error('[ONEs] renderStories:', e); }
+  try { renderMxRow(); } catch(e) { console.error('[ONEs] renderMxRow:', e); }
+  try { renderNT('ntlist',NT); } catch(e) { console.error('[ONEs] renderNT:', e); }
+  try { renderMpDiary(); } catch(e) { console.error('[ONEs] renderMpDiary:', e); }
+  try { renderSide(); } catch(e) { console.error('[ONEs] renderSide:', e); }
+  try { renderCal(); } catch(e) { console.error('[ONEs] renderCal:', e); }
+  try { renderSelectedTags(); } catch(e) { console.error('[ONEs] renderSelectedTags:', e); }
+
+  // 描画後にもう一度写真を反映（renderで上書きされる可能性に対応）
+  setTimeout(function(){
+    try { loadProfilePhoto(); } catch(e) {}
+  }, 100);
 }
 
 checkSession();
