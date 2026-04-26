@@ -4754,13 +4754,18 @@ async function openMsgThread(partnerId, partnerName, partnerEmoji){
       : msgs.map(function(m){
           var isMe = m.from_id === currentUser.id;
           var ts = m.created_at ? new Date(m.created_at).getTime() : Date.now();
-          return '<div style="display:flex;justify-content:'+(isMe?'flex-end':'flex-start')+';margin-bottom:10px;">'+
-            '<div style="max-width:70%;background:'+(isMe?'var(--og)':'var(--og-pale)')+';'+
-              'color:'+(isMe?'#fff':'var(--text)')+';'+
-              'padding:10px 14px;border-radius:'+(isMe?'18px 18px 4px 18px':'18px 18px 18px 4px')+';'+
-              'font-size:13px;line-height:1.6;">'+
-              escHtml(m.body)+
-              '<div style="font-size:10px;opacity:.7;margin-top:4px;text-align:right;">'+timeAgoStr(ts)+'</div>'+
+          var senderName = isMe ? (currentUser.name || '自分') : (m.from_name || partnerName || 'メンバー');
+          var senderEmoji = m.from_emoji || (isMe ? (currentUser.emoji || '🙋') : (partnerEmoji || '🙋'));
+          var subject = m.subject ? String(m.subject).trim() : '';
+          return '<div style="display:flex;gap:10px;align-items:flex-start;padding:12px;background:'+(isMe?'#f0faf4':'#ffffff')+';border-bottom:1px solid var(--og-pale);">'+
+            '<div class="av as" style="'+AB+';display:flex;align-items:center;justify-content:center;flex-shrink:0;">'+escHtml(senderEmoji)+'</div>'+
+            '<div style="flex:1;min-width:0;">'+
+              '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px;">'+
+                '<div style="font-size:12px;font-weight:700;color:var(--og3);">'+escHtml(senderName)+'</div>'+
+                '<div style="font-size:11px;color:var(--text3);white-space:nowrap;">'+timeAgoStr(ts)+'</div>'+
+              '</div>'+
+              (subject ? '<div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px;line-height:1.4;">'+escHtml(subject)+'</div>' : '')+
+              '<div style="font-size:13px;color:var(--text);line-height:1.7;white-space:pre-wrap;word-break:break-word;">'+escHtml(m.body)+'</div>'+
             '</div>'+
           '</div>';
         }).join('');
