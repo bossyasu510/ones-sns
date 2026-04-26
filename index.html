@@ -2928,6 +2928,52 @@ async function renderTL(){
       try { allP = await dbFetchPhotos(10); } catch(e) {}
     }
 
+    // TLに表示する投稿者のプロフィール写真を事前取得
+    var avatarById = {};
+    var avatarByName = {};
+    try {
+      var previewD = allD.slice(0, 3);
+      var previewP = allP.slice(0, 3);
+      var previewV = allV.slice(0, 5);
+      var authorIds = [];
+      var authorNames = [];
+
+      previewD.forEach(function(d){
+        if(d.author_id) authorIds.push(d.author_id);
+        if(d.author_name || d.author) authorNames.push(d.author_name || d.author);
+      });
+      previewP.forEach(function(p){
+        if(p.author_id) authorIds.push(p.author_id);
+        if(p.author_name) authorNames.push(p.author_name);
+      });
+      previewV.forEach(function(v){
+        if(v.author_id) authorIds.push(v.author_id);
+        if(v.author_name || v.u) authorNames.push(v.author_name || v.u);
+      });
+
+      authorIds = Array.from(new Set(authorIds.filter(Boolean)));
+      authorNames = Array.from(new Set(authorNames.filter(Boolean)));
+
+      if(dbReady() && authorIds.length){
+        try {
+          var byIdResult = await sb.from('members').select('id,name,photo').in('id', authorIds);
+          (byIdResult.data || []).forEach(function(m){
+            if(m && m.id && m.photo) avatarById[m.id] = m.photo;
+            if(m && m.name && m.photo) avatarByName[m.name] = m.photo;
+          });
+        } catch(e) {}
+      }
+      if(dbReady() && authorNames.length){
+        try {
+          var byNameResult = await sb.from('members').select('id,name,photo').in('name', authorNames);
+          (byNameResult.data || []).forEach(function(m){
+            if(m && m.id && m.photo) avatarById[m.id] = m.photo;
+            if(m && m.name && m.photo) avatarByName[m.name] = m.photo;
+          });
+        } catch(e) {}
+      }
+    } catch(e) {}
+
     // 本物のデータのみ表示（デモデータは表示しない）
 
     var h = '';
@@ -2939,9 +2985,12 @@ async function renderTL(){
       var dateStr = d.created_at ? new Date(d.created_at).toLocaleString('ja-JP', {year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit'}) : (d.date || '');
       var excerpt = (d.body || d.excerpt || '').slice(0, 70);
       var isMe = currentUser && (d.author_id === currentUser.id || diaryAuthor === currentUser.name);
+      var diaryPhoto = (d.author_id && avatarById[d.author_id]) || avatarByName[diaryAuthor] || '';
       var avHtml = isMe
         ? myAvHtml('am')
-        : '<div class="av am" style="'+AB+';cursor:pointer;" onclick="openUserSheet(\''+esc(diaryAuthor)+'\',\''+diaryEmoji+'\')">'+diaryEmoji+'</div>';
+        : (diaryPhoto
+            ? '<div class="av am" style="overflow:hidden;cursor:pointer;" onclick="openUserSheet(\''+esc(diaryAuthor)+'\',\''+diaryEmoji+'\')"><img src="'+diaryPhoto+'" style="width:100%;height:100%;object-fit:cover;border-radius:10px;"></div>'
+            : '<div class="av am" style="'+AB+';cursor:pointer;" onclick="openUserSheet(\''+esc(diaryAuthor)+'\',\''+diaryEmoji+'\')">'+diaryEmoji+'</div>');
       var nameHtml = isMe
         ? escHtml(diaryAuthor)
         : '<span style="cursor:pointer;color:var(--og3);" onclick="openUserSheet(\''+esc(diaryAuthor)+'\',\''+diaryEmoji+'\')">'+escHtml(diaryAuthor)+'</span>';
@@ -2962,13 +3011,16 @@ async function renderTL(){
       var photoUrl = p.photo_url || p.photo || '';
       var ts = p.created_at ? new Date(p.created_at).getTime() : (p.ts || Date.now());
       var isMe = currentUser && (p.author_id === currentUser.id);
+      var authorPhoto = (p.author_id && avatarById[p.author_id]) || avatarByName[photoAuthor] || '';
       var captionTxt = p.caption || '';
       var captionShort = captionTxt.length > 70 ? captionTxt.slice(0,70)+'…' : captionTxt;
       var caption = captionTxt ? '<div class="ftxt" style="padding:8px 0 4px;">'+escHtml(captionShort)+'</div>' : '';
       var pAuthorEsc = esc(photoAuthor);
       var pAvHtml = isMe
         ? myAvHtml('am')
-        : '<div class="av am" style="'+AB+';cursor:pointer;" onclick="openUserSheet(\''+pAuthorEsc+'\',\''+photoEmoji+'\')">'+photoEmoji+'</div>';
+        : (authorPhoto
+            ? '<div class="av am" style="overflow:hidden;cursor:pointer;" onclick="openUserSheet(\''+pAuthorEsc+'\',\''+photoEmoji+'\')"><img src="'+authorPhoto+'" style="width:100%;height:100%;object-fit:cover;border-radius:10px;"></div>'
+            : '<div class="av am" style="'+AB+';cursor:pointer;" onclick="openUserSheet(\''+pAuthorEsc+'\',\''+photoEmoji+'\')">'+photoEmoji+'</div>');
       var photoNameHtml = isMe
         ? escHtml(photoAuthor)
         : '<span style="cursor:pointer;color:var(--og3);" onclick="openUserSheet(\''+pAuthorEsc+'\',\''+photoEmoji+'\')">'+escHtml(photoAuthor)+'</span>';
@@ -2988,9 +3040,12 @@ async function renderTL(){
       var voiceBody = v.body || v.t || '';
       var ts = v.created_at ? new Date(v.created_at).getTime() : (v.ts || (v.tm === 'たった今' ? Date.now() : Date.now() - 60000));
       var isMe = currentUser && (v.author_id === currentUser.id || voiceAuthor === currentUser.name);
+      var voicePhoto = (v.author_id && avatarById[v.author_id]) || avatarByName[voiceAuthor] || '';
       var avHtml = isMe
         ? myAvHtml('am')
-        : '<div class="av am" style="'+AB+';cursor:pointer;" onclick="openUserSheet(\''+esc(voiceAuthor)+'\',\''+voiceEmoji+'\')">'+voiceEmoji+'</div>';
+        : (voicePhoto
+            ? '<div class="av am" style="overflow:hidden;cursor:pointer;" onclick="openUserSheet(\''+esc(voiceAuthor)+'\',\''+voiceEmoji+'\')"><img src="'+voicePhoto+'" style="width:100%;height:100%;object-fit:cover;border-radius:10px;"></div>'
+            : '<div class="av am" style="'+AB+';cursor:pointer;" onclick="openUserSheet(\''+esc(voiceAuthor)+'\',\''+voiceEmoji+'\')">'+voiceEmoji+'</div>');
       var voiceNameHtml = isMe
         ? escHtml(voiceAuthor)
         : '<span style="cursor:pointer;color:var(--og3);" onclick="openUserSheet(\''+esc(voiceAuthor)+'\',\''+voiceEmoji+'\')">'+escHtml(voiceAuthor)+'</span>';
@@ -4222,7 +4277,7 @@ async function saveProfile(){
       const key = 'ones_profile_' + currentUser.id;
       const existing = JSON.parse(localStorage.getItem(key) || '{}');
       const updated = Object.assign(existing, {
-        nick, status: st, gender, loc, job
+        nick, status: st, bio: st, gender, loc, job, updatedAt: new Date().toISOString()
       });
       localStorage.setItem(key, JSON.stringify(updated));
       console.log('[ONEs] プロフィールをLocalStorageに保存:', updated);
@@ -5632,6 +5687,15 @@ function initApp(){
           .then(function(result){
             if(result.data){
               const m = result.data;
+              // LocalStorage優先でマージ（Supabaseは補完として扱う）
+              const merged = {
+                nick:   savedProf.nick   || m.name     || '',
+                gender: savedProf.gender || m.gender   || '未設定',
+                loc:    savedProf.loc    || m.location || '',
+                job:    savedProf.job    || m.job      || '',
+                bio:    savedProf.bio    || savedProf.status || m.bio || ''
+              };
+
               // 画面に反映
               const pvgender = document.getElementById('pvgender');
               const pvloc    = document.getElementById('pvloc');
@@ -5641,18 +5705,22 @@ function initApp(){
               const mpname   = document.getElementById('mpname');
               const pvnick   = document.getElementById('pvnick');
 
-              if(pvnick   && m.name)     pvnick.textContent   = m.name;
-              if(mpname   && m.name)     mpname.textContent   = m.name;
-              if(pvgender && m.gender)   pvgender.textContent = m.gender;
-              if(pvloc    && m.location) pvloc.textContent    = m.location;
-              if(pvjob    && m.job)      pvjob.textContent    = m.job;
-              if(pvbio    && m.bio)      pvbio.innerHTML      = escHtml(m.bio).replace(/\n/g,'<br>');
-              if(mpstatus && m.bio)      mpstatus.textContent = m.bio;
+              if(pvnick && merged.nick) pvnick.textContent = merged.nick;
+              if(mpname && merged.nick) mpname.textContent = merged.nick;
+              if(pvgender) pvgender.textContent = merged.gender || '未設定';
+              if(pvloc)    pvloc.textContent    = merged.loc || '未設定';
+              if(pvjob)    pvjob.textContent    = merged.job || '未設定';
+              if(pvbio)    pvbio.innerHTML      = merged.bio ? escHtml(merged.bio).replace(/\n/g,'<br>') : '<span style="color:var(--text3);">自己紹介を書きましょう ✏️</span>';
+              if(mpstatus) mpstatus.textContent = merged.bio || 'よろしくお願いします！';
 
               // LocalStorageにもキャッシュ
               const updated = Object.assign(savedProf, {
-                nick: m.name, gender: m.gender,
-                loc: m.location, job: m.job, bio: m.bio
+                nick: merged.nick,
+                status: merged.bio,
+                bio: merged.bio,
+                gender: merged.gender,
+                loc: merged.loc,
+                job: merged.job
               });
               localStorage.setItem(profKey, JSON.stringify(updated));
               console.log('[ONEs] Supabaseからプロフィール読み込み成功');
