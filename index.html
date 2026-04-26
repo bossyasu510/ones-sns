@@ -1545,6 +1545,16 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
         💌 メッセージ
         <a href="#" onclick="openComposeMsg('');return false;">＋ 作成</a>
       </div>
+      <div style="margin:0 12px 8px;">
+        <div style="position:relative;">
+          <input type="search" id="msg-search" placeholder="🔍 名前・件名・本文で検索..."
+            style="width:100%;background:#fff;border:1.5px solid var(--og-border);border-radius:24px;padding:10px 40px 10px 16px;font-size:13px;font-family:inherit;outline:none;box-shadow:var(--shadow);"
+            oninput="onMsgSearch()" autocomplete="off">
+          <span id="msg-search-clear" onclick="clearMsgSearch()"
+            style="position:absolute;right:14px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--text3);font-size:18px;display:none;">✕</span>
+        </div>
+        <div id="msg-search-info" style="display:none;font-size:11px;color:var(--text3);padding:6px 14px 0;"></div>
+      </div>
       <div id="msg-layout" style="display:flex;gap:10px;margin:0 12px 10px;">
         <div id="msg-sidebar" style="width:200px;flex-shrink:0;background:#fff;border-radius:14px;box-shadow:var(--shadow);overflow:hidden;">
           <div class="msg-folder-item" data-tab="inbox" onclick="setMsgTab('inbox',this)" style="display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;border-left:3px solid var(--og);background:var(--og-pale);transition:all .15s;">
@@ -3915,6 +3925,23 @@ async function renderMsgs(){
     var list = Object.values(threads).sort(function(a,b){
       return new Date(b.created_at) - new Date(a.created_at);
     });
+    if(msgSearchQuery){
+      list = list.filter(function(t){
+        var name = (t.partnerName || '').toLowerCase();
+        var subject = (t.subject || '').toLowerCase();
+        var body = (t.body || '').toLowerCase();
+        return name.indexOf(msgSearchQuery) !== -1 || subject.indexOf(msgSearchQuery) !== -1 || body.indexOf(msgSearchQuery) !== -1;
+      });
+    }
+    var info = document.getElementById('msg-search-info');
+    if(info) {
+      if(msgSearchQuery){
+        info.style.display = 'block';
+        info.textContent = '🔍 「'+msgSearchQuery+'」の検索結果: ' + list.length + '件';
+      } else {
+        info.style.display = 'none';
+      }
+    }
 
     if(list.length === 0){
       var tabLabelMap = {inbox:'受信箱', sent:'送信箱', starred:'重要', trash:'ゴミ箱'};
@@ -3964,6 +3991,7 @@ async function renderMsgs(){
   }
 }
 var userFolders = [];
+var msgSearchQuery = '';
 window.msgTab = 'inbox';
 function renderFolderItem(tab, icon, label, isActive, isCustom, folderId) {
   var bg = isActive ? 'var(--og-pale)' : '#fff';
@@ -4037,6 +4065,28 @@ function setMsgTab(tab, el){
   window.msgTab = tab || 'inbox';
   applyMsgLayoutMode();
   renderSidebar();
+  renderMsgs();
+}
+function onMsgSearch() {
+  var input = document.getElementById('msg-search');
+  msgSearchQuery = input ? input.value.trim().toLowerCase() : '';
+  var clearBtn = document.getElementById('msg-search-clear');
+  var info = document.getElementById('msg-search-info');
+  if(clearBtn) clearBtn.style.display = msgSearchQuery ? 'block' : 'none';
+  if(info) {
+    info.style.display = msgSearchQuery ? 'block' : 'none';
+    if(msgSearchQuery) info.textContent = '🔍 「'+msgSearchQuery+'」を検索中';
+  }
+  renderMsgs();
+}
+function clearMsgSearch() {
+  var input = document.getElementById('msg-search');
+  if(input) input.value = '';
+  msgSearchQuery = '';
+  var clearBtn = document.getElementById('msg-search-clear');
+  var info = document.getElementById('msg-search-info');
+  if(clearBtn) clearBtn.style.display = 'none';
+  if(info) info.style.display = 'none';
   renderMsgs();
 }
 function openCreateFolder() {
