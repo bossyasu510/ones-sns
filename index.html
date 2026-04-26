@@ -3425,6 +3425,26 @@ async function submitComment(type, recordId, title) {
       cntEl.textContent = parseInt(cntEl.textContent||'0') + 1;
     }
     updateFriendship(recordId, 5);
+    if(type === 'diary' || type === 'voice' || type === 'photo') {
+      var ownerTable = type === 'diary' ? 'diaries' : (type === 'voice' ? 'voices' : 'photos');
+      try {
+        var ownerR = await sb.from(ownerTable).select('author_id, author_name, title, body').eq('id', recordId).maybeSingle();
+        if(ownerR.data && ownerR.data.author_id !== currentUser.id) {
+          var ownerTitle = ownerR.data.title || (ownerR.data.body || '').slice(0, 20);
+          await createNotification(
+            ownerR.data.author_id,
+            'comment',
+            currentUser.name + 'さんがコメントしました',
+            '「' + ownerTitle + '」へ：' + body.slice(0, 50),
+            currentUser.id,
+            currentUser.name,
+            currentUser.emoji || '🙋',
+            type,
+            recordId
+          );
+        }
+      } catch(e){}
+    }
 
   } catch(e){
     console.error('[ONEs] submitComment:', e);
@@ -4652,6 +4672,90 @@ async function moveThreadToFolder(partnerId, folderId, folderName) {
 }
 window.addEventListener('resize', applyMsgLayoutMode);
 function renderNT(id,list){const el=document.getElementById(id);if(!el)return;el.innerHTML=list.map(n=>`<div class="nti"><div class="ntd ${n.type||'old'}"></div><div><div class="ntt">${n.t}</div><div class="ntm">${n.tm}</div></div></div>`).join('');}
+async function createNotification(userId, type, title, body, fromUserId, fromUserName, fromUserEmoji, linkType, linkId) {
+  try {
+    if(!dbReady() || !userId) return;
+    if(userId === fromUserId) return;
+    var r = await sb.from('notifications').insert({
+      user_id: userId,
+      type: type,
+      title: title,
+      body: body || null,
+      from_user_id: fromUserId || null,
+      from_user_name: fromUserName || null,
+      from_user_emoji: fromUserEmoji || '🙋',
+      link_type: linkType || null,
+      link_id: linkId || null
+    });
+    if(r.error) console.warn('[ONEs] createNotification:', r.error);
+  } catch(e){ console.error('[ONEs] createNotification:', e); }
+}
+async function renderNotifications(limit) {
+  var el = document.getElementById('ntlist');
+  if(!el) return;
+  if(!dbReady() || !currentUser || !currentUser.id) {
+    renderNT('ntlist', NT);
+    return;
+  }
+  try {
+    var r = await sb.from('notifications')
+      .select('*')
+      .eq('user_id', currentUser.id)
+      .order('created_at', {ascending:false})
+      .limit(limit || 50);
+    var list = r.data || [];
+    if(list.length === 0) {
+      el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);">お知らせはありません</div>';
+      return;
+    }
+    el.innerHTML = list.map(function(n){
+      var ts = n.created_at ? new Date(n.created_at).getTime() : Date.now();
+      var dotClass = n.is_read ? 'old' : 'new';
+      return '<div class="nti" style="'+(n.is_read?'':'background:var(--og-pale);border-radius:8px;')+'">'+
+        '<div class="ntd '+dotClass+'"></div>'+
+        '<div style="flex:1;">'+
+          '<div class="ntt">'+escHtml(n.title||'')+'</div>'+
+          (n.body ? '<div style="font-size:12px;color:var(--text3);margin-top:2px;">'+escHtml(n.body)+'</div>' : '')+
+          '<div class="ntm">'+timeAgoStr(ts)+'</div>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+    if(limit !== 5) {
+      try { await sb.from('notifications').update({is_read:true}).eq('user_id', currentUser.id).eq('is_read', false); } catch(e){}
+      updateNoticeBadge();
+    }
+  } catch(e){
+    console.error('[ONEs] renderNotifications:', e);
+    renderNT('ntlist', NT);
+  }
+}
+async function renderSideNotifications(limit) {
+  var el = document.getElementById('snt');
+  if(!el) return;
+  if(!dbReady() || !currentUser || !currentUser.id) {
+    renderNT('snt', NT.slice(0,5));
+    return;
+  }
+  try {
+    var r = await sb.from('notifications')
+      .select('*')
+      .eq('user_id', currentUser.id)
+      .order('created_at', {ascending:false})
+      .limit(limit || 5);
+    var list = r.data || [];
+    if(list.length === 0) {
+      el.innerHTML = '<div style="padding:10px;text-align:center;color:var(--text3);font-size:11px;">お知らせはありません</div>';
+      return;
+    }
+    el.innerHTML = list.map(function(n){
+      var ts = n.created_at ? new Date(n.created_at).getTime() : Date.now();
+      return '<div class="nti"><div class="ntd '+(n.is_read?'old':'new')+'"></div><div><div class="ntt">'+escHtml(n.title||'')+'</div><div class="ntm">'+timeAgoStr(ts)+'</div></div></div>';
+    }).join('');
+  } catch(e){
+    console.error('[ONEs] renderSideNotifications:', e);
+    renderNT('snt', NT.slice(0,5));
+  }
+}
 async function loadWanmikNotices(){
   if(!dbReady() || !currentUser || !currentUser.id) return;
   try {
@@ -4686,6 +4790,11 @@ async function updateNoticeBadge() {
         .eq('to_id', currentUser.id)
         .eq('status', 'pending');
       count += (r.count || 0);
+      var nr = await sb.from('notifications')
+        .select('id', {count: 'exact'})
+        .eq('user_id', currentUser.id)
+        .eq('is_read', false);
+      count += (nr.count || 0);
     }
 
     // バッジ更新
@@ -4815,7 +4924,8 @@ function renderSide(){
       } catch(e){ console.warn('[ONEs] side stats:', e); }
     })();
   }
-  renderNT('snt',NT.slice(0,5));
+  if(typeof renderSideNotifications === 'function') renderSideNotifications(5);
+  else renderNT('snt',NT.slice(0,5));
 }
 
 /* ══════════ NAV ══════════ */
@@ -4859,7 +4969,11 @@ function nav(name,el){
       }
     } catch(e) { console.error(e); }
     if(name==='notice'){
-      try { renderNT('ntlist',NT); loadWanmikNotices(); } catch(e){}
+      try {
+        if(typeof renderNotifications === 'function') renderNotifications(50);
+        else renderNT('ntlist',NT);
+        loadWanmikNotices();
+      } catch(e){}
       // バッジをリセット
       var badge = document.getElementById('notice-badge');
       if(badge){ badge.textContent = '0'; badge.style.display = 'none'; }
@@ -5350,6 +5464,17 @@ async function recordFootprint(visitedId, visitedName) {
       visited_id: visitedId,
       visited_name: visitedName
     });
+    await createNotification(
+      visitedId,
+      'footprint',
+      currentUser.name + 'さんが足あとを残しました',
+      null,
+      currentUser.id,
+      currentUser.name,
+      currentUser.emoji || '🙋',
+      'profile',
+      currentUser.id
+    );
     console.log('[ONEs] 足あと記録:', visitedName);
   } catch(e){ console.error('[ONEs] recordFootprint:', e); }
 }
@@ -5375,6 +5500,17 @@ async function requestWanmik(name) {
       status: 'pending'
     });
     if(ins.error){ toast('❌ 申請失敗: '+(ins.error.message||'')); return; }
+    await createNotification(
+      target.id,
+      'wanmik_request',
+      currentUser.name + 'さんからワンミク申請が届きました',
+      '承認するとワンミクになります',
+      currentUser.id,
+      currentUser.name,
+      currentUser.emoji || '🙋',
+      'wanmik',
+      null
+    );
     closeSheet();
     toast('🤝 '+name+'さんに申請しました！承認されるとワンミク成立です');
     if(typeof cur!=='undefined' && cur==='wanmik') renderWanmik();
@@ -5383,8 +5519,24 @@ async function requestWanmik(name) {
 
 async function approveWanmik(wanmikId){
   try {
+    var wmR = await sb.from('wanmik').select('from_id, from_name').eq('id', wanmikId).maybeSingle();
     var r = await sb.from('wanmik').update({status:'accepted'}).eq('id',wanmikId);
     if(r.error){ toast('❌ 承認に失敗しました'); return; }
+    try {
+      if(wmR.data) {
+        await createNotification(
+          wmR.data.from_id,
+          'wanmik_accepted',
+          currentUser.name + 'さんとワンミクになりました！',
+          '🎉 これからメッセージを送り合えます',
+          currentUser.id,
+          currentUser.name,
+          currentUser.emoji || '🙋',
+          'profile',
+          currentUser.id
+        );
+      }
+    } catch(e){}
     toast('🤝 ワンミク成立！');
     renderWanmik();
   } catch(e){ toast('❌ エラーが発生しました'); }
@@ -5831,6 +5983,17 @@ async function sendMessage(toId, toName, toEmoji){
 
     inputEl.value = '';
     toast('💌 送信しました！');
+    await createNotification(
+      toId,
+      'message',
+      currentUser.name + 'さんからメッセージが届きました',
+      (subject ? subject + ' / ' : '') + body.slice(0, 50),
+      currentUser.id,
+      currentUser.name,
+      currentUser.emoji || '🙋',
+      'message',
+      null
+    );
 
     // スレッドを更新
     setTimeout(function(){
@@ -5907,6 +6070,17 @@ async function sendNewMessage(){
 
     closeSheet();
     toast('💌 '+toName+'さんにメッセージを送りました！');
+    await createNotification(
+      target.data.id,
+      'message',
+      currentUser.name + 'さんからメッセージが届きました',
+      (subject ? subject + ' / ' : '') + body.slice(0, 50),
+      currentUser.id,
+      currentUser.name,
+      currentUser.emoji || '🙋',
+      'message',
+      null
+    );
     renderMsgs();
   } catch(e){
     console.error('[ONEs] sendNewMessage:', e);
