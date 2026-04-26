@@ -1081,6 +1081,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
     <div class="dn" onclick="nav('diary',this)">日記</div>
     <div class="dn" onclick="nav('voice',this)">つぶやき</div>
     <div class="dn" onclick="nav('wanmik',this)">ワンミク</div>
+    <div class="dn" onclick="nav('members',this)">👥 みんな</div>
     <div class="dn" onclick="nav('footprint',this)">足あと</div>
     <div class="dn" onclick="nav('community',this)">コミュニティ</div>
     <div class="dn" onclick="nav('invite',this)">招待</div>
@@ -1270,6 +1271,25 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
       <!-- みんなが作ったコミュニティ -->
       <div class="sh">🌱 メンバーのコミュニティ</div>
       <div class="card" style="margin:0 12px 10px;"><div class="cb" id="cm-mine"></div></div>
+    </div>
+
+    <!-- MEMBERS PAGE -->
+    <div class="pg" id="pg-members">
+      <div class="sh" style="padding-top:14px;">
+        👥 みんな
+        <span id="members-count" style="font-size:12px;color:var(--text3);font-weight:500;"></span>
+      </div>
+      <div style="margin:0 12px 8px;">
+        <input type="search" id="members-search" placeholder="🔍 名前・興味タグで検索..."
+          style="width:100%;background:#fff;border:1.5px solid var(--og-border);border-radius:24px;padding:10px 16px;font-size:13px;font-family:inherit;outline:none;box-shadow:var(--shadow);"
+          oninput="filterMembers()" autocomplete="off">
+      </div>
+      <div style="margin:0 12px 8px;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;">
+        <div class="member-sort-chip on" data-sort="match" onclick="sortMembersBy('match',this)" style="padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;background:var(--og);color:#fff;border:1.5px solid var(--og);">🎯 興味の合致順</div>
+        <div class="member-sort-chip" data-sort="new" onclick="sortMembersBy('new',this)" style="padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;background:#fff;color:var(--text2);border:1.5px solid var(--og-border);">🌱 新着順</div>
+        <div class="member-sort-chip" data-sort="name" onclick="sortMembersBy('name',this)" style="padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;background:#fff;color:var(--text2);border:1.5px solid var(--og-border);">📝 名前順</div>
+      </div>
+      <div id="members-list" style="padding:0 12px 20px;"></div>
     </div>
 
     <!-- INVITE PAGE -->
@@ -3781,6 +3801,136 @@ async function renderCM(){
     mk(allCommunities, 'cm-mine', true);
   } catch(e) { console.error('[ONEs] renderCM:', e); }
 }
+var membersAllList = [];
+var membersSortBy = 'match';
+var membersSearchQuery = '';
+async function renderMembersPage() {
+  var listEl = document.getElementById('members-list');
+  var countEl = document.getElementById('members-count');
+  if(!listEl) return;
+  listEl.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text3);">読み込み中...</div>';
+  if(!dbReady() || !currentUser || !currentUser.id) {
+    listEl.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text3);">読み込みエラー</div>';
+    return;
+  }
+  try {
+    var r = await sb.from('members')
+      .select('*')
+      .eq('status', 'active')
+      .neq('id', currentUser.id);
+    membersAllList = r.data || [];
+    if(countEl) countEl.textContent = '（'+membersAllList.length+'人）';
+    filterAndSortMembers();
+  } catch(e){
+    console.error('[ONEs] renderMembersPage:', e);
+    listEl.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text3);">読み込みエラー</div>';
+  }
+}
+function filterAndSortMembers() {
+  var listEl = document.getElementById('members-list');
+  if(!listEl) return;
+  var list = membersAllList.slice();
+  if(membersSearchQuery) {
+    var q = membersSearchQuery.toLowerCase();
+    list = list.filter(function(m){
+      var name = (m.name||'').toLowerCase();
+      var bio = (m.bio||'').toLowerCase();
+      var loc = (m.location||'').toLowerCase();
+      var job = (m.job||'').toLowerCase();
+      var interests = '';
+      try {
+        var tags2 = JSON.parse(m.interests||'[]');
+        interests = tags2.join(' ').toLowerCase();
+      } catch(e){}
+      return name.indexOf(q) !== -1 || bio.indexOf(q) !== -1 ||
+             loc.indexOf(q) !== -1 || job.indexOf(q) !== -1 ||
+             interests.indexOf(q) !== -1;
+    });
+  }
+  var myTags = [];
+  try {
+    myTags = JSON.parse(localStorage.getItem('ones_interests_'+currentUser.id)||'[]');
+  } catch(e){}
+  if(membersSortBy === 'match') {
+    list.forEach(function(m){
+      var tags = [];
+      try { tags = JSON.parse(m.interests||'[]'); } catch(e){}
+      m._matchCount = tags.filter(function(t){ return myTags.indexOf(t) !== -1; }).length;
+    });
+    list.sort(function(a,b){
+      if(b._matchCount !== a._matchCount) return b._matchCount - a._matchCount;
+      return (b.join_date||'').localeCompare(a.join_date||'');
+    });
+  } else if(membersSortBy === 'new') {
+    list.sort(function(a,b){ return (b.join_date||'').localeCompare(a.join_date||''); });
+  } else if(membersSortBy === 'name') {
+    list.sort(function(a,b){ return (a.name||'').localeCompare(b.name||'','ja'); });
+  }
+  if(list.length === 0) {
+    listEl.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3);">該当するメンバーがいません</div>';
+    return;
+  }
+  listEl.innerHTML = list.map(function(m){
+    var photo = m.photo;
+    var emoji = m.emoji || '🙋';
+    var avHtml = photo
+      ? '<img src="'+photo+'" style="width:64px;height:64px;border-radius:14px;object-fit:cover;border:2px solid var(--og-border);">'
+      : '<div style="width:64px;height:64px;border-radius:14px;background:linear-gradient(135deg,#a8ddb8,#3fa865);display:flex;align-items:center;justify-content:center;font-size:32px;border:2px solid var(--og-border);">'+emoji+'</div>';
+    var tags = [];
+    try { tags = JSON.parse(m.interests||'[]'); } catch(e){}
+    var matchCount = membersSortBy === 'match' && m._matchCount ? m._matchCount : 0;
+    var tagsHtml = tags.length === 0 ? ''
+      : '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;">'+
+          tags.slice(0,5).map(function(t){
+            var isMatch = myTags.indexOf(t) !== -1;
+            return '<span style="background:'+(isMatch?'var(--og)':'var(--og-pale)')+';color:'+(isMatch?'#fff':'var(--og3)')+';padding:2px 9px;border-radius:12px;font-size:10px;font-weight:600;">'+escHtml(t)+'</span>';
+          }).join('')+
+          (tags.length > 5 ? '<span style="font-size:10px;color:var(--text3);align-self:center;">+'+(tags.length-5)+'</span>' : '')+
+        '</div>';
+    var matchBadge = matchCount > 0
+      ? '<div style="display:inline-block;background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;margin-left:6px;">🎯 '+matchCount+'個一致</div>'
+      : '';
+    var bioShort = (m.bio||'').slice(0,40);
+    var bioHtml = m.bio ? '<div style="font-size:12px;color:var(--text);margin-top:4px;">'+escHtml(bioShort)+(m.bio.length > 40 ? '…' : '')+'</div>' : '';
+    var metaParts = [];
+    if(m.location) metaParts.push('📍 '+escHtml(m.location));
+    if(m.job) metaParts.push('💼 '+escHtml(m.job));
+    var metaHtml = metaParts.length ? '<div style="font-size:11px;color:var(--text3);margin-top:4px;">'+metaParts.join(' · ')+'</div>' : '';
+    return '<div class="card" style="margin:0 0 10px;cursor:pointer;display:flex;gap:12px;padding:14px;" onclick="openUserSheet(\''+esc(m.name)+'\',\''+emoji+'\')">'+
+      avHtml+
+      '<div style="flex:1;min-width:0;">'+
+        '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;">'+
+          '<span style="font-size:15px;font-weight:700;color:var(--og3);">'+escHtml(m.name)+'</span>'+
+          matchBadge+
+        '</div>'+
+        bioHtml+
+        metaHtml+
+        tagsHtml+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+function filterMembers() {
+  var input = document.getElementById('members-search');
+  membersSearchQuery = input ? input.value.trim() : '';
+  filterAndSortMembers();
+}
+function sortMembersBy(sort, el) {
+  membersSortBy = sort;
+  document.querySelectorAll('.member-sort-chip').forEach(function(c){
+    c.classList.remove('on');
+    c.style.background = '#fff';
+    c.style.color = 'var(--text2)';
+    c.style.borderColor = 'var(--og-border)';
+  });
+  if(el) {
+    el.classList.add('on');
+    el.style.background = 'var(--og)';
+    el.style.color = '#fff';
+    el.style.borderColor = 'var(--og)';
+  }
+  filterAndSortMembers();
+}
 
 function openCreateCommunity() {
   showSheet('🏘️ コミュニティを作成', `
@@ -4523,6 +4673,7 @@ function nav(name,el){
     try { if(name==='diary' && typeof renderDiary === 'function') renderDiary(); } catch(e) { console.error(e); }
     try { if(name==='voice' && typeof renderVoice === 'function') renderVoice(); } catch(e) { console.error(e); }
     try { if(name==='wanmik' && typeof renderWanmik === 'function') renderWanmik(); } catch(e) { console.error(e); }
+    try { if(name==='members' && typeof renderMembersPage === 'function') renderMembersPage(); } catch(e) { console.error(e); }
     try { if(name==='footprint' && typeof renderFP === 'function') renderFP(); } catch(e) { console.error(e); }
     try { if(name==='community' && typeof renderCM === 'function') renderCM(); } catch(e) { console.error(e); }
     try {
@@ -6914,10 +7065,28 @@ function loadSelectedTags() {
   if(saved) return JSON.parse(saved);
   return isBossYasu ? DEFAULT_SELECTED : [];
 }
+async function loadSelectedTagsFromDb() {
+  if(!dbReady() || !currentUser || !currentUser.id) return null;
+  try {
+    var r = await sb.from('members').select('interests').eq('id', currentUser.id).maybeSingle();
+    if(r.data && r.data.interests) {
+      var tags = JSON.parse(r.data.interests);
+      var userKey = 'ones_interests_'+currentUser.id;
+      localStorage.setItem(userKey, JSON.stringify(tags));
+      return tags;
+    }
+  } catch(e){}
+  return null;
+}
 
 function saveSelectedTags(tags) {
-  const userKey = currentUser && currentUser.id ? 'ones_interests_'+currentUser.id : 'ones_interests';
+  var userKey = currentUser && currentUser.id ? 'ones_interests_'+currentUser.id : 'ones_interests';
   localStorage.setItem(userKey, JSON.stringify(tags));
+  if(dbReady() && currentUser && currentUser.id) {
+    sb.from('members').update({interests: JSON.stringify(tags)}).eq('id', currentUser.id).then(function(r){
+      if(r.error) console.warn('[ONEs] interests save:', r.error);
+    });
+  }
 }
 
 function renderSelectedTags() {
@@ -7261,6 +7430,7 @@ function initApp(){
   try { renderMpDiary(); } catch(e) { console.error('[ONEs] renderMpDiary:', e); }
   try { renderSide(); } catch(e) { console.error('[ONEs] renderSide:', e); }
   try { renderCal(); } catch(e) { console.error('[ONEs] renderCal:', e); }
+  try { if(typeof loadSelectedTagsFromDb === 'function') loadSelectedTagsFromDb().then(function(){ renderSelectedTags(); }); } catch(e) {}
   try { renderSelectedTags(); } catch(e) { console.error('[ONEs] renderSelectedTags:', e); }
   try { updateNoticeBadge(); } catch(e) {}
 
