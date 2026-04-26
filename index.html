@@ -3824,35 +3824,57 @@ async function renderMsgs(){
     console.log('[ONEs] messages r2:', r2.data, r2.error);
 
     var allMsgs = [...(r1.data||[]), ...(r2.data||[])];
+    var seen = {};
+    allMsgs = allMsgs.filter(function(m){
+      if(!m || !m.id) return false;
+      if(seen[m.id]) return false;
+      seen[m.id] = 1;
+      return true;
+    });
     renderSidebar();
     applyMsgLayoutMode();
-    var inboxCount = allMsgs.filter(function(m){
-      return m.to_id === currentUser.id && !(!!m.is_trashed || m.folder_name === 'trash');
-    }).length;
-    var sentCount = allMsgs.filter(function(m){
-      return m.from_id === currentUser.id && !(!!m.is_trashed || m.folder_name === 'trash');
-    }).length;
-    var starredCount = allMsgs.filter(function(m){
-      return (!!m.is_starred || m.folder_name === 'starred') && !(!!m.is_trashed || m.folder_name === 'trash');
-    }).length;
-    var trashCount = allMsgs.filter(function(m){
-      return !!m.is_trashed || m.folder_name === 'trash';
-    }).length;
-    var cntInbox = document.getElementById('cnt-inbox');
-    var cntSent = document.getElementById('cnt-sent');
-    var cntStarred = document.getElementById('cnt-starred');
-    var cntTrash = document.getElementById('cnt-trash');
-    if(cntInbox) cntInbox.textContent = inboxCount + '件';
-    if(cntSent) cntSent.textContent = sentCount + '件';
-    if(cntStarred) cntStarred.textContent = starredCount + '件';
-    if(cntTrash) cntTrash.textContent = trashCount + '件';
-    userFolders.forEach(function(f){
-      var cnt = allMsgs.filter(function(m){
-        return m.folder_name === f.id && !(!!m.is_trashed || m.folder_name === 'trash');
-      }).length;
-      var c = document.getElementById('cnt-folder-'+f.id);
-      if(c) c.textContent = cnt + '件';
+    function countByFilter(filterFn) {
+      var filtered = allMsgs.filter(filterFn);
+      var partners = {};
+      filtered.forEach(function(m){
+        var pid = m.from_id === currentUser.id ? m.to_id : m.from_id;
+        if(pid) partners[pid] = 1;
+      });
+      return { threads: Object.keys(partners).length, msgs: filtered.length };
+    }
+    var inboxCnt = countByFilter(function(m){
+      var isTrashed = !!m.is_trashed || m.folder_name === 'trash';
+      return m.to_id === currentUser.id && !isTrashed && !m.folder_name;
     });
+    var sentCnt = countByFilter(function(m){
+      var isTrashed = !!m.is_trashed || m.folder_name === 'trash';
+      return m.from_id === currentUser.id && !isTrashed && !m.folder_name;
+    });
+    var starredCnt = countByFilter(function(m){
+      var isTrashed = !!m.is_trashed || m.folder_name === 'trash';
+      return (!!m.is_starred || m.folder_name === 'starred') && !isTrashed;
+    });
+    var trashCnt = countByFilter(function(m){
+      return !!m.is_trashed || m.folder_name === 'trash';
+    });
+    var setCnt = function(id, c){
+      var cntEl = document.getElementById(id);
+      if(cntEl) cntEl.textContent = c.threads + '人 / ' + c.msgs + '通';
+    };
+    setCnt('cnt-inbox', inboxCnt);
+    setCnt('cnt-sent', sentCnt);
+    setCnt('cnt-starred', starredCnt);
+    setCnt('cnt-trash', trashCnt);
+    if(typeof userFolders !== 'undefined') {
+      userFolders.forEach(function(f){
+        var fc = countByFilter(function(m){
+          var isTrashed = !!m.is_trashed || m.folder_name === 'trash';
+          return m.folder_name === f.id && !isTrashed;
+        });
+        var id = 'cnt-' + ('folder:'+f.id).replace(':','-');
+        setCnt(id, fc);
+      });
+    }
     var tab = window.msgTab || 'inbox';
     var filteredMsgs = allMsgs.filter(function(m){
       var isInbox = m.to_id === currentUser.id;
