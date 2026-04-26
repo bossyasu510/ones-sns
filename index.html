@@ -3067,24 +3067,13 @@ async function renderTL(){
     authorIds = authorIds.filter(function(v,i,a){ return a.indexOf(v)===i && v; });
     authorNames = authorNames.filter(function(v,i,a){ return a.indexOf(v)===i && v; });
 
-    // LocalStorageキャッシュから先に読み込む
     var photoMap = {};
-    authorIds.forEach(function(id){
-      var cached = localStorage.getItem('ones_profile_photo_'+id);
-      if(cached) photoMap[id] = cached;
-    });
-    authorNames.forEach(function(name){
-      var cached = localStorage.getItem('ones_photo_by_name_'+name);
-      if(cached) photoMap[name] = cached;
-    });
-
-    // Supabaseから未取得分だけ取得（photoなしメンバーは除外）
-    var uncachedIds = authorIds.filter(function(id){ return !photoMap[id]; });
-    if(dbReady() && uncachedIds.length > 0){
+    // Supabase から取得（最新が優先）
+    if(dbReady() && authorIds.length > 0){
       try {
         var pr = await sb.from('members')
           .select('id,name,photo')
-          .in('id', uncachedIds)
+          .in('id', authorIds)
           .not('photo', 'is', null);
         if(pr.data) pr.data.forEach(function(m){
           if(m.photo && m.photo.length > 0){
@@ -3099,6 +3088,19 @@ async function renderTL(){
         });
       } catch(e){ console.warn('[ONEs] photoMap fetch:', e); }
     }
+    // Supabaseで取得できなかった分は LocalStorage から補完
+    authorIds.forEach(function(id){
+      if(!photoMap[id]) {
+        var cached = localStorage.getItem('ones_profile_photo_'+id);
+        if(cached) photoMap[id] = cached;
+      }
+    });
+    authorNames.forEach(function(name){
+      if(!photoMap[name]) {
+        var cached = localStorage.getItem('ones_photo_by_name_'+name);
+        if(cached) photoMap[name] = cached;
+      }
+    });
 
     // アバターHTMLを生成するヘルパー関数
     function getAvHtml(authorId, authorName, authorEmoji, size, isMe, clickable) {
@@ -3649,14 +3651,9 @@ async function renderDiary(){
     all.forEach(function(d){ if(d.author_id) authorIds.push(d.author_id); });
     authorIds = [...new Set(authorIds)];
     var photoMap = {};
-    authorIds.forEach(function(id){
-      var cached = localStorage.getItem('ones_profile_photo_'+id);
-      if(cached) photoMap[id] = cached;
-    });
-    var uncached = authorIds.filter(function(id){ return !photoMap[id]; });
-    if(dbReady() && uncached.length > 0) {
+    if(dbReady() && authorIds.length > 0) {
       try {
-        var pr = await sb.from('members').select('id,photo').in('id', uncached).not('photo','is',null);
+        var pr = await sb.from('members').select('id,photo').in('id', authorIds).not('photo','is',null);
         if(pr.data) pr.data.forEach(function(m){
           if(m.photo) {
             photoMap[m.id] = m.photo;
@@ -3665,6 +3662,12 @@ async function renderDiary(){
         });
       } catch(e){}
     }
+    authorIds.forEach(function(id){
+      if(!photoMap[id]) {
+        var cached = localStorage.getItem('ones_profile_photo_'+id);
+        if(cached) photoMap[id] = cached;
+      }
+    });
     dlistEl.innerHTML = all.map(function(d){
       var dauthor = d.author_name || d.author || 'メンバー';
       var demoji = d.author_emoji || d.authorEmoji || '🙋';
@@ -3725,14 +3728,9 @@ async function renderVoice(){
     all.forEach(function(v){ if(v.author_id) authorIds.push(v.author_id); });
     authorIds = [...new Set(authorIds)];
     var photoMap = {};
-    authorIds.forEach(function(id){
-      var cached = localStorage.getItem('ones_profile_photo_'+id);
-      if(cached) photoMap[id] = cached;
-    });
-    var uncached = authorIds.filter(function(id){ return !photoMap[id]; });
-    if(dbReady() && uncached.length > 0) {
+    if(dbReady() && authorIds.length > 0) {
       try {
-        var pr = await sb.from('members').select('id,photo').in('id', uncached).not('photo','is',null);
+        var pr = await sb.from('members').select('id,photo').in('id', authorIds).not('photo','is',null);
         if(pr.data) pr.data.forEach(function(m){
           if(m.photo) {
             photoMap[m.id] = m.photo;
@@ -3741,6 +3739,12 @@ async function renderVoice(){
         });
       } catch(e){}
     }
+    authorIds.forEach(function(id){
+      if(!photoMap[id]) {
+        var cached = localStorage.getItem('ones_profile_photo_'+id);
+        if(cached) photoMap[id] = cached;
+      }
+    });
     vfeedEl.innerHTML = all.map(function(v){
       var vauthor = v.author_name || v.u || 'メンバー';
       var vemoji = v.author_emoji || v.e || '🙋';
@@ -5424,9 +5428,6 @@ async function openUserSheet(name, emoji) {
     }
 
     var bio = (member && member.bio) ? member.bio : '';
-    var location = (member && member.location) ? member.location : '';
-    var job = (member && member.job) ? member.job : '';
-    var gender = (member && member.gender) ? member.gender : '';
     var joinDate = (member && member.join_date) ? member.join_date : '';
     var invitedBy = (member && member.invited_by) ? member.invited_by : '';
 
@@ -5437,24 +5438,45 @@ async function openUserSheet(name, emoji) {
       avHtml = '<div style="width:80px;height:80px;border-radius:20px;'+AB+';display:flex;align-items:center;justify-content:center;font-size:46px;border:3px solid var(--og-border);">'+emoji+'</div>';
     }
 
-    var basicInfo = '';
-    if(location || job || gender) {
-      basicInfo = '<div style="background:var(--og-pale);border-radius:10px;padding:12px;margin:10px 0;text-align:left;">';
-      if(gender && gender !== '未設定') basicInfo += '<div style="font-size:12px;color:var(--text3);padding:4px 0;">👤 性別：'+escHtml(gender)+'</div>';
-      if(location) basicInfo += '<div style="font-size:12px;color:var(--text3);padding:4px 0;">📍 居住地：'+escHtml(location)+'</div>';
-      if(job)      basicInfo += '<div style="font-size:12px;color:var(--text3);padding:4px 0;">💼 職業：'+escHtml(job)+'</div>';
-      basicInfo += '</div>';
-    }
-
     var friendScore = 0;
     if(member && member.id) friendScore = calcFriendship(member.id);
     var meterHtml = friendshipMeterHtml(friendScore);
 
-    // openUserSheet内のdetailsHtmlをbasicInfo + 自己紹介に変更
-    var detailsHtml = basicInfo;
+    var detailsHtml = '';
+    var tagsExtraHtml = '';
+    if(member) {
+      var details = [];
+      if(member.gender) details.push('👤 性別：'+escHtml(member.gender));
+      if(member.location) details.push('📍 居住地：'+escHtml(member.location));
+      if(member.job) details.push('💼 職業：'+escHtml(member.job));
+      if(member.age) details.push('🎂 年齢：'+escHtml(String(member.age)));
+      if(member.interests) {
+        try {
+          var memberTags = JSON.parse(member.interests);
+          if(Array.isArray(memberTags) && memberTags.length > 0) {
+            tagsExtraHtml = '<div style="margin-top:14px;">'+
+              '<div style="font-size:12px;color:var(--og3);font-weight:700;margin-bottom:8px;">🏷️ 興味・関心</div>'+
+              '<div style="display:flex;flex-wrap:wrap;gap:6px;">'+
+                memberTags.map(function(t){
+                  return '<span style="background:var(--og-pale);color:var(--og3);padding:4px 12px;border-radius:14px;font-size:12px;font-weight:600;">'+escHtml(t)+'</span>';
+                }).join('')+
+              '</div>'+
+            '</div>';
+          }
+        } catch(e){}
+      }
+      if(details.length > 0) {
+        detailsHtml = '<div style="background:var(--og-pale);border-radius:14px;padding:14px;margin-bottom:16px;text-align:left;">'+
+          details.map(function(d){
+            return '<div style="font-size:13px;color:var(--text);padding:5px 0;">'+d+'</div>';
+          }).join('')+
+        '</div>';
+      }
+    }
     if(bio) {
       detailsHtml += '<div style="background:var(--og-pale);border-radius:10px;padding:12px;margin:10px 0;font-size:13px;color:var(--text);line-height:1.7;text-align:left;">'+escHtml(bio)+'</div>';
     }
+    detailsHtml += tagsExtraHtml;
 
     var metaHtml = '';
     if(joinDate || invitedBy) {
