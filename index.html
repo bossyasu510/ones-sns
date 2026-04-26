@@ -1164,7 +1164,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
         <div class="psh"><span class="t">👤 基本情報</span><a href="#" onclick="openEditProfile();return false;">編集</a></div>
         <div class="psb">
           <div class="pr"><div class="pk">ニックネーム</div><div class="pv" id="pvnick">BOSS YASU</div></div>
-          <div class="pr"><div class="pk">性別</div><div class="pv">男性</div></div>
+          <div class="pr"><div class="pk">性別</div><div class="pv" id="pvgender">未設定</div></div>
           <div class="pr"><div class="pk">居住地</div><div class="pv" id="pvloc">愛知県 名古屋市</div></div>
           <div class="pr"><div class="pk">職業</div><div class="pv" id="pvjob">IT会社経営</div></div>
           <div class="pr"><div class="pk">招待者</div><div class="pv">🌱 創設メンバー（管理者）</div></div>
@@ -2939,7 +2939,12 @@ async function renderTL(){
       var dateStr = d.created_at ? new Date(d.created_at).toLocaleString('ja-JP', {year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit'}) : (d.date || '');
       var excerpt = (d.body || d.excerpt || '').slice(0, 70);
       var isMe = currentUser && (d.author_id === currentUser.id || diaryAuthor === currentUser.name);
-      var avHtml = isMe ? myAvHtml('am') : '<div class="av am" style="'+AB+'">'+diaryEmoji+'</div>';
+      var avHtml = isMe
+        ? myAvHtml('am')
+        : '<div class="av am" style="'+AB+';cursor:pointer;" onclick="openUserSheet(\''+esc(diaryAuthor)+'\',\''+diaryEmoji+'\')">'+diaryEmoji+'</div>';
+      var nameHtml = isMe
+        ? escHtml(diaryAuthor)
+        : '<span style="cursor:pointer;color:var(--og3);" onclick="openUserSheet(\''+esc(diaryAuthor)+'\',\''+diaryEmoji+'\')">'+escHtml(diaryAuthor)+'</span>';
       var userId = currentUser ? currentUser.id : '';
       var recId = d.id || '';
       var likeKey = userId ? 'ones_likes_'+userId : '';
@@ -2947,7 +2952,7 @@ async function renderTL(){
       var isLiked = recId && likedList.indexOf(recId) !== -1;
       var likeCount = d.good || 0;
       var diaryTitleEsc = esc(d.title || '');
-      h += '<div class="fc"><div class="fch">'+avHtml+'<div class="fui"><div class="fname">'+escHtml(diaryAuthor)+'</div><div class="fsub">'+dateStr+'&nbsp;<span class="fbadge bd">日記</span></div></div></div><div class="fcb"><div class="ftit" onclick="openDiarySheet(\''+diaryTitleEsc+'\')">'+escHtml(d.title)+'</div><div class="ftxt">'+escHtml(excerpt)+(excerpt.length >= 70 ? '…' : '')+'</div></div><div class="fcf"><div class="fbtn'+(isLiked?' lk':'')+'" onclick="likeThis(this,\'diaries\',\''+recId+'\')">👍 <span class="like-count">'+likeCount+'</span></div><div class="fbtn" onclick="openDiarySheet(\''+diaryTitleEsc+'\')">💬 '+(d.comments_count||0)+'件</div><div class="fbtn" onclick="sharePost(\''+diaryTitleEsc+'\')">↗️ シェア</div></div></div>';
+      h += '<div class="fc"><div class="fch">'+avHtml+'<div class="fui"><div class="fname">'+nameHtml+'</div><div class="fsub">'+dateStr+'&nbsp;<span class="fbadge bd">日記</span></div></div></div><div class="fcb"><div class="ftit" onclick="openDiarySheet(\''+diaryTitleEsc+'\')">'+escHtml(d.title)+'</div><div class="ftxt">'+escHtml(excerpt)+(excerpt.length >= 70 ? '…' : '')+'</div></div><div class="fcf"><div class="fbtn'+(isLiked?' lk':'')+'" onclick="likeThis(this,\'diaries\',\''+recId+'\')">👍 <span class="like-count">'+likeCount+'</span></div><div class="fbtn" onclick="openDiarySheet(\''+diaryTitleEsc+'\')">💬 '+(d.comments_count||0)+'件</div><div class="fbtn" onclick="sharePost(\''+diaryTitleEsc+'\')">↗️ シェア</div></div></div>';
     });
 
     // 写真（最大3件）
@@ -2957,19 +2962,23 @@ async function renderTL(){
       var photoUrl = p.photo_url || p.photo || '';
       var ts = p.created_at ? new Date(p.created_at).getTime() : (p.ts || Date.now());
       var isMe = currentUser && (p.author_id === currentUser.id);
-      var avHtml = isMe ? myAvHtml('am') : '<div class="av am" style="'+AB+'">'+photoEmoji+'</div>';
       var captionTxt = p.caption || '';
       var captionShort = captionTxt.length > 70 ? captionTxt.slice(0,70)+'…' : captionTxt;
       var caption = captionTxt ? '<div class="ftxt" style="padding:8px 0 4px;">'+escHtml(captionShort)+'</div>' : '';
       var pAuthorEsc = esc(photoAuthor);
-      var pAvHtml = isMe ? myAvHtml('am') : '<div class="av am" style="'+AB+';cursor:pointer;" onclick="openUserSheet(\''+pAuthorEsc+'\',\''+photoEmoji+'\')">'+photoEmoji+'</div>';
+      var pAvHtml = isMe
+        ? myAvHtml('am')
+        : '<div class="av am" style="'+AB+';cursor:pointer;" onclick="openUserSheet(\''+pAuthorEsc+'\',\''+photoEmoji+'\')">'+photoEmoji+'</div>';
+      var photoNameHtml = isMe
+        ? escHtml(photoAuthor)
+        : '<span style="cursor:pointer;color:var(--og3);" onclick="openUserSheet(\''+pAuthorEsc+'\',\''+photoEmoji+'\')">'+escHtml(photoAuthor)+'</span>';
       var userId = currentUser ? currentUser.id : '';
       var likeKey = userId ? 'ones_likes_'+userId : '';
       var likedList = likeKey ? JSON.parse(localStorage.getItem(likeKey)||'[]') : [];
       var recId = p.id || '';
       var isLikedP = recId && likedList.indexOf(recId) !== -1;
       var sharePhotoUrl = p.photo_url || '';
-      h += '<div class="fc"><div class="fch">'+pAvHtml+'<div class="fui"><div class="fname" '+(isMe?'':'style="cursor:pointer;" onclick="openUserSheet(\''+pAuthorEsc+'\',\''+photoEmoji+'\')"')+'>'+escHtml(photoAuthor)+'</div><div class="fsub">'+timeAgoStr(ts)+'&nbsp;<span class="fbadge" style="background:#fef3c7;color:#92400e;">📷 フォト</span></div></div></div><div class="fcb"><img src="'+photoUrl+'" style="width:100%;max-height:300px;object-fit:cover;border-radius:8px;">'+caption+'</div><div class="fcf"><div class="fbtn'+(isLikedP?' lk':'')+'" onclick="likeThis(this,\'photos\',\''+recId+'\')">👍 <span class="like-count">'+(p.good||0)+'</span></div><div class="fbtn" onclick="toast(\'💬 コメント機能は準備中です\')">💬 0件</div><div class="fbtn" onclick="sharePost(\'\',\''+esc(sharePhotoUrl)+'\')">↗️ シェア</div></div></div>';
+      h += '<div class="fc"><div class="fch">'+pAvHtml+'<div class="fui"><div class="fname">'+photoNameHtml+'</div><div class="fsub">'+timeAgoStr(ts)+'&nbsp;<span class="fbadge" style="background:#fef3c7;color:#92400e;">📷 フォト</span></div></div></div><div class="fcb"><img src="'+photoUrl+'" style="width:100%;max-height:300px;object-fit:cover;border-radius:8px;">'+caption+'</div><div class="fcf"><div class="fbtn'+(isLikedP?' lk':'')+'" onclick="likeThis(this,\'photos\',\''+recId+'\')">👍 <span class="like-count">'+(p.good||0)+'</span></div><div class="fbtn" onclick="toast(\'💬 コメント機能は準備中です\')">💬 0件</div><div class="fbtn" onclick="sharePost(\'\',\''+esc(sharePhotoUrl)+'\')">↗️ シェア</div></div></div>';
     });
 
     // つぶやき（最大5件）
@@ -2979,13 +2988,18 @@ async function renderTL(){
       var voiceBody = v.body || v.t || '';
       var ts = v.created_at ? new Date(v.created_at).getTime() : (v.ts || (v.tm === 'たった今' ? Date.now() : Date.now() - 60000));
       var isMe = currentUser && (v.author_id === currentUser.id || voiceAuthor === currentUser.name);
-      var avHtml = isMe ? myAvHtml('am') : '<div class="av am" style="'+AB+'" onclick="openUserSheet(\''+esc(voiceAuthor)+'\',\''+voiceEmoji+'\')">'+voiceEmoji+'</div>';
+      var avHtml = isMe
+        ? myAvHtml('am')
+        : '<div class="av am" style="'+AB+';cursor:pointer;" onclick="openUserSheet(\''+esc(voiceAuthor)+'\',\''+voiceEmoji+'\')">'+voiceEmoji+'</div>';
+      var voiceNameHtml = isMe
+        ? escHtml(voiceAuthor)
+        : '<span style="cursor:pointer;color:var(--og3);" onclick="openUserSheet(\''+esc(voiceAuthor)+'\',\''+voiceEmoji+'\')">'+escHtml(voiceAuthor)+'</span>';
       var userId = currentUser ? currentUser.id : '';
       var likeKey = userId ? 'ones_likes_'+userId : '';
       var likedList = likeKey ? JSON.parse(localStorage.getItem(likeKey)||'[]') : [];
       var recId = v.id || '';
       var isLikedV = recId && likedList.indexOf(recId) !== -1;
-      h += '<div class="fc"><div class="fch">'+avHtml+'<div class="fui"><div class="fname">'+escHtml(voiceAuthor)+'</div><div class="fsub">'+timeAgoStr(ts)+'&nbsp;<span class="fbadge bv">つぶやき</span></div></div></div><div class="fcb"><div class="ftxt" style="padding-bottom:2px;">'+escHtml(voiceBody)+'</div></div><div class="fcf"><div class="fbtn'+(isLikedV?' lk':'')+'" onclick="likeThis(this,\'voices\',\''+recId+'\')">👍 <span class="like-count">'+(v.good||0)+'</span></div><div class="fbtn" onclick="toast(\'💬 返信機能は準備中です\')">💬 返信</div><div class="fbtn" onclick="sharePost(\''+esc(voiceBody)+'\')">↗️ シェア</div></div></div>';
+      h += '<div class="fc"><div class="fch">'+avHtml+'<div class="fui"><div class="fname">'+voiceNameHtml+'</div><div class="fsub">'+timeAgoStr(ts)+'&nbsp;<span class="fbadge bv">つぶやき</span></div></div></div><div class="fcb"><div class="ftxt" style="padding-bottom:2px;">'+escHtml(voiceBody)+'</div></div><div class="fcf"><div class="fbtn'+(isLikedV?' lk':'')+'" onclick="likeThis(this,\'voices\',\''+recId+'\')">👍 <span class="like-count">'+(v.good||0)+'</span></div><div class="fbtn" onclick="toast(\'💬 返信機能は準備中です\')">💬 返信</div><div class="fbtn" onclick="sharePost(\''+esc(voiceBody)+'\')">↗️ シェア</div></div></div>';
     });
 
     if(tlEl) tlEl.innerHTML = h || '<div style="padding:40px;text-align:center;color:var(--text3);">まだ投稿がありません<br><span style="font-size:12px;">最初の投稿をしてみましょう！</span></div>';
@@ -3779,6 +3793,7 @@ async function openUserSheet(name, emoji) {
     var bio = (member && member.bio) ? member.bio : '';
     var location = (member && member.location) ? member.location : '';
     var job = (member && member.job) ? member.job : '';
+    var gender = (member && member.gender) ? member.gender : '';
     var joinDate = (member && member.join_date) ? member.join_date : '';
     var invitedBy = (member && member.invited_by) ? member.invited_by : '';
 
@@ -3789,13 +3804,19 @@ async function openUserSheet(name, emoji) {
       avHtml = '<div style="width:80px;height:80px;border-radius:20px;'+AB+';display:flex;align-items:center;justify-content:center;font-size:46px;border:3px solid var(--og-border);">'+emoji+'</div>';
     }
 
-    var detailsHtml = '';
-    if(bio || location || job) {
-      detailsHtml = '<div style="background:var(--og-pale);border-radius:12px;padding:14px;margin:14px 0;text-align:left;">';
-      if(bio) detailsHtml += '<div style="font-size:13px;color:var(--text);line-height:1.7;margin-bottom:8px;">'+escHtml(bio)+'</div>';
-      if(location) detailsHtml += '<div style="font-size:12px;color:var(--text3);">📍 '+escHtml(location)+'</div>';
-      if(job) detailsHtml += '<div style="font-size:12px;color:var(--text3);">💼 '+escHtml(job)+'</div>';
-      detailsHtml += '</div>';
+    var basicInfo = '';
+    if(location || job || gender) {
+      basicInfo = '<div style="background:var(--og-pale);border-radius:10px;padding:12px;margin:10px 0;text-align:left;">';
+      if(gender && gender !== '未設定') basicInfo += '<div style="font-size:12px;color:var(--text3);padding:4px 0;">👤 性別：'+escHtml(gender)+'</div>';
+      if(location) basicInfo += '<div style="font-size:12px;color:var(--text3);padding:4px 0;">📍 居住地：'+escHtml(location)+'</div>';
+      if(job)      basicInfo += '<div style="font-size:12px;color:var(--text3);padding:4px 0;">💼 職業：'+escHtml(job)+'</div>';
+      basicInfo += '</div>';
+    }
+
+    // openUserSheet内のdetailsHtmlをbasicInfo + 自己紹介に変更
+    var detailsHtml = basicInfo;
+    if(bio) {
+      detailsHtml += '<div style="background:var(--og-pale);border-radius:10px;padding:12px;margin:10px 0;font-size:13px;color:var(--text);line-height:1.7;text-align:left;">'+escHtml(bio)+'</div>';
     }
 
     var metaHtml = '';
@@ -4160,64 +4181,78 @@ function escHtml(str) {
 }
 function openMsgSheet(from,emoji,text){showSheet(from+'さんのメッセージ',`<div><div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;"><div class="av am" style="${AB}">${emoji}</div><div><div style="font-weight:700;color:var(--og3);">${from}</div><div style="font-size:11px;color:var(--text3);">ワンミク</div></div></div><div style="background:var(--og-pale);border-radius:12px;padding:14px;font-size:14px;color:var(--text);line-height:1.7;margin-bottom:16px;">${text}</div><textarea style="width:100%;background:var(--og-pale);border:1.5px solid var(--og-border);border-radius:12px;padding:12px;font-size:14px;font-family:inherit;outline:none;resize:none;height:90px;margin-bottom:10px;" placeholder="返信を入力..."></textarea><button class="bo" style="width:100%;" onclick="toast('返信を送信しました！');closeSheet()">送信する</button></div>`);}
 function openComposeMsg(to){showSheet('新しいメッセージ',`<div><div class="er"><label class="el">宛先</label><input class="ei" type="text" value="${to||''}" placeholder="ニックネームを入力"></div><div class="er"><label class="el">件名</label><input class="ei" type="text" placeholder="件名を入力"></div><div class="er"><label class="el">本文</label><textarea class="eta" placeholder="メッセージを入力してください..."></textarea></div><button class="bo" style="width:100%;" onclick="toast('メッセージを送信しました！');closeSheet()">送信する</button></div>`);}
-function openEditProfile(){const nick=document.getElementById('pvnick').textContent;const loc=document.getElementById('pvloc').textContent;const job=document.getElementById('pvjob').textContent;const status=document.getElementById('mpstatus').textContent;showSheet('プロフィールを編集',`<div><div class="er"><label class="el">ニックネーム</label><input id="ep-nick" class="ei" type="text" value="${nick}"></div><div class="er"><label class="el">ひとこと</label><input id="ep-st" class="ei" type="text" value="${status}"></div><div class="er"><label class="el">居住地</label><input id="ep-loc" class="ei" type="text" value="${loc}"></div><div class="er"><label class="el">職業</label><input id="ep-job" class="ei" type="text" value="${job}"></div><button class="bo" style="width:100%;" onclick="saveProfile()">保存する</button></div>`);}
+function openEditProfile(){const nick=document.getElementById('pvnick').textContent;const loc=document.getElementById('pvloc').textContent;const job=document.getElementById('pvjob').textContent;const gender=document.getElementById('pvgender')?document.getElementById('pvgender').textContent:'未設定';const status=document.getElementById('mpstatus').textContent;const gOpts=['未設定','男性','女性','その他','回答しない'];const gSel=gOpts.map(g=>`<option${g===gender?' selected':''}>${g}</option>`).join('');showSheet('プロフィールを編集',`<div><div class="er"><label class="el">ニックネーム</label><input id="ep-nick" class="ei" type="text" value="${nick}"></div><div class="er"><label class="el">ひとこと</label><input id="ep-st" class="ei" type="text" value="${status}"></div><div class="er"><label class="el">性別</label><select id="ep-gender" class="ei">${gSel}</select></div><div class="er"><label class="el">居住地</label><input id="ep-loc" class="ei" type="text" placeholder="例：愛知県 名古屋市" value="${loc==='未設定'?'':loc}"></div><div class="er"><label class="el">職業</label><input id="ep-job" class="ei" type="text" placeholder="例：IT会社経営" value="${job==='未設定'?'':job}"></div><button class="bo" style="width:100%;" onclick="saveProfile()">保存する</button></div>`);}
 function openEditBio(){const cur=document.getElementById('pvbio').innerText;showSheet('自己紹介を編集',`<div><div class="er"><label class="el">自己紹介文</label><textarea id="ep-bio" class="eta" style="min-height:150px;">${cur}</textarea></div><button class="bo" style="width:100%;" onclick="saveBio()">保存する</button></div>`);}
 async function saveProfile(){
   try {
-    const nick = document.getElementById('ep-nick').value.trim();
-    const st = document.getElementById('ep-st').value.trim();
-    const loc = document.getElementById('ep-loc').value.trim();
-    const job = document.getElementById('ep-job').value.trim();
+    const nick = document.getElementById('ep-nick') ? document.getElementById('ep-nick').value.trim() : '';
+    const st   = document.getElementById('ep-st')   ? document.getElementById('ep-st').value.trim()   : '';
+    const loc  = document.getElementById('ep-loc')  ? document.getElementById('ep-loc').value.trim()  : '';
+    const job  = document.getElementById('ep-job')  ? document.getElementById('ep-job').value.trim()  : '';
+    const genderEl = document.getElementById('ep-gender');
+    const gender = genderEl ? genderEl.value : '未設定';
 
-    if(!nick) { toast('ニックネームを入力してください'); return; }
-    if(/<|>|script|javascript:|on\w+=/i.test(nick + st + loc + job)) {
+    if(!nick){ toast('ニックネームを入力してください'); return; }
+    if(/<|>|script|javascript:|on\w+=/i.test(nick+st+loc+job)){
       toast('使用できない文字が含まれています'); return;
     }
 
-    // 画面更新
-    var pvnick = document.getElementById('pvnick');
-    var pvloc = document.getElementById('pvloc');
-    var pvjob = document.getElementById('pvjob');
-    var mpname = document.getElementById('mpname');
-    var mpstatus = document.getElementById('mpstatus');
-    if(pvnick) pvnick.textContent = nick;
-    if(pvloc) pvloc.textContent = loc;
-    if(pvjob) pvjob.textContent = job;
-    if(mpname) mpname.textContent = nick;
-    if(mpstatus) mpstatus.textContent = st;
+    // 画面に即時反映
+    const fields = {
+      pvnick:   nick,
+      pvgender: gender || '未設定',
+      pvloc:    loc    || '未設定',
+      pvjob:    job    || '未設定',
+      mpname:   nick,
+      mpstatus: st
+    };
+    Object.entries(fields).forEach(([id, val]) => {
+      const el = document.getElementById(id);
+      if(el) el.textContent = val;
+    });
 
-    // currentUser を更新
-    if(currentUser) {
+    // currentUser更新
+    if(currentUser){
       currentUser.name = nick;
       saveSession(currentUser);
     }
 
-    // LocalStorage にも保存（フォールバック）
-    if(currentUser && currentUser.id) {
-      var existing = JSON.parse(localStorage.getItem('ones_profile_'+currentUser.id) || '{}');
-      var profile = { nick: nick, status: st, loc: loc, job: job };
-      localStorage.setItem('ones_profile_'+currentUser.id, JSON.stringify(Object.assign(existing, profile)));
+    // LocalStorageに保存（オフライン対応）
+    if(currentUser && currentUser.id){
+      const key = 'ones_profile_' + currentUser.id;
+      const existing = JSON.parse(localStorage.getItem(key) || '{}');
+      const updated = Object.assign(existing, {
+        nick, status: st, gender, loc, job
+      });
+      localStorage.setItem(key, JSON.stringify(updated));
+      console.log('[ONEs] プロフィールをLocalStorageに保存:', updated);
     }
 
-    // Supabase に保存
-    if(dbReady() && currentUser && currentUser.id) {
-      var updateResult = await sb.from('members').update({
-        name: nick,
-        bio: st,
+    // Supabaseに保存（カラムが存在する場合のみ）
+    if(dbReady() && currentUser && currentUser.id){
+      console.log('[ONEs] Supabase保存開始:', {nick, st, gender, loc, job});
+      const updateResult = await sb.from('members').update({
+        name:     nick,
+        bio:      st,
+        gender:   gender,
         location: loc,
-        job: job
+        job:      job
       }).eq('id', currentUser.id);
 
-      if(updateResult.error) {
-        console.error('[ONEs] saveProfile DB:', updateResult.error);
+      if(updateResult.error){
+        console.error('[ONEs] Supabase保存エラー:', updateResult.error);
+        // エラーでもLocalStorageには保存済みなので続行
+        toast('⚠️ クラウド保存に失敗しましたがローカルに保存しました');
+      } else {
+        console.log('[ONEs] Supabase保存成功');
       }
     }
 
     closeSheet();
     toast('✅ プロフィールを保存しました');
-  } catch(err) {
-    console.error('[ONEs] saveProfile:', err);
-    toast('❌ 保存に失敗しました');
+  } catch(err){
+    console.error('[ONEs] saveProfile error:', err);
+    toast('❌ 保存に失敗しました: ' + err.message);
   }
 }
 async function saveBio(){
@@ -5587,22 +5622,58 @@ function initApp(){
 
     // 新規メンバー（BOSS YASU以外）はプロフィールを初期化
     if(!isBossYasu) {
-      // 保存済みプロフィールがあれば読み込み、なければ空欄
-      const savedProf = JSON.parse(localStorage.getItem('ones_profile_'+currentUser.id) || '{}');
+      // LocalStorageから読み込み
+      const profKey = 'ones_profile_' + currentUser.id;
+      const savedProf = JSON.parse(localStorage.getItem(profKey) || '{}');
 
-      const pvloc = document.getElementById('pvloc');
-      const pvjob = document.getElementById('pvjob');
-      const pvbio = document.getElementById('pvbio');
-      const mpstatus = document.getElementById('mpstatus');
+      // Supabaseからも読み込んでマージ（非同期）
+      if(dbReady() && currentUser.id){
+        sb.from('members').select('*').eq('id', currentUser.id).maybeSingle()
+          .then(function(result){
+            if(result.data){
+              const m = result.data;
+              // 画面に反映
+              const pvgender = document.getElementById('pvgender');
+              const pvloc    = document.getElementById('pvloc');
+              const pvjob    = document.getElementById('pvjob');
+              const pvbio    = document.getElementById('pvbio');
+              const mpstatus = document.getElementById('mpstatus');
+              const mpname   = document.getElementById('mpname');
+              const pvnick   = document.getElementById('pvnick');
 
-      if(pvloc) pvloc.textContent = savedProf.loc || '未設定';
-      if(pvjob) pvjob.textContent = savedProf.job || '未設定';
-      if(pvbio) pvbio.innerHTML = savedProf.bio || '<span style="color:var(--text3);">プロフィールを編集して自己紹介を書きましょう ✏️</span>';
-      if(mpstatus) mpstatus.textContent = savedProf.status || 'よろしくお願いします！';
+              if(pvnick   && m.name)     pvnick.textContent   = m.name;
+              if(mpname   && m.name)     mpname.textContent   = m.name;
+              if(pvgender && m.gender)   pvgender.textContent = m.gender;
+              if(pvloc    && m.location) pvloc.textContent    = m.location;
+              if(pvjob    && m.job)      pvjob.textContent    = m.job;
+              if(pvbio    && m.bio)      pvbio.innerHTML      = escHtml(m.bio).replace(/\n/g,'<br>');
+              if(mpstatus && m.bio)      mpstatus.textContent = m.bio;
 
-      // 性別を未設定に
-      const genderRow = document.querySelector('.pr:nth-child(2) .pv');
-      if(genderRow && !genderRow.id) genderRow.textContent = '未設定';
+              // LocalStorageにもキャッシュ
+              const updated = Object.assign(savedProf, {
+                nick: m.name, gender: m.gender,
+                loc: m.location, job: m.job, bio: m.bio
+              });
+              localStorage.setItem(profKey, JSON.stringify(updated));
+              console.log('[ONEs] Supabaseからプロフィール読み込み成功');
+            }
+          }).catch(function(e){
+            console.warn('[ONEs] Supabase読み込みエラー:', e);
+          });
+      }
+
+      // まずLocalStorageの値を即時表示（Supabase待ちの間）
+      const pvgender2 = document.getElementById('pvgender');
+      const pvloc2    = document.getElementById('pvloc');
+      const pvjob2    = document.getElementById('pvjob');
+      const pvbio2    = document.getElementById('pvbio');
+      const mpstatus2 = document.getElementById('mpstatus');
+
+      if(pvgender2) pvgender2.textContent = savedProf.gender || '未設定';
+      if(pvloc2)    pvloc2.textContent    = savedProf.loc    || '未設定';
+      if(pvjob2)    pvjob2.textContent    = savedProf.job    || '未設定';
+      if(pvbio2)    pvbio2.innerHTML      = savedProf.bio    ? escHtml(savedProf.bio).replace(/\n/g,'<br>') : '<span style="color:var(--text3);">自己紹介を書きましょう ✏️</span>';
+      if(mpstatus2) mpstatus2.textContent = savedProf.status || 'よろしくお願いします！';
 
       // 招待者情報
       const invRow = document.querySelectorAll('.pr');
