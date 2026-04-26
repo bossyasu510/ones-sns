@@ -4836,7 +4836,7 @@ async function updateNoticeBadge() {
     var sideCount = document.getElementById('side-notice-count');
     if(sideCount) {
       sideCount.textContent = count;
-      sideCount.style.display = count > 0 ? '' : 'none';
+      sideCount.style.display = count > 0 ? 'inline-block' : 'none';
     }
   } catch(e) {
     console.warn('[ONEs] updateNoticeBadge:', e);
