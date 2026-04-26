@@ -5047,6 +5047,7 @@ function nav(name,el){
   setTimeout(function(){
     try { loadProfilePhoto(); } catch(e) {}
   }, 50);
+  try { updateNoticeBadge(); } catch(e){}
 
   } catch(navErr) {
     console.error('[ONEs] nav error:', navErr);
@@ -7818,6 +7819,17 @@ function initApp(){
   try { if(typeof loadSelectedTagsFromDb === 'function') loadSelectedTagsFromDb().then(function(){ renderSelectedTags(); }); } catch(e) {}
   try { renderSelectedTags(); } catch(e) { console.error('[ONEs] renderSelectedTags:', e); }
   try { updateNoticeBadge(); } catch(e) {}
+  setTimeout(function(){
+    try { updateNoticeBadge(); } catch(e){}
+  }, 1000);
+  setTimeout(function(){
+    try { updateNoticeBadge(); } catch(e){}
+  }, 3000);
+  if(!window._noticeBadgeInterval) {
+    window._noticeBadgeInterval = setInterval(function(){
+      try { updateNoticeBadge(); } catch(e){}
+    }, 30000);
+  }
 
   // 描画後にもう一度写真を反映（renderで上書きされる可能性に対応）
   setTimeout(function(){
