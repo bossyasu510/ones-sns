@@ -3873,6 +3873,7 @@ async function renderMsgs(){
           subject: m.subject,
           body: m.body,
           created_at: m.created_at,
+          is_starred: !!m.is_starred || m.folder_name === 'starred',
           unread: !m.read && m.to_id === currentUser.id
         };
       }
@@ -3893,15 +3894,28 @@ async function renderMsgs(){
 
     el.innerHTML = list.map(function(t){
       var ts = t.created_at ? new Date(t.created_at).getTime() : Date.now();
-      return '<div class="mlit '+(t.unread?'unrd':'')+'" '+
+      var subjectHtml = t.subject ? '<div class="mlsubject" style="font-size:13px;font-weight:700;color:var(--og3);margin:2px 0;">' + escHtml(t.subject) + '</div>' : '';
+      var isStarred = t.is_starred || false;
+      var starIcon = isStarred ? '⭐' : '☆';
+      var starColor = isStarred ? '#f4d03f' : '#ccc';
+      var actionBtns = '';
+      if(window.msgTab === 'trash') {
+        actionBtns = '<div onclick="event.stopPropagation();restoreMsgThread(\''+t.partnerId+'\')" style="padding:6px 10px;background:var(--og);color:#fff;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;margin-left:8px;">↩️ 復元</div>' +
+                     '<div onclick="event.stopPropagation();permaDeleteThread(\''+t.partnerId+'\')" style="padding:6px 10px;background:#e53e3e;color:#fff;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;margin-left:4px;">🗑️ 完全削除</div>';
+      } else {
+        actionBtns = '<div onclick="event.stopPropagation();toggleStarThread(\''+t.partnerId+'\','+!isStarred+')" style="padding:6px 8px;cursor:pointer;font-size:18px;color:'+starColor+';margin-left:8px;" title="重要マーク">'+starIcon+'</div>' +
+                     '<div onclick="event.stopPropagation();trashMsgThread(\''+t.partnerId+'\')" style="padding:6px 8px;cursor:pointer;font-size:16px;margin-left:4px;" title="ゴミ箱へ">🗑️</div>';
+      }
+      return '<div class="mlit '+(t.unread?'unrd':'')+'" style="display:flex;align-items:center;gap:10px;padding:14px 4px;border-bottom:1px solid var(--og-pale);" '+
         'onclick="openMsgThread(\''+t.partnerId+'\',\''+esc(t.partnerName)+'\',\''+t.partnerEmoji+'\')">'+
-        '<div class="av as" style="'+AB+';display:flex;align-items:center;justify-content:center;">'+t.partnerEmoji+'</div>'+
-        '<div style="flex:1;min-width:0;">'+
-          '<div class="mlfrom">'+escHtml(t.partnerName)+'</div>'+
-          (t.subject ? '<div class="mlprev" style="font-weight:700;color:var(--text);">'+escHtml(t.subject)+'</div>' : '')+
-          '<div class="mlprev">'+escHtml(t.body)+'</div>'+
+        '<div class="av as" style="background:linear-gradient(135deg,#a8ddb8,#3fa865);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">'+t.partnerEmoji+'</div>'+
+        '<div style="flex:1;min-width:0;cursor:pointer;">'+
+          '<div class="mlfrom" style="font-size:14px;font-weight:700;color:var(--text);">'+escHtml(t.partnerName)+(t.unread?' <span style="display:inline-block;width:7px;height:7px;background:var(--og);border-radius:50%;margin-left:4px;"></span>':'')+'</div>'+
+          subjectHtml+
+          '<div class="mlprev" style="font-size:12px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+escHtml(t.body)+'</div>'+
         '</div>'+
-        '<div class="mldate">'+timeAgoStr(ts)+'</div>'+
+        '<div class="mldate" style="font-size:10px;color:var(--text3);white-space:nowrap;flex-shrink:0;">'+timeAgoStr(ts)+'</div>'+
+        actionBtns+
       '</div>';
     }).join('');
 
@@ -3932,6 +3946,49 @@ function setMsgTab(tab, el){
     if(title) title.style.color = isActive ? 'var(--og3)' : 'var(--text)';
   });
   renderMsgs();
+}
+async function toggleStarThread(partnerId, newValue) {
+  try {
+    if(!dbReady() || !currentUser) return;
+    var r = await sb.from('messages').update({is_starred: newValue})
+      .or('and(from_id.eq.'+currentUser.id+',to_id.eq.'+partnerId+'),and(from_id.eq.'+partnerId+',to_id.eq.'+currentUser.id+')');
+    if(r.error){ toast('❌ 更新に失敗しました'); return; }
+    toast(newValue ? '⭐ 重要マークをつけました' : '☆ 重要マークを外しました');
+    renderMsgs();
+  } catch(e){ console.error('[ONEs] toggleStar:', e); }
+}
+async function trashMsgThread(partnerId) {
+  if(!confirm('このスレッドをゴミ箱に移動しますか？')) return;
+  try {
+    if(!dbReady() || !currentUser) return;
+    var r = await sb.from('messages').update({is_trashed: true})
+      .or('and(from_id.eq.'+currentUser.id+',to_id.eq.'+partnerId+'),and(from_id.eq.'+partnerId+',to_id.eq.'+currentUser.id+')');
+    if(r.error){ toast('❌ 失敗しました'); return; }
+    toast('🗑️ ゴミ箱に移動しました');
+    renderMsgs();
+  } catch(e){ console.error('[ONEs] trash:', e); }
+}
+async function restoreMsgThread(partnerId) {
+  try {
+    if(!dbReady() || !currentUser) return;
+    var r = await sb.from('messages').update({is_trashed: false})
+      .or('and(from_id.eq.'+currentUser.id+',to_id.eq.'+partnerId+'),and(from_id.eq.'+partnerId+',to_id.eq.'+currentUser.id+')');
+    if(r.error){ toast('❌ 失敗しました'); return; }
+    toast('↩️ 受信箱に戻しました');
+    renderMsgs();
+  } catch(e){ console.error('[ONEs] restore:', e); }
+}
+async function permaDeleteThread(partnerId) {
+  if(!confirm('このスレッドを完全に削除しますか？\n（元に戻せません）')) return;
+  if(!confirm('本当に削除しますか？\n削除されたメッセージは復元できません。')) return;
+  try {
+    if(!dbReady() || !currentUser) return;
+    var r = await sb.from('messages').delete()
+      .or('and(from_id.eq.'+currentUser.id+',to_id.eq.'+partnerId+'),and(from_id.eq.'+partnerId+',to_id.eq.'+currentUser.id+')');
+    if(r.error){ toast('❌ 失敗しました'); return; }
+    toast('🗑️ 完全に削除しました');
+    renderMsgs();
+  } catch(e){ console.error('[ONEs] permaDelete:', e); }
 }
 window.addEventListener('resize', applyMsgLayoutMode);
 function renderNT(id,list){const el=document.getElementById(id);if(!el)return;el.innerHTML=list.map(n=>`<div class="nti"><div class="ntd ${n.type||'old'}"></div><div><div class="ntt">${n.t}</div><div class="ntm">${n.tm}</div></div></div>`).join('');}
