@@ -4707,7 +4707,7 @@ function renderSide(){
       sb.from('footprints').select('*').eq('visited_id', currentUser.id).order('created_at',{ascending:false}).limit(10).then(function(r){
         var visitors = r.data || [];
         if(visitors.length === 0) {
-          sfp.innerHTML = '<div style="text-align:center;color:var(--text3);font-size:11px;padding:10px;">まだ足あとはありません</div>';
+          sfp.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--text3);font-size:11px;padding:14px 8px;white-space:normal;line-height:1.5;">まだ足あとはありません</div>';
           return;
         }
         var visitorIds = [...new Set(visitors.map(function(v){ return v.visitor_id; }))];
@@ -4725,6 +4725,8 @@ function renderSide(){
             '</div>';
           }).join('');
         });
+      }).catch(function(){
+        sfp.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--text3);font-size:11px;padding:14px 8px;white-space:normal;line-height:1.5;">読み込みエラー</div>';
       });
     } else {
       sfp.innerHTML = '';
