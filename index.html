@@ -3896,10 +3896,17 @@ function renderSide(){
 /* ══════════ NAV ══════════ */
 let cur='home';
 function nav(name,el){
+  console.log('[ONEs] nav called:', name);
   try {
     document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
     const pg=document.getElementById('pg-'+name);
-    if(pg) pg.classList.add('on');
+    console.log('[ONEs] pg element:', pg, 'exists?', !!pg);
+    if(pg) {
+      pg.classList.add('on');
+      console.log('[ONEs] on class added. classList:', pg.classList.toString());
+    } else {
+      console.error('[ONEs] pg element not found for name:', name);
+    }
     cur=name;
     document.querySelectorAll('.bi').forEach(b=>b.classList.remove('on'));
     const bmap={home:'bn-home',wanmik:'bn-wanmik',calendar:'bn-calendar',invite:'bn-invite',message:'bn-message',mypage:'bn-mypage'};
