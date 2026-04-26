@@ -3018,10 +3018,15 @@ function sharePost(text, url) {
 async function syncMyPhoto() {
   if(!dbReady() || !currentUser || !currentUser.id) return;
   try {
-    var r = await sb.from('members')
+    // モバイル回線で待ち続けて描画を止めないため、短いタイムアウトを設定
+    var queryPromise = sb.from('members')
       .select('photo')
       .eq('id', currentUser.id)
       .maybeSingle();
+    var timeoutPromise = new Promise(function(resolve){
+      setTimeout(function(){ resolve(null); }, 1500);
+    });
+    var r = await Promise.race([queryPromise, timeoutPromise]);
     if(r && r.data && r.data.photo) {
       try {
         localStorage.setItem('ones_profile_photo_'+currentUser.id, r.data.photo);
@@ -5468,24 +5473,42 @@ async function openUserSheet(name, emoji) {
     var tagsExtraHtml = '';
     if(member) {
       var details = [];
-      if(member.gender) details.push('👤 性別：'+escHtml(member.gender));
-      if(member.location) details.push('📍 居住地：'+escHtml(member.location));
-      if(member.job) details.push('💼 職業：'+escHtml(member.job));
-      if(member.age) details.push('🎂 年齢：'+escHtml(String(member.age)));
-      if(member.interests) {
-        try {
-          var memberTags = JSON.parse(member.interests);
-          if(Array.isArray(memberTags) && memberTags.length > 0) {
-            tagsExtraHtml = '<div style="margin-top:14px;">'+
-              '<div style="font-size:12px;color:var(--og3);font-weight:700;margin-bottom:8px;">🏷️ 興味・関心</div>'+
-              '<div style="display:flex;flex-wrap:wrap;gap:6px;">'+
-                memberTags.map(function(t){
-                  return '<span style="background:var(--og-pale);color:var(--og3);padding:4px 12px;border-radius:14px;font-size:12px;font-weight:600;">'+escHtml(t)+'</span>';
-                }).join('')+
-              '</div>'+
-            '</div>';
+      var genderVal = member.gender || member.sex || '';
+      var locationVal = member.location || member.loc || member.address || '';
+      var jobVal = member.job || member.occupation || member.work || '';
+      var ageVal = member.age || member.age_text || member.generation || '';
+      if(genderVal) details.push('👤 性別：'+escHtml(String(genderVal)));
+      if(locationVal) details.push('📍 居住地：'+escHtml(String(locationVal)));
+      if(jobVal) details.push('💼 職業：'+escHtml(String(jobVal)));
+      if(ageVal) details.push('🎂 年齢：'+escHtml(String(ageVal)));
+
+      var memberTags = [];
+      var rawInterests = member.interests || member.tags || member.interest_tags || '';
+      if(rawInterests) {
+        if(Array.isArray(rawInterests)) {
+          memberTags = rawInterests;
+        } else if(typeof rawInterests === 'string') {
+          try {
+            var parsed = JSON.parse(rawInterests);
+            if(Array.isArray(parsed)) {
+              memberTags = parsed;
+            } else if(typeof parsed === 'string' && parsed.trim()) {
+              memberTags = parsed.split(/[,\n、]/).map(function(x){ return x.trim(); }).filter(Boolean);
+            }
+          } catch(e) {
+            memberTags = rawInterests.split(/[,\n、]/).map(function(x){ return x.trim(); }).filter(Boolean);
           }
-        } catch(e){}
+        }
+      }
+      if(memberTags.length > 0) {
+        tagsExtraHtml = '<div style="margin-top:14px;text-align:left;">'+
+          '<div style="font-size:12px;color:var(--og3);font-weight:700;margin-bottom:8px;">🏷️ 興味・関心</div>'+
+          '<div style="display:flex;flex-wrap:wrap;gap:6px;">'+
+            memberTags.map(function(t){
+              return '<span style="background:var(--og-pale);color:var(--og3);padding:4px 12px;border-radius:14px;font-size:12px;font-weight:600;">'+escHtml(String(t))+'</span>';
+            }).join('')+
+          '</div>'+
+        '</div>';
       }
       if(details.length > 0) {
         detailsHtml = '<div style="background:var(--og-pale);border-radius:14px;padding:14px;margin-bottom:16px;text-align:left;">'+
