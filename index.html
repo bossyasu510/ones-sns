@@ -3564,7 +3564,53 @@ async function renderStories() {
     }).join('');
   } catch(e){ console.error('[ONEs] renderStories:', e); }
 }
-function renderMxRow(){document.getElementById('mxrow-inner').innerHTML=USERS.map(u=>`<div class="mxi" onclick="openUserSheet('${esc(u.n)}','${u.e}')"><div class="av am" style="${AB};position:relative;">${u.e}${u.on?'<div class="odot"></div>':''}</div><div class="mn">${u.n}</div></div>`).join('');}
+async function renderMxRow() {
+  var rowEl = document.getElementById('mxrow-inner');
+  if(!rowEl) return;
+  if(!dbReady() || !currentUser || !currentUser.id) { rowEl.innerHTML = ''; return; }
+  try {
+    var r1 = await sb.from('wanmik').select('*').eq('from_id', currentUser.id).eq('status','accepted');
+    var r2 = await sb.from('wanmik').select('*').eq('to_id', currentUser.id).eq('status','accepted');
+    var accepted = [...(r1.data||[]), ...(r2.data||[])];
+    if(accepted.length === 0) {
+      rowEl.innerHTML = '';
+      var mxsrow = document.getElementById('mxsrow');
+      if(mxsrow) mxsrow.style.display = 'none';
+      return;
+    }
+    var mxsrow2 = document.getElementById('mxsrow');
+    if(mxsrow2) mxsrow2.style.display = '';
+    var seen = {};
+    var uniq = [];
+    accepted.forEach(function(w){
+      var partnerId = w.from_id === currentUser.id ? w.to_id : w.from_id;
+      if(!seen[partnerId]) {
+        seen[partnerId] = 1;
+        uniq.push({
+          id: partnerId,
+          name: w.from_id === currentUser.id ? w.to_name : w.from_name,
+          emoji: w.from_id === currentUser.id ? (w.to_emoji||'🙋') : (w.from_emoji||'🙋')
+        });
+      }
+    });
+    var ids = uniq.map(function(u){ return u.id; });
+    var photoMap = {};
+    try {
+      var pr = await sb.from('members').select('id,photo').in('id', ids).not('photo','is',null);
+      if(pr.data) pr.data.forEach(function(m){ if(m.photo) photoMap[m.id] = m.photo; });
+    } catch(e){}
+    rowEl.innerHTML = uniq.map(function(u){
+      var photo = photoMap[u.id];
+      var avInner = photo
+        ? '<div class="av am" style="background:url('+photo+') center/cover;position:relative;"></div>'
+        : '<div class="av am" style="background:linear-gradient(135deg,#a8ddb8,#3fa865);position:relative;">'+u.emoji+'</div>';
+      return '<div class="mxi" onclick="openUserSheet(\''+esc(u.name)+'\',\''+u.emoji+'\')">'+
+        avInner+
+        '<div class="mn">'+escHtml(u.name)+'</div>'+
+      '</div>';
+    }).join('');
+  } catch(e){ console.error('[ONEs] renderMxRow:', e); }
+}
 async function renderDiary(){
   try {
     var dlistEl = document.getElementById('dlist');
@@ -3906,6 +3952,9 @@ function filterAndSortMembers() {
         bioHtml+
         metaHtml+
         tagsHtml+
+        '<div style="display:flex;justify-content:flex-end;margin-top:8px;">'+
+          '<button class="bos" style="padding:7px 12px;font-size:12px;" onclick="event.stopPropagation();requestWanmik(\''+esc(m.name)+'\')">🤝 ワンミク申請</button>'+
+        '</div>'+
       '</div>'+
     '</div>';
   }).join('');
@@ -4638,7 +4687,55 @@ function renderSide(){
     }
   }
   const smx=document.getElementById('smx');
-  if(smx)smx.innerHTML=USERS.slice(0,8).map(u=>`<div style="text-align:center;cursor:pointer;" onclick="openUserSheet('${esc(u.n)}','${u.e}')"><div style="width:44px;height:44px;border-radius:10px;${AB};display:flex;align-items:center;justify-content:center;font-size:24px;border:1.5px solid var(--og-border);margin:0 auto 3px;position:relative;">${u.e}${u.on?'<div style="position:absolute;bottom:1px;right:1px;width:9px;height:9px;background:#33cc44;border-radius:50%;border:1.5px solid #fff;"></div>':''}</div><div style="font-size:10px;color:var(--text2);font-weight:600;">${u.n}</div></div>`).join('');
+  if(!smx) return;
+  if(!dbReady() || !currentUser || !currentUser.id) {
+    smx.innerHTML = '<div style="text-align:center;color:var(--text3);font-size:11px;padding:10px;grid-column:1/-1;">読み込み中...</div>';
+    return;
+  }
+  (async function(){
+    try {
+      var r1 = await sb.from('wanmik').select('*').eq('from_id', currentUser.id).eq('status','accepted');
+      var r2 = await sb.from('wanmik').select('*').eq('to_id', currentUser.id).eq('status','accepted');
+      var accepted = [...(r1.data||[]), ...(r2.data||[])];
+      if(accepted.length === 0) {
+        smx.innerHTML = '<div style="text-align:center;color:var(--text3);font-size:11px;padding:10px;grid-column:1/-1;">まだワンミクがいません</div>';
+        return;
+      }
+      var seen = {};
+      var uniq = [];
+      accepted.forEach(function(w){
+        var partnerId = w.from_id === currentUser.id ? w.to_id : w.from_id;
+        if(!seen[partnerId]) {
+          seen[partnerId] = 1;
+          uniq.push({
+            id: partnerId,
+            name: w.from_id === currentUser.id ? w.to_name : w.from_name,
+            emoji: w.from_id === currentUser.id ? (w.to_emoji||'🙋') : (w.from_emoji||'🙋')
+          });
+        }
+      });
+      uniq = uniq.slice(0, 8);
+      var ids = uniq.map(function(u){ return u.id; });
+      var photoMap = {};
+      try {
+        var pr = await sb.from('members').select('id,photo').in('id', ids).not('photo','is',null);
+        if(pr.data) pr.data.forEach(function(m){ if(m.photo) photoMap[m.id] = m.photo; });
+      } catch(e){}
+      smx.innerHTML = uniq.map(function(u){
+        var photo = photoMap[u.id];
+        var inner = photo
+          ? '<div style="width:44px;height:44px;border-radius:10px;background:url('+photo+') center/cover;border:1.5px solid var(--og-border);margin:0 auto 3px;position:relative;"></div>'
+          : '<div style="width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#a8ddb8,#3fa865);display:flex;align-items:center;justify-content:center;font-size:24px;border:1.5px solid var(--og-border);margin:0 auto 3px;position:relative;">'+u.emoji+'</div>';
+        return '<div style="text-align:center;cursor:pointer;" onclick="openUserSheet(\''+esc(u.name)+'\',\''+u.emoji+'\')">'+
+          inner+
+          '<div style="font-size:10px;color:var(--text2);font-weight:600;">'+escHtml(u.name)+'</div>'+
+        '</div>';
+      }).join('');
+    } catch(e){
+      console.error('[ONEs] sidebar wanmik:', e);
+      smx.innerHTML = '<div style="text-align:center;color:var(--text3);font-size:11px;padding:10px;grid-column:1/-1;">読み込みエラー</div>';
+    }
+  })();
   renderNT('snt',NT.slice(0,5));
 }
 
