@@ -3824,6 +3824,8 @@ async function renderMsgs(){
     console.log('[ONEs] messages r2:', r2.data, r2.error);
 
     var allMsgs = [...(r1.data||[]), ...(r2.data||[])];
+    renderSidebar();
+    applyMsgLayoutMode();
     var inboxCount = allMsgs.filter(function(m){
       return m.to_id === currentUser.id && !(!!m.is_trashed || m.folder_name === 'trash');
     }).length;
@@ -3844,8 +3846,13 @@ async function renderMsgs(){
     if(cntSent) cntSent.textContent = sentCount + '件';
     if(cntStarred) cntStarred.textContent = starredCount + '件';
     if(cntTrash) cntTrash.textContent = trashCount + '件';
-
-    applyMsgLayoutMode();
+    userFolders.forEach(function(f){
+      var cnt = allMsgs.filter(function(m){
+        return m.folder_name === f.id && !(!!m.is_trashed || m.folder_name === 'trash');
+      }).length;
+      var c = document.getElementById('cnt-folder-'+f.id);
+      if(c) c.textContent = cnt + '件';
+    });
     var tab = window.msgTab || 'inbox';
     var filteredMsgs = allMsgs.filter(function(m){
       var isInbox = m.to_id === currentUser.id;
@@ -3856,6 +3863,10 @@ async function renderMsgs(){
       if(tab === 'sent') return isSent && !isTrashed;
       if(tab === 'starred') return isStarred && !isTrashed;
       if(tab === 'trash') return isTrashed;
+      if(tab && tab.indexOf('folder:') === 0) {
+        var folderId = tab.replace('folder:', '');
+        return m.folder_name === folderId && !isTrashed;
+      }
       return !isTrashed;
     });
 
@@ -3886,6 +3897,11 @@ async function renderMsgs(){
     if(list.length === 0){
       var tabLabelMap = {inbox:'受信箱', sent:'送信箱', starred:'重要', trash:'ゴミ箱'};
       var tabLabel = tabLabelMap[tab] || 'メッセージ';
+      if(tab && tab.indexOf('folder:') === 0) {
+        var openFolderId = tab.replace('folder:', '');
+        var openFolder = userFolders.find(function(f){ return f.id === openFolderId; });
+        if(openFolder) tabLabel = (openFolder.icon || '📁') + ' ' + openFolder.name;
+      }
       el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3);">'+
         tabLabel+'にメッセージはありません<br>'+
         '<span style="font-size:12px;">ワンミクにメッセージを送ってみましょう</span></div>';
@@ -3924,7 +3940,67 @@ async function renderMsgs(){
     el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);">読み込みエラー</div>';
   }
 }
+var userFolders = [];
 window.msgTab = 'inbox';
+function renderFolderItem(tab, icon, label, isActive, isCustom, folderId) {
+  var bg = isActive ? 'var(--og-pale)' : '#fff';
+  var borderColor = isActive ? 'var(--og)' : 'transparent';
+  var nameColor = isActive ? 'var(--og3)' : 'var(--text)';
+  var menuBtn = isCustom
+    ? '<div onclick="event.stopPropagation();openFolderMenu(\''+folderId+'\')" style="opacity:.5;font-size:14px;padding:2px 6px;cursor:pointer;">⋮</div>'
+    : '';
+  return '<div class="msg-folder-item" data-tab="'+tab+'" onclick="setMsgTab(\''+tab+'\',this)" '+
+    'style="display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;border-left:3px solid '+borderColor+';background:'+bg+';transition:all .15s;">'+
+    '<div style="font-size:20px;">'+icon+'</div>'+
+    '<div style="flex:1;min-width:0;">'+
+      '<div style="font-size:13px;font-weight:700;color:'+nameColor+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escHtml(label)+'</div>'+
+      '<div style="font-size:10px;color:var(--text3);" id="cnt-'+tab.replace(':','-')+'">-</div>'+
+    '</div>'+
+    menuBtn+
+  '</div>';
+}
+function renderSidebar() {
+  var sidebar = document.getElementById('msg-sidebar');
+  if(!sidebar) return;
+  var fixedFolders = [
+    {tab:'inbox', icon:'📥', label:'受信箱'},
+    {tab:'sent', icon:'📤', label:'送信箱'},
+    {tab:'starred', icon:'⭐', label:'重要'}
+  ];
+  var html = '';
+  fixedFolders.forEach(function(f){
+    var isActive = window.msgTab === f.tab;
+    html += renderFolderItem(f.tab, f.icon, f.label, isActive, false);
+  });
+  html += '<div style="border-top:1px solid var(--og-pale);margin:6px 0;"></div>';
+  html += '<div style="padding:6px 14px;font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.05em;display:flex;justify-content:space-between;align-items:center;">';
+  html += '<span>📁 マイフォルダ</span>';
+  html += '<span onclick="openCreateFolder()" style="cursor:pointer;color:var(--og);font-size:14px;">＋</span>';
+  html += '</div>';
+  if(userFolders.length === 0) {
+    html += '<div style="padding:6px 14px;font-size:11px;color:var(--text3);">フォルダを作成してメッセージを整理</div>';
+  } else {
+    userFolders.forEach(function(f){
+      var isActive = window.msgTab === 'folder:'+f.id;
+      html += renderFolderItem('folder:'+f.id, f.icon || '📁', f.name, isActive, true, f.id);
+    });
+  }
+  html += '<div style="border-top:1px solid var(--og-pale);margin:6px 0;"></div>';
+  var trashActive = window.msgTab === 'trash';
+  html += renderFolderItem('trash', '🗑️', 'ゴミ箱', trashActive, false);
+  sidebar.innerHTML = html;
+}
+async function loadFolders() {
+  try {
+    if(!dbReady() || !currentUser || !currentUser.id) return;
+    var r = await sb.from('message_folders')
+      .select('*')
+      .eq('user_id', currentUser.id)
+      .order('sort_order', {ascending: true});
+    userFolders = r.data || [];
+    renderSidebar();
+  } catch(e){ console.error('[ONEs] loadFolders:', e); }
+}
 function applyMsgLayoutMode(){
   var layout = document.getElementById('msg-layout');
   var side = document.getElementById('msg-sidebar');
@@ -3937,15 +4013,125 @@ function applyMsgLayoutMode(){
 function setMsgTab(tab, el){
   window.msgTab = tab || 'inbox';
   applyMsgLayoutMode();
-  var tabs = document.querySelectorAll('#msg-sidebar .msg-folder-item');
-  tabs.forEach(function(item){
-    var isActive = item.getAttribute('data-tab') === window.msgTab;
-    item.style.background = isActive ? 'var(--og-pale)' : '#fff';
-    item.style.borderLeftColor = isActive ? 'var(--og)' : 'transparent';
-    var title = item.querySelector('div[style*="font-size:13px"]');
-    if(title) title.style.color = isActive ? 'var(--og3)' : 'var(--text)';
-  });
+  renderSidebar();
   renderMsgs();
+}
+function openCreateFolder() {
+  var icons = ['📁','💼','👥','💖','⭐','🎯','📌','💡','🎉','🔥','🌸','🌟','✨','📚','🎨','🍽️'];
+  var iconHtml = icons.map(function(ic){
+    return '<div onclick="selectFolderIcon(this,\''+ic+'\')" class="folder-icon-pick" data-icon="'+ic+'" style="font-size:24px;padding:8px;border-radius:8px;cursor:pointer;text-align:center;border:2px solid transparent;transition:all .15s;">'+ic+'</div>';
+  }).join('');
+  showSheet('📁 新しいフォルダを作成',
+    '<div>' +
+      '<div class="er">' +
+        '<label class="el">フォルダ名</label>' +
+        '<input id="folder-name" class="ei" type="text" placeholder="例：仕事、プライベート" maxlength="20">' +
+      '</div>' +
+      '<div class="er">' +
+        '<label class="el">アイコン</label>' +
+        '<input type="hidden" id="folder-icon" value="📁">' +
+        '<div style="display:grid;grid-template-columns:repeat(8,1fr);gap:4px;">'+iconHtml+'</div>' +
+      '</div>' +
+      '<button class="bo" style="width:100%;" onclick="createFolder()">作成する</button>' +
+    '</div>');
+  setTimeout(function(){
+    var first = document.querySelector('.folder-icon-pick[data-icon="📁"]');
+    if(first) first.style.borderColor = 'var(--og)';
+  }, 100);
+}
+function selectFolderIcon(el, icon) {
+  document.querySelectorAll('.folder-icon-pick').forEach(function(x){
+    x.style.borderColor = 'transparent';
+    x.style.background = 'transparent';
+  });
+  el.style.borderColor = 'var(--og)';
+  el.style.background = 'var(--og-pale)';
+  var iconEl = document.getElementById('folder-icon');
+  if(iconEl) iconEl.value = icon;
+}
+async function createFolder() {
+  try {
+    var nameEl = document.getElementById('folder-name');
+    var iconEl = document.getElementById('folder-icon');
+    var name = nameEl ? nameEl.value.trim() : '';
+    var icon = (iconEl && iconEl.value) ? iconEl.value : '📁';
+    if(!name) { toast('フォルダ名を入力してください'); return; }
+    if(/<|>|script|javascript:|on\w+=/i.test(name)) { toast('使用できない文字が含まれています'); return; }
+    if(!dbReady() || !currentUser) { toast('❌ 接続できません'); return; }
+    var r = await sb.from('message_folders').insert({
+      user_id: currentUser.id,
+      name: name,
+      icon: icon,
+      sort_order: userFolders.length
+    });
+    if(r.error) { toast('❌ 作成に失敗: '+r.error.message); return; }
+    closeSheet();
+    toast('📁 フォルダ「'+name+'」を作成しました');
+    await loadFolders();
+    renderMsgs();
+  } catch(e){ console.error('[ONEs] createFolder:', e); }
+}
+function openFolderMenu(folderId) {
+  var folder = userFolders.find(function(f){ return f.id === folderId; });
+  if(!folder) return;
+  showSheet('📁 ' + folder.name,
+    '<div>' +
+      '<button class="bo" style="width:100%;margin-bottom:8px;" onclick="openRenameFolder(\''+folderId+'\')">✏️ 名前・アイコン変更</button>' +
+      '<button class="bg" style="width:100%;color:#e53e3e;border-color:#e53e3e;" onclick="deleteFolder(\''+folderId+'\')">🗑️ フォルダを削除</button>' +
+      '<div style="font-size:11px;color:var(--text3);text-align:center;margin-top:10px;">※ フォルダ内のメッセージは受信箱に戻ります</div>' +
+    '</div>');
+}
+function openRenameFolder(folderId) {
+  var folder = userFolders.find(function(f){ return f.id === folderId; });
+  if(!folder) return;
+  var icons = ['📁','💼','👥','💖','⭐','🎯','📌','💡','🎉','🔥','🌸','🌟','✨','📚','🎨','🍽️'];
+  var iconHtml = icons.map(function(ic){
+    var sel = ic === folder.icon ? ';border-color:var(--og);background:var(--og-pale);' : ';';
+    return '<div onclick="selectFolderIcon(this,\''+ic+'\')" class="folder-icon-pick" data-icon="'+ic+'" style="font-size:24px;padding:8px;border-radius:8px;cursor:pointer;text-align:center;border:2px solid transparent;transition:all .15s'+sel+'">'+ic+'</div>';
+  }).join('');
+  showSheet('✏️ フォルダ編集',
+    '<div>' +
+      '<div class="er">' +
+        '<label class="el">フォルダ名</label>' +
+        '<input id="folder-name" class="ei" type="text" value="'+escHtml(folder.name)+'" maxlength="20">' +
+      '</div>' +
+      '<div class="er">' +
+        '<label class="el">アイコン</label>' +
+        '<input type="hidden" id="folder-icon" value="'+(folder.icon || '📁')+'">' +
+        '<div style="display:grid;grid-template-columns:repeat(8,1fr);gap:4px;">'+iconHtml+'</div>' +
+      '</div>' +
+      '<button class="bo" style="width:100%;" onclick="updateFolder(\''+folderId+'\')">保存する</button>' +
+    '</div>');
+}
+async function updateFolder(folderId) {
+  try {
+    var nameEl = document.getElementById('folder-name');
+    var iconEl = document.getElementById('folder-icon');
+    var name = nameEl ? nameEl.value.trim() : '';
+    var icon = (iconEl && iconEl.value) ? iconEl.value : '📁';
+    if(!name) { toast('フォルダ名を入力してください'); return; }
+    if(!dbReady()) return;
+    var r = await sb.from('message_folders').update({name: name, icon: icon}).eq('id', folderId);
+    if(r.error) { toast('❌ 更新失敗'); return; }
+    closeSheet();
+    toast('✅ 更新しました');
+    await loadFolders();
+    renderMsgs();
+  } catch(e){ console.error('[ONEs] updateFolder:', e); }
+}
+async function deleteFolder(folderId) {
+  if(!confirm('このフォルダを削除しますか？\n中のメッセージは受信箱に戻ります。')) return;
+  try {
+    if(!dbReady()) return;
+    await sb.from('messages').update({folder_name: null}).eq('folder_name', folderId);
+    var r = await sb.from('message_folders').delete().eq('id', folderId);
+    if(r.error) { toast('❌ 削除失敗'); return; }
+    if(window.msgTab === 'folder:'+folderId) window.msgTab = 'inbox';
+    closeSheet();
+    toast('🗑️ フォルダを削除しました');
+    await loadFolders();
+    renderMsgs();
+  } catch(e){ console.error('[ONEs] deleteFolder:', e); }
 }
 async function toggleStarThread(partnerId, newValue) {
   try {
@@ -4081,7 +4267,12 @@ function nav(name,el){
     try { if(name==='wanmik' && typeof renderWanmik === 'function') renderWanmik(); } catch(e) { console.error(e); }
     try { if(name==='footprint' && typeof renderFP === 'function') renderFP(); } catch(e) { console.error(e); }
     try { if(name==='community' && typeof renderCM === 'function') renderCM(); } catch(e) { console.error(e); }
-    try { if(name==='message' && typeof renderMsgs === 'function') renderMsgs(); } catch(e) { console.error(e); }
+    try {
+      if(name==='message') {
+        if(typeof loadFolders === 'function') loadFolders().then(function(){ if(typeof renderMsgs === 'function') renderMsgs(); });
+        else if(typeof renderMsgs === 'function') renderMsgs();
+      }
+    } catch(e) { console.error(e); }
     if(name==='notice'){
       try { renderNT('ntlist',NT); loadWanmikNotices(); } catch(e){}
       // バッジをリセット
