@@ -3800,6 +3800,7 @@ async function renderMsgs(){
           partnerId: partnerId,
           partnerName: partnerName,
           partnerEmoji: partnerEmoji,
+          subject: m.subject,
           body: m.body,
           created_at: m.created_at,
           unread: !m.read && m.to_id === currentUser.id
@@ -3825,6 +3826,7 @@ async function renderMsgs(){
         '<div class="av as" style="'+AB+';display:flex;align-items:center;justify-content:center;">'+t.partnerEmoji+'</div>'+
         '<div style="flex:1;min-width:0;">'+
           '<div class="mlfrom">'+escHtml(t.partnerName)+'</div>'+
+          (t.subject ? '<div class="mlprev" style="font-weight:700;color:var(--text);">'+escHtml(t.subject)+'</div>' : '')+
           '<div class="mlprev">'+escHtml(t.body)+'</div>'+
         '</div>'+
         '<div class="mldate">'+timeAgoStr(ts)+'</div>'+
@@ -4802,6 +4804,20 @@ async function sendMessage(toId, toName, toEmoji){
     if(!currentUser || !currentUser.id){ toast('❌ ログインが必要です'); return; }
     if(!dbReady()){ toast('❌ 接続できません'); return; }
 
+    var subject = '（件名なし）';
+    try {
+      var latest = await sb.from('messages').select('subject,created_at')
+        .or('and(from_id.eq.'+currentUser.id+',to_id.eq.'+toId+'),and(from_id.eq.'+toId+',to_id.eq.'+currentUser.id+')')
+        .order('created_at', {ascending:false})
+        .limit(1)
+        .maybeSingle();
+      var baseSubject = (latest && latest.data && latest.data.subject ? String(latest.data.subject).trim() : '') || '（件名なし）';
+      subject = /^Re:\s*/i.test(baseSubject) ? baseSubject : ('Re: ' + baseSubject);
+    } catch(subjectErr) {
+      console.warn('[ONEs] sendMessage subject fallback:', subjectErr);
+      subject = 'Re: （件名なし）';
+    }
+
     var result = await sb.from('messages').insert({
       from_id:    currentUser.id,
       from_name:  currentUser.name,
@@ -4809,6 +4825,7 @@ async function sendMessage(toId, toName, toEmoji){
       to_id:      toId,
       to_name:    toName,
       to_emoji:   toEmoji,
+      subject:    subject,
       body:       body,
       read:       false
     });
@@ -4845,6 +4862,10 @@ function openComposeMsg(toName){
           value="${toName||''}" placeholder="ニックネームを入力">
       </div>
       <div class="er">
+        <label class="el">件名</label>
+        <input id="msg-subject" class="ei" type="text" placeholder="例：はじめまして" maxlength="50">
+      </div>
+      <div class="er">
         <label class="el">メッセージ</label>
         <textarea id="msg-new-body" class="eta"
           style="min-height:120px;" placeholder="メッセージを入力..."></textarea>
@@ -4857,14 +4878,17 @@ function openComposeMsg(toName){
 async function sendNewMessage(){
   try {
     var toNameEl = document.getElementById('msg-to-name');
+    var subjectEl = document.getElementById('msg-subject');
     var bodyEl   = document.getElementById('msg-new-body');
-    if(!toNameEl || !bodyEl) return;
+    if(!toNameEl || !subjectEl || !bodyEl) return;
 
     var toName = toNameEl.value.trim();
+    var subject = subjectEl.value.trim();
     var body   = bodyEl.value.trim();
 
     if(!toName){ toast('宛先を入力してください'); return; }
     if(!body)  { toast('メッセージを入力してください'); return; }
+    if(!subject) { subject = '（件名なし）'; }
     if(!dbReady() || !currentUser){ toast('❌ 接続できません'); return; }
 
     // 宛先メンバーを検索
@@ -4878,6 +4902,7 @@ async function sendNewMessage(){
       to_id:      target.data.id,
       to_name:    target.data.name,
       to_emoji:   target.data.emoji || '🙋',
+      subject:    subject,
       body:       body,
       read:       false
     });
