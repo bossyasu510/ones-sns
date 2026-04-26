@@ -1649,7 +1649,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
       </div>
     </div>
     <div class="sc">
-      <div class="sch">🔔 お知らせ <span style="background:#e53e3e;color:#fff;border-radius:8px;padding:0 5px;font-size:10px;font-weight:900;">7</span></div>
+      <div class="sch">🔔 お知らせ <span id="side-notice-count" style="background:#e53e3e;color:#fff;border-radius:8px;padding:0 5px;font-size:10px;font-weight:900;display:none;">0</span></div>
       <div class="scb" id="snt"></div>
     </div>
   </aside>
@@ -4832,6 +4832,11 @@ async function updateNoticeBadge() {
     if(badge) {
       badge.textContent = count;
       badge.style.display = count > 0 ? 'flex' : 'none';
+    }
+    var sideCount = document.getElementById('side-notice-count');
+    if(sideCount) {
+      sideCount.textContent = count;
+      sideCount.style.display = count > 0 ? '' : 'none';
     }
   } catch(e) {
     console.warn('[ONEs] updateNoticeBadge:', e);
