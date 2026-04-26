@@ -1542,6 +1542,12 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
     <!-- MESSAGE -->
     <div class="pg" id="pg-message">
       <div class="sh" style="padding-top:14px;">メッセージ <a href="#" onclick="openComposeMsg('');return false;">＋ 作成</a></div>
+      <div id="msg-tabs" style="display:flex;gap:4px;padding:8px 12px;background:#fff;border-bottom:1px solid var(--og-pale);">
+        <button type="button" class="msg-tab-btn" data-msg-tab="inbox" onclick="setMsgTab('inbox',this)" style="border:1px solid var(--og-border);background:var(--og-pale);color:var(--og3);border-radius:999px;padding:6px 10px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;">受信箱</button>
+        <button type="button" class="msg-tab-btn" data-msg-tab="sent" onclick="setMsgTab('sent',this)" style="border:1px solid var(--og-border);background:#fff;color:var(--text3);border-radius:999px;padding:6px 10px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;">送信箱</button>
+        <button type="button" class="msg-tab-btn" data-msg-tab="starred" onclick="setMsgTab('starred',this)" style="border:1px solid var(--og-border);background:#fff;color:var(--text3);border-radius:999px;padding:6px 10px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;">重要</button>
+        <button type="button" class="msg-tab-btn" data-msg-tab="trash" onclick="setMsgTab('trash',this)" style="border:1px solid var(--og-border);background:#fff;color:var(--text3);border-radius:999px;padding:6px 10px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;">ゴミ箱</button>
+      </div>
       <div class="card" style="margin:0 12px;"><div style="padding:0 14px;" id="msglist"></div></div>
     </div>
 
@@ -3789,10 +3795,22 @@ async function renderMsgs(){
     console.log('[ONEs] messages r2:', r2.data, r2.error);
 
     var allMsgs = [...(r1.data||[]), ...(r2.data||[])];
+    var tab = window.msgTab || 'inbox';
+    var filteredMsgs = allMsgs.filter(function(m){
+      var isInbox = m.to_id === currentUser.id;
+      var isSent = m.from_id === currentUser.id;
+      var isTrashed = !!m.is_trashed || m.folder_name === 'trash';
+      var isStarred = !!m.is_starred || m.folder_name === 'starred';
+      if(tab === 'inbox') return isInbox && !isTrashed;
+      if(tab === 'sent') return isSent && !isTrashed;
+      if(tab === 'starred') return isStarred && !isTrashed;
+      if(tab === 'trash') return isTrashed;
+      return !isTrashed;
+    });
 
     // スレッドごとにグループ化（相手IDでまとめる）
     var threads = {};
-    allMsgs.forEach(function(m){
+    filteredMsgs.forEach(function(m){
       var partnerId = m.from_id === currentUser.id ? m.to_id : m.from_id;
       var partnerName = m.from_id === currentUser.id ? m.to_name : m.from_name;
       var partnerEmoji = m.from_id === currentUser.id ? (m.to_emoji||'🙋') : (m.from_emoji||'🙋');
@@ -3814,8 +3832,10 @@ async function renderMsgs(){
     });
 
     if(list.length === 0){
+      var tabLabelMap = {inbox:'受信箱', sent:'送信箱', starred:'重要', trash:'ゴミ箱'};
+      var tabLabel = tabLabelMap[tab] || 'メッセージ';
       el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3);">'+
-        'メッセージはありません<br>'+
+        tabLabel+'にメッセージはありません<br>'+
         '<span style="font-size:12px;">ワンミクにメッセージを送ってみましょう</span></div>';
       return;
     }
@@ -3838,6 +3858,21 @@ async function renderMsgs(){
     console.error('[ONEs] renderMsgs:', e);
     el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);">読み込みエラー</div>';
   }
+}
+window.msgTab = 'inbox';
+function setMsgTab(tab, el){
+  window.msgTab = tab || 'inbox';
+  var tabs = document.querySelectorAll('#msg-tabs .msg-tab-btn');
+  tabs.forEach(function(btn){
+    var isActive = btn.getAttribute('data-msg-tab') === window.msgTab;
+    btn.style.background = isActive ? 'var(--og-pale)' : '#fff';
+    btn.style.color = isActive ? 'var(--og3)' : 'var(--text3)';
+  });
+  if(el){
+    el.style.background = 'var(--og-pale)';
+    el.style.color = 'var(--og3)';
+  }
+  renderMsgs();
 }
 function renderNT(id,list){const el=document.getElementById(id);if(!el)return;el.innerHTML=list.map(n=>`<div class="nti"><div class="ntd ${n.type||'old'}"></div><div><div class="ntt">${n.t}</div><div class="ntm">${n.tm}</div></div></div>`).join('');}
 async function loadWanmikNotices(){
