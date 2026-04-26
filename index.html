@@ -3721,7 +3721,26 @@ async function renderVoice(){
       vfeedEl.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text3);">まだつぶやきがありません</div>';
       return;
     }
-
+    var authorIds = [];
+    all.forEach(function(v){ if(v.author_id) authorIds.push(v.author_id); });
+    authorIds = [...new Set(authorIds)];
+    var photoMap = {};
+    authorIds.forEach(function(id){
+      var cached = localStorage.getItem('ones_profile_photo_'+id);
+      if(cached) photoMap[id] = cached;
+    });
+    var uncached = authorIds.filter(function(id){ return !photoMap[id]; });
+    if(dbReady() && uncached.length > 0) {
+      try {
+        var pr = await sb.from('members').select('id,photo').in('id', uncached).not('photo','is',null);
+        if(pr.data) pr.data.forEach(function(m){
+          if(m.photo) {
+            photoMap[m.id] = m.photo;
+            try { localStorage.setItem('ones_profile_photo_'+m.id, m.photo); } catch(e){}
+          }
+        });
+      } catch(e){}
+    }
     vfeedEl.innerHTML = all.map(function(v){
       var vauthor = v.author_name || v.u || 'メンバー';
       var vemoji = v.author_emoji || v.e || '🙋';
@@ -3729,12 +3748,23 @@ async function renderVoice(){
       var ts = v.created_at ? new Date(v.created_at).getTime() : (v.ts || Date.now());
       var isMe = currentUser && (v.author_id === currentUser.id || vauthor === currentUser.name);
       var authorEsc = esc(vauthor);
-      var avHtml = isMe ? myAvHtml('am') : '<div class="av am" style="'+AB+'" onclick="openUserSheet(\''+authorEsc+'\',\''+vemoji+'\')">'+vemoji+'</div>';
+      var photo = v.author_id ? photoMap[v.author_id] : null;
+      var avHtml;
+      if(isMe) {
+        avHtml = myAvHtml('am');
+      } else if(photo) {
+        avHtml = '<div class="av am" style="overflow:hidden;cursor:pointer;" onclick="openUserSheet(\''+authorEsc+'\',\''+vemoji+'\')"><img src="'+photo+'" style="width:100%;height:100%;object-fit:cover;border-radius:10px;"></div>';
+      } else {
+        avHtml = '<div class="av am" style="background:linear-gradient(135deg,#a8ddb8,#3fa865);display:flex;align-items:center;justify-content:center;cursor:pointer;" onclick="openUserSheet(\''+authorEsc+'\',\''+vemoji+'\')">'+vemoji+'</div>';
+      }
       var userId = currentUser ? currentUser.id : '';
       var likeKey = userId ? 'ones_likes_'+userId : '';
       var likedList = likeKey ? JSON.parse(localStorage.getItem(likeKey)||'[]') : [];
       var isLiked = v.id && likedList.indexOf(v.id) !== -1;
-      return '<div class="fc"><div class="fch">'+avHtml+'<div class="fui"><div class="fname">'+escHtml(vauthor)+'</div><div class="fsub">'+timeAgoStr(ts)+'</div></div></div><div class="fcb"><div class="ftxt" style="padding-bottom:2px;">'+escHtml(vbody)+'</div></div><div class="fcf"><div class="fbtn'+(isLiked?' lk':'')+'" onclick="likeThis(this,\'voices\',\''+v.id+'\')">👍 <span class="like-count">'+(v.good||0)+'</span></div><div class="fbtn" onclick="toast(\'💬 返信機能は準備中です\')">💬 返信</div><div class="fbtn" onclick="sharePost(\''+esc(vbody)+'\')">↗️ シェア</div></div></div>';
+      var nameHtml = isMe
+        ? escHtml(vauthor)
+        : '<span style="cursor:pointer;" onclick="openUserSheet(\''+authorEsc+'\',\''+vemoji+'\')">'+escHtml(vauthor)+'</span>';
+      return '<div class="fc"><div class="fch">'+avHtml+'<div class="fui"><div class="fname">'+nameHtml+'</div><div class="fsub">'+timeAgoStr(ts)+'</div></div></div><div class="fcb"><div class="ftxt" style="padding-bottom:2px;">'+escHtml(vbody)+'</div></div><div class="fcf"><div class="fbtn'+(isLiked?' lk':'')+'" onclick="likeThis(this,\'voices\',\''+v.id+'\')">👍 <span class="like-count">'+(v.good||0)+'</span></div><div class="fbtn" onclick="toast(\'💬 返信機能は準備中です\')">💬 返信</div><div class="fbtn" onclick="sharePost(\''+esc(vbody)+'\')">↗️ シェア</div></div></div>';
     }).join('');
   } catch(e) { console.error('[ONEs] renderVoice:', e); }
 }
