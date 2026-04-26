@@ -3920,6 +3920,7 @@ async function renderMsgs(){
                      '<div onclick="event.stopPropagation();permaDeleteThread(\''+t.partnerId+'\')" style="padding:6px 10px;background:#e53e3e;color:#fff;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;margin-left:4px;">🗑️ 完全削除</div>';
       } else {
         actionBtns = '<div onclick="event.stopPropagation();toggleStarThread(\''+t.partnerId+'\','+!isStarred+')" style="padding:6px 8px;cursor:pointer;font-size:18px;color:'+starColor+';margin-left:8px;" title="重要マーク">'+starIcon+'</div>' +
+                     '<div onclick="event.stopPropagation();openMoveThreadFolder(\''+t.partnerId+'\')" style="padding:6px 8px;cursor:pointer;font-size:16px;margin-left:2px;" title="フォルダへ移動">📁</div>' +
                      '<div onclick="event.stopPropagation();trashMsgThread(\''+t.partnerId+'\')" style="padding:6px 8px;cursor:pointer;font-size:16px;margin-left:4px;" title="ゴミ箱へ">🗑️</div>';
       }
       return '<div class="mlit '+(t.unread?'unrd':'')+'" style="display:flex;align-items:center;gap:10px;padding:14px 4px;border-bottom:1px solid var(--og-pale);" '+
@@ -4175,6 +4176,33 @@ async function permaDeleteThread(partnerId) {
     toast('🗑️ 完全に削除しました');
     renderMsgs();
   } catch(e){ console.error('[ONEs] permaDelete:', e); }
+}
+function openMoveThreadFolder(partnerId) {
+  var folderBtns = '<button class="bos" style="width:100%;margin-bottom:8px;" onclick="moveThreadToFolder(\''+partnerId+'\',null,\'受信箱\')">📥 受信箱へ戻す</button>';
+  if(userFolders.length > 0) {
+    folderBtns += userFolders.map(function(f){
+      return '<button class="bo" style="width:100%;margin-bottom:8px;" onclick="moveThreadToFolder(\''+partnerId+'\',\''+f.id+'\',\''+esc(f.name)+'\')">'+(f.icon||'📁')+' '+escHtml(f.name)+'</button>';
+    }).join('');
+  } else {
+    folderBtns += '<div style="font-size:12px;color:var(--text3);padding:6px 0 10px;">先に「マイフォルダ」を作成してください</div>';
+  }
+  showSheet('📁 フォルダへ移動',
+    '<div>' +
+      folderBtns +
+      '<button class="bg" style="width:100%;" onclick="closeSheet()">キャンセル</button>' +
+    '</div>');
+}
+async function moveThreadToFolder(partnerId, folderId, folderName) {
+  try {
+    if(!dbReady() || !currentUser) { toast('❌ 接続できません'); return; }
+    var payload = {folder_name: folderId || null, is_trashed: false};
+    var r = await sb.from('messages').update(payload)
+      .or('and(from_id.eq.'+currentUser.id+',to_id.eq.'+partnerId+'),and(from_id.eq.'+partnerId+',to_id.eq.'+currentUser.id+')');
+    if(r.error) { toast('❌ 移動に失敗しました'); return; }
+    closeSheet();
+    toast('📁 '+(folderName || '受信箱')+'へ移動しました');
+    renderMsgs();
+  } catch(e){ console.error('[ONEs] moveThreadToFolder:', e); }
 }
 window.addEventListener('resize', applyMsgLayoutMode);
 function renderNT(id,list){const el=document.getElementById(id);if(!el)return;el.innerHTML=list.map(n=>`<div class="nti"><div class="ntd ${n.type||'old'}"></div><div><div class="ntt">${n.t}</div><div class="ntm">${n.tm}</div></div></div>`).join('');}
