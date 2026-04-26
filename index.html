@@ -2990,51 +2990,54 @@ async function renderTL(){
       try { allP = await dbFetchPhotos(10); } catch(e) {}
     }
 
-    // TLに表示する投稿者のプロフィール写真を事前取得
-    var avatarById = {};
-    var avatarByName = {};
-    try {
-      var previewD = allD.slice(0, 3);
-      var previewP = allP.slice(0, 3);
-      var previewV = allV.slice(0, 5);
-      var authorIds = [];
-      var authorNames = [];
+    // 投稿者IDと名前を収集
+    var authorIds = [];
+    var authorNames = [];
+    allD.forEach(function(d){ if(d.author_id) authorIds.push(d.author_id); if(d.author_name) authorNames.push(d.author_name); });
+    allV.forEach(function(v){ if(v.author_id) authorIds.push(v.author_id); if(v.author_name) authorNames.push(v.author_name); });
+    allP.forEach(function(p){ if(p.author_id) authorIds.push(p.author_id); });
 
-      previewD.forEach(function(d){
-        if(d.author_id) authorIds.push(d.author_id);
-        if(d.author_name || d.author) authorNames.push(d.author_name || d.author);
-      });
-      previewP.forEach(function(p){
-        if(p.author_id) authorIds.push(p.author_id);
-        if(p.author_name) authorNames.push(p.author_name);
-      });
-      previewV.forEach(function(v){
-        if(v.author_id) authorIds.push(v.author_id);
-        if(v.author_name || v.u) authorNames.push(v.author_name || v.u);
-      });
+    // 重複除去
+    authorIds = authorIds.filter(function(v,i,a){ return a.indexOf(v)===i && v; });
+    authorNames = authorNames.filter(function(v,i,a){ return a.indexOf(v)===i && v; });
 
-      authorIds = Array.from(new Set(authorIds.filter(Boolean)));
-      authorNames = Array.from(new Set(authorNames.filter(Boolean)));
+    // Supabaseから写真を一括取得
+    var photoMap = {};
+    if(dbReady() && authorIds.length > 0){
+      try {
+        var pr = await sb.from('members').select('id,name,photo').in('id', authorIds);
+        if(pr.data) pr.data.forEach(function(m){
+          if(m.photo){ photoMap[m.id] = m.photo; photoMap[m.name] = m.photo; }
+        });
+      } catch(e){ console.warn('[ONEs] photoMap fetch:', e); }
+    }
 
-      if(dbReady() && authorIds.length){
-        try {
-          var byIdResult = await sb.from('members').select('id,name,photo').in('id', authorIds);
-          (byIdResult.data || []).forEach(function(m){
-            if(m && m.id && m.photo) avatarById[m.id] = m.photo;
-            if(m && m.name && m.photo) avatarByName[m.name] = m.photo;
-          });
-        } catch(e) {}
+    // 名前でも検索（IDがない場合の補完）
+    if(dbReady() && authorNames.length > 0){
+      try {
+        var pr2 = await sb.from('members').select('id,name,photo').in('name', authorNames);
+        if(pr2.data) pr2.data.forEach(function(m){
+          if(m.photo){ photoMap[m.id] = m.photo; photoMap[m.name] = m.photo; }
+        });
+      } catch(e){}
+    }
+
+    // アバターHTMLを生成するヘルパー関数
+    function getAvHtml(authorId, authorName, authorEmoji, size, isMe, clickable) {
+      size = size || 'am';
+      if(isMe) return myAvHtml(size);
+      var photo = photoMap[authorId] || photoMap[authorName];
+      var radius = size === 'am' ? '10px' : '50%';
+      var onclick = clickable ? ' onclick="openUserSheet(\''+esc(authorName)+'\',\''+authorEmoji+'\')"' : '';
+      var cursorStyle = clickable ? 'cursor:pointer;' : '';
+      if(photo){
+        return '<div class="av '+size+'"'+onclick+' style="'+cursorStyle+'overflow:hidden;">'+
+          '<img src="'+photo+'" style="width:100%;height:100%;object-fit:cover;border-radius:'+radius+';">'+
+        '</div>';
       }
-      if(dbReady() && authorNames.length){
-        try {
-          var byNameResult = await sb.from('members').select('id,name,photo').in('name', authorNames);
-          (byNameResult.data || []).forEach(function(m){
-            if(m && m.id && m.photo) avatarById[m.id] = m.photo;
-            if(m && m.name && m.photo) avatarByName[m.name] = m.photo;
-          });
-        } catch(e) {}
-      }
-    } catch(e) {}
+      return '<div class="av '+size+'" style="background:linear-gradient(135deg,#a8ddb8,#3fa865);'+
+        'display:flex;align-items:center;justify-content:center;'+cursorStyle+'"'+onclick+'>'+authorEmoji+'</div>';
+    }
 
     // TLに表示する投稿のコメント数を事前取得
     var commentCountById = {};
@@ -3065,12 +3068,7 @@ async function renderTL(){
       var dateStr = d.created_at ? new Date(d.created_at).toLocaleString('ja-JP', {year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit'}) : (d.date || '');
       var excerpt = (d.body || d.excerpt || '').slice(0, 70);
       var isMe = currentUser && (d.author_id === currentUser.id || diaryAuthor === currentUser.name);
-      var diaryPhoto = (d.author_id && avatarById[d.author_id]) || avatarByName[diaryAuthor] || '';
-      var avHtml = isMe
-        ? myAvHtml('am')
-        : (diaryPhoto
-            ? '<div class="av am" style="overflow:hidden;cursor:pointer;" onclick="openUserSheet(\''+esc(diaryAuthor)+'\',\''+diaryEmoji+'\')"><img src="'+diaryPhoto+'" style="width:100%;height:100%;object-fit:cover;border-radius:10px;"></div>'
-            : '<div class="av am" style="'+AB+';cursor:pointer;" onclick="openUserSheet(\''+esc(diaryAuthor)+'\',\''+diaryEmoji+'\')">'+diaryEmoji+'</div>');
+      var avHtml = getAvHtml(d.author_id, diaryAuthor, diaryEmoji, 'am', isMe, true);
       var nameHtml = isMe
         ? escHtml(diaryAuthor)
         : '<span style="cursor:pointer;color:var(--og3);" onclick="openUserSheet(\''+esc(diaryAuthor)+'\',\''+diaryEmoji+'\')">'+escHtml(diaryAuthor)+'</span>';
@@ -3092,16 +3090,11 @@ async function renderTL(){
       var photoUrl = p.photo_url || p.photo || '';
       var ts = p.created_at ? new Date(p.created_at).getTime() : (p.ts || Date.now());
       var isMe = currentUser && (p.author_id === currentUser.id);
-      var authorPhoto = (p.author_id && avatarById[p.author_id]) || avatarByName[photoAuthor] || '';
       var captionTxt = p.caption || '';
       var captionShort = captionTxt.length > 70 ? captionTxt.slice(0,70)+'…' : captionTxt;
       var caption = captionTxt ? '<div class="ftxt" style="padding:8px 0 4px;">'+escHtml(captionShort)+'</div>' : '';
       var pAuthorEsc = esc(photoAuthor);
-      var pAvHtml = isMe
-        ? myAvHtml('am')
-        : (authorPhoto
-            ? '<div class="av am" style="overflow:hidden;cursor:pointer;" onclick="openUserSheet(\''+pAuthorEsc+'\',\''+photoEmoji+'\')"><img src="'+authorPhoto+'" style="width:100%;height:100%;object-fit:cover;border-radius:10px;"></div>'
-            : '<div class="av am" style="'+AB+';cursor:pointer;" onclick="openUserSheet(\''+pAuthorEsc+'\',\''+photoEmoji+'\')">'+photoEmoji+'</div>');
+      var pAvHtml = getAvHtml(p.author_id, photoAuthor, photoEmoji, 'am', isMe, true);
       var photoNameHtml = isMe
         ? escHtml(photoAuthor)
         : '<span style="cursor:pointer;color:var(--og3);" onclick="openUserSheet(\''+pAuthorEsc+'\',\''+photoEmoji+'\')">'+escHtml(photoAuthor)+'</span>';
@@ -3122,12 +3115,7 @@ async function renderTL(){
       var voiceBody = v.body || v.t || '';
       var ts = v.created_at ? new Date(v.created_at).getTime() : (v.ts || (v.tm === 'たった今' ? Date.now() : Date.now() - 60000));
       var isMe = currentUser && (v.author_id === currentUser.id || voiceAuthor === currentUser.name);
-      var voicePhoto = (v.author_id && avatarById[v.author_id]) || avatarByName[voiceAuthor] || '';
-      var avHtml = isMe
-        ? myAvHtml('am')
-        : (voicePhoto
-            ? '<div class="av am" style="overflow:hidden;cursor:pointer;" onclick="openUserSheet(\''+esc(voiceAuthor)+'\',\''+voiceEmoji+'\')"><img src="'+voicePhoto+'" style="width:100%;height:100%;object-fit:cover;border-radius:10px;"></div>'
-            : '<div class="av am" style="'+AB+';cursor:pointer;" onclick="openUserSheet(\''+esc(voiceAuthor)+'\',\''+voiceEmoji+'\')">'+voiceEmoji+'</div>');
+      var avHtml = getAvHtml(v.author_id, voiceAuthor, voiceEmoji, 'am', isMe, true);
       var voiceNameHtml = isMe
         ? escHtml(voiceAuthor)
         : '<span style="cursor:pointer;color:var(--og3);" onclick="openUserSheet(\''+esc(voiceAuthor)+'\',\''+voiceEmoji+'\')">'+escHtml(voiceAuthor)+'</span>';
