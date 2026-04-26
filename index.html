@@ -3001,25 +3001,37 @@ async function renderTL(){
     authorIds = authorIds.filter(function(v,i,a){ return a.indexOf(v)===i && v; });
     authorNames = authorNames.filter(function(v,i,a){ return a.indexOf(v)===i && v; });
 
-    // Supabaseから写真を一括取得
+    // LocalStorageキャッシュから先に読み込む
     var photoMap = {};
-    if(dbReady() && authorIds.length > 0){
+    authorIds.forEach(function(id){
+      var cached = localStorage.getItem('ones_profile_photo_'+id);
+      if(cached) photoMap[id] = cached;
+    });
+    authorNames.forEach(function(name){
+      var cached = localStorage.getItem('ones_photo_by_name_'+name);
+      if(cached) photoMap[name] = cached;
+    });
+
+    // Supabaseから未取得分だけ取得（photoなしメンバーは除外）
+    var uncachedIds = authorIds.filter(function(id){ return !photoMap[id]; });
+    if(dbReady() && uncachedIds.length > 0){
       try {
-        var pr = await sb.from('members').select('id,name,photo').in('id', authorIds);
+        var pr = await sb.from('members')
+          .select('id,name,photo')
+          .in('id', uncachedIds)
+          .not('photo', 'is', null);
         if(pr.data) pr.data.forEach(function(m){
-          if(m.photo){ photoMap[m.id] = m.photo; photoMap[m.name] = m.photo; }
+          if(m.photo && m.photo.length > 0){
+            photoMap[m.id] = m.photo;
+            photoMap[m.name] = m.photo;
+            // LocalStorageにキャッシュ
+            try {
+              localStorage.setItem('ones_profile_photo_'+m.id, m.photo);
+              localStorage.setItem('ones_photo_by_name_'+m.name, m.photo);
+            } catch(e){}
+          }
         });
       } catch(e){ console.warn('[ONEs] photoMap fetch:', e); }
-    }
-
-    // 名前でも検索（IDがない場合の補完）
-    if(dbReady() && authorNames.length > 0){
-      try {
-        var pr2 = await sb.from('members').select('id,name,photo').in('name', authorNames);
-        if(pr2.data) pr2.data.forEach(function(m){
-          if(m.photo){ photoMap[m.id] = m.photo; photoMap[m.name] = m.photo; }
-        });
-      } catch(e){}
     }
 
     // アバターHTMLを生成するヘルパー関数
@@ -3766,10 +3778,14 @@ async function renderMsgs(){
     // 自分が送受信したメッセージスレッドを取得
     var r1 = await sb.from('messages').select('*')
       .eq('to_id', currentUser.id)
-      .order('created_at', {ascending: false});
+      .order('created_at', {ascending: false})
+      .limit(50);
+    console.log('[ONEs] messages r1:', r1.data, r1.error);
     var r2 = await sb.from('messages').select('*')
       .eq('from_id', currentUser.id)
-      .order('created_at', {ascending: false});
+      .order('created_at', {ascending: false})
+      .limit(50);
+    console.log('[ONEs] messages r2:', r2.data, r2.error);
 
     var allMsgs = [...(r1.data||[]), ...(r2.data||[])];
 
@@ -5035,28 +5051,56 @@ function handlePhotoUpload(event) {
       try {
         var userId = (currentUser && currentUser.id) ? currentUser.id : 'm001';
         var userName = (currentUser && currentUser.name) ? currentUser.name : null;
+        var finalPhoto = compressedDataUrl;
+
+        // Supabase Storageへアップロード（成功時はURLを保存）
+        if(typeof dbReady === 'function' && dbReady() && currentUser && currentUser.id) {
+          try {
+            var byteString = atob(compressedDataUrl.split(',')[1]);
+            var mimeString = compressedDataUrl.split(',')[0].split(':')[1].split(';')[0];
+            var ab = new ArrayBuffer(byteString.length);
+            var ia = new Uint8Array(ab);
+            for(var i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+            var blob = new Blob([ab], {type: mimeString});
+            var filePath = 'profiles/' + userId + '/' + Date.now() + '.jpg';
+            var up = await sb.storage.from('profile-photos').upload(filePath, blob, {
+              contentType: 'image/jpeg',
+              upsert: true
+            });
+            if(up.error) {
+              console.warn('[ONEs] profile-photos upload:', up.error);
+            } else {
+              var pu = sb.storage.from('profile-photos').getPublicUrl(filePath);
+              if(pu && pu.data && pu.data.publicUrl) {
+                finalPhoto = pu.data.publicUrl;
+              }
+            }
+          } catch(e) {
+            console.warn('[ONEs] profile photo storage fallback:', e);
+          }
+        }
 
         // 1. ユーザーIDで保存
-        try { localStorage.setItem('ones_profile_photo_'+userId, compressedDataUrl); } catch(e) { console.error(e); }
+        try { localStorage.setItem('ones_profile_photo_'+userId, finalPhoto); } catch(e) { console.error(e); }
         // 2. 現在セッション用
-        try { localStorage.setItem('ones_current_photo', compressedDataUrl); } catch(e) {}
+        try { localStorage.setItem('ones_current_photo', finalPhoto); } catch(e) {}
         // 3. ニックネーム別
         if(userName) {
-          try { localStorage.setItem('ones_photo_by_name_'+userName, compressedDataUrl); } catch(e) {}
+          try { localStorage.setItem('ones_photo_by_name_'+userName, finalPhoto); } catch(e) {}
         }
         // 4. メンバーデータ自体に写真を埋め込み（永続性最大）
         try {
           var members = JSON.parse(localStorage.getItem('ones_members') || '[]');
           var idx = members.findIndex(function(m){ return m.id === userId; });
           if(idx !== -1) {
-            members[idx].photo = compressedDataUrl;
+            members[idx].photo = finalPhoto;
             localStorage.setItem('ones_members', JSON.stringify(members));
             console.log('[ONEs] メンバーデータに写真保存:', userId);
           }
         } catch(e) { console.error('メンバー写真保存:', e); }
 
         // 全アバターに反映
-        applyProfilePhoto(compressedDataUrl);
+        applyProfilePhoto(finalPhoto);
 
         toast('📷 プロフィール写真を更新しました！');
         console.log('[ONEs] 写真保存完了 - userId:', userId, ', userName:', userName);
@@ -5064,7 +5108,7 @@ function handlePhotoUpload(event) {
         // Supabase の members テーブルにも保存
         if(typeof dbReady === 'function' && dbReady() && currentUser && currentUser.id) {
           try {
-            sb.from('members').update({photo: compressedDataUrl}).eq('id', currentUser.id).then(function(r){
+            sb.from('members').update({photo: finalPhoto}).eq('id', currentUser.id).then(function(r){
               if(r.error) console.error('[ONEs] photo to DB:', r.error);
               else console.log('[ONEs] photo synced to Supabase');
             });
