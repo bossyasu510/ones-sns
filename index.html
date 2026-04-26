@@ -1624,8 +1624,8 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
           <span id="side-av-emoji">😊</span>
         </div>
         <div id="side-name-display" style="font-weight:700;color:var(--og3);margin-bottom:6px;">BOSS YASU</div>
-        <div class="inv-badge" style="margin-bottom:8px;">🌱 創設メンバー</div>
-        <div style="font-size:11px;color:var(--text3);line-height:2.1;">ワンミク <strong>12</strong>人<br>招待数 <strong>5</strong>人<br>日記 <strong>47</strong>件</div>
+        <div class="inv-badge" id="side-role-badge" style="margin-bottom:8px;">🌱 メンバー</div>
+        <div style="font-size:11px;color:var(--text3);line-height:2.1;">ワンミク <strong id="side-stat-wanmik">0</strong>人<br>招待数 <strong id="side-stat-invite">0</strong>人<br>日記 <strong id="side-stat-diary">0</strong>件</div>
         <button class="bos" style="margin-top:10px;width:100%;" onclick="nav('mypage',null)">マイページへ</button>
         <button class="bg" style="margin-top:6px;width:100%;color:#e53e3e;border-color:#e53e3e;" onclick="logoutApp()">🚪 ログアウト</button>
         <button class="bos" style="margin-top:6px;width:100%;background:linear-gradient(135deg,#1e6e3a,#0d3d20);" onclick="openAdmin()">🛡️ 管理者画面</button>
@@ -4732,8 +4732,12 @@ function renderSide(){
   }
   const smx=document.getElementById('smx');
   if(smx) {
-    if(!dbReady() || !currentUser || !currentUser.id) {
-      smx.innerHTML = '<div style="text-align:center;color:var(--text3);font-size:11px;padding:10px;grid-column:1/-1;">ログインが必要です</div>';
+    if(typeof currentUser === 'undefined' || !currentUser || !currentUser.id) {
+      smx.innerHTML = '<div style="text-align:center;color:var(--text3);font-size:11px;padding:10px;grid-column:1/-1;">読み込み中...</div>';
+      setTimeout(function(){ if(typeof renderSide === 'function') renderSide(); }, 1000);
+    } else if(typeof dbReady === 'function' && !dbReady()) {
+      smx.innerHTML = '<div style="text-align:center;color:var(--text3);font-size:11px;padding:10px;grid-column:1/-1;">接続中...</div>';
+      setTimeout(function(){ if(typeof renderSide === 'function') renderSide(); }, 1000);
     } else {
       smx.innerHTML = '';
       (async function(){
@@ -4781,6 +4785,33 @@ function renderSide(){
         }
       })();
     }
+  }
+  if(typeof currentUser !== 'undefined' && currentUser && currentUser.id && typeof dbReady === 'function' && dbReady()) {
+    var badgeEl = document.getElementById('side-role-badge');
+    if(badgeEl) {
+      if(currentUser.id === 'm001') {
+        badgeEl.textContent = '🌱 創設メンバー';
+      } else if(currentUser.role === 'admin') {
+        badgeEl.textContent = '🛡️ 管理者';
+      } else {
+        badgeEl.textContent = '🌱 メンバー';
+      }
+    }
+    (async function(){
+      try {
+        var w1 = await sb.from('wanmik').select('id', {count:'exact', head:true}).eq('from_id', currentUser.id).eq('status','accepted');
+        var w2 = await sb.from('wanmik').select('id', {count:'exact', head:true}).eq('to_id', currentUser.id).eq('status','accepted');
+        var wanmikCount = (w1.count||0) + (w2.count||0);
+        var wanmikEl = document.getElementById('side-stat-wanmik');
+        if(wanmikEl) wanmikEl.textContent = wanmikCount;
+        var iv = await sb.from('members').select('id', {count:'exact', head:true}).eq('invited_by_id', currentUser.id);
+        var inviteEl = document.getElementById('side-stat-invite');
+        if(inviteEl) inviteEl.textContent = iv.count || 0;
+        var di = await sb.from('diaries').select('id', {count:'exact', head:true}).eq('author_id', currentUser.id);
+        var diaryEl = document.getElementById('side-stat-diary');
+        if(diaryEl) diaryEl.textContent = di.count || 0;
+      } catch(e){ console.warn('[ONEs] side stats:', e); }
+    })();
   }
   renderNT('snt',NT.slice(0,5));
 }
