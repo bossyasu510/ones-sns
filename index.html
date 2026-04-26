@@ -3014,33 +3014,44 @@ function sharePost(text, url) {
 }
 
 /* ══════════ APP RENDERS ══════════ */
+// 自分の最新写真をSupabaseから取得してLocalStorageに同期
+async function syncMyPhoto() {
+  if(!dbReady() || !currentUser || !currentUser.id) return;
+  try {
+    var r = await sb.from('members')
+      .select('photo')
+      .eq('id', currentUser.id)
+      .maybeSingle();
+    if(r && r.data && r.data.photo) {
+      try {
+        localStorage.setItem('ones_profile_photo_'+currentUser.id, r.data.photo);
+        currentUser.photo = r.data.photo;
+      } catch(e){}
+    }
+  } catch(e){
+    console.warn('syncMyPhoto failed:', e);
+  }
+}
+
 function myAvHtml(size){
   size = size || 'am';
+  if(!currentUser) return '<div class="av ' + size + '">🙋</div>';
+  var id = currentUser.id;
   var photo = null;
   try {
-    if(currentUser && currentUser.id) {
-      photo = localStorage.getItem('ones_profile_photo_'+currentUser.id);
-    }
-    if(!photo && currentUser && currentUser.name) {
-      photo = localStorage.getItem('ones_photo_by_name_'+currentUser.name);
-    }
-    if(!photo) {
-      photo = localStorage.getItem('ones_current_photo');
-    }
-    if(!photo && currentUser && currentUser.id === 'm001') {
-      photo = localStorage.getItem('ones_profile_photo');
-    }
+    photo = currentUser.photo || localStorage.getItem('ones_profile_photo_'+id);
   } catch(e) {}
 
   if(photo) {
     var radius = (size === 'am') ? '10px' : '50%';
     return '<div class="av ' + size + '" style="overflow:hidden;"><img src="' + photo + '" style="width:100%;height:100%;object-fit:cover;border-radius:' + radius + ';"></div>';
   }
-  var userEmoji = (currentUser && currentUser.emoji) ? currentUser.emoji : '😊';
+  var userEmoji = (currentUser && currentUser.emoji) ? currentUser.emoji : '🙋';
   return '<div class="av ' + size + '" style="' + AB + '">' + userEmoji + '</div>';
 }
 
 async function renderTL(){
+  await syncMyPhoto();
   try {
     var tlEl = document.getElementById('tlfeed');
     if(!tlEl) return;
@@ -3634,6 +3645,7 @@ async function renderMxRow() {
   } catch(e){ console.error('[ONEs] renderMxRow:', e); }
 }
 async function renderDiary(){
+  await syncMyPhoto();
   try {
     var dlistEl = document.getElementById('dlist');
     if(!dlistEl) return;
@@ -3711,6 +3723,7 @@ async function renderDiary(){
 }
 
 async function renderVoice(){
+  await syncMyPhoto();
   try {
     var vfeedEl = document.getElementById('vfeed');
     if(!vfeedEl) return;
@@ -3771,6 +3784,15 @@ async function renderVoice(){
       return '<div class="fc"><div class="fch">'+avHtml+'<div class="fui"><div class="fname">'+nameHtml+'</div><div class="fsub">'+timeAgoStr(ts)+'</div></div></div><div class="fcb"><div class="ftxt" style="padding-bottom:2px;">'+escHtml(vbody)+'</div></div><div class="fcf"><div class="fbtn'+(isLiked?' lk':'')+'" onclick="likeThis(this,\'voices\',\''+v.id+'\')">👍 <span class="like-count">'+(v.good||0)+'</span></div><div class="fbtn" onclick="toast(\'💬 返信機能は準備中です\')">💬 返信</div><div class="fbtn" onclick="sharePost(\''+esc(vbody)+'\')">↗️ シェア</div></div></div>';
     }).join('');
   } catch(e) { console.error('[ONEs] renderVoice:', e); }
+}
+async function renderHome(){
+  await syncMyPhoto();
+  try { await renderTL(); } catch(e) { console.error('[ONEs] renderHome:', e); }
+}
+async function renderMypage(){
+  await syncMyPhoto();
+  try { renderMpDiary(); } catch(e) { console.error('[ONEs] renderMypage diary:', e); }
+  try { await renderMypagePhotos(); } catch(e) { console.error('[ONEs] renderMypage photos:', e); }
 }
 async function renderWanmik(){
   var grid = document.getElementById('mxgrid');
@@ -4997,6 +5019,7 @@ function nav(name,el){
 
     try { if(name==='diary' && typeof renderDiary === 'function') renderDiary(); } catch(e) { console.error(e); }
     try { if(name==='voice' && typeof renderVoice === 'function') renderVoice(); } catch(e) { console.error(e); }
+    try { if(name==='home' && typeof renderHome === 'function') renderHome(); } catch(e) { console.error(e); }
     try { if(name==='wanmik' && typeof renderWanmik === 'function') renderWanmik(); } catch(e) { console.error(e); }
     try { if(name==='members' && typeof renderMembersPage === 'function') renderMembersPage(); } catch(e) { console.error(e); }
     try { if(name==='footprint' && typeof renderFP === 'function') renderFP(); } catch(e) { console.error(e); }
@@ -5018,8 +5041,7 @@ function nav(name,el){
       if(badge){ badge.textContent = '0'; badge.style.display = 'none'; }
     }
   if(name==='mypage'){
-    renderMpDiary();
-    try { renderMypagePhotos(); } catch(e) { console.error(e); }
+    try { if(typeof renderMypage === 'function') renderMypage(); } catch(e) { console.error(e); }
     const myCode = (currentUser && currentUser.code) ? currentUser.code : 'ONES-7X3K';
     const tryQR2 = (attempts) => {
       if(typeof qrcode !== 'undefined') {
@@ -7723,7 +7745,7 @@ function ieSave() {
 }
 
 /* ══════════ INIT (updated) ══════════ */
-function initApp(){
+async function initApp(){
   // currentUser のプロフィール情報を画面に反映
   if(currentUser) {
     const isAdmin = currentUser.role === 'admin';
@@ -7954,6 +7976,7 @@ function initApp(){
 
   // プロフィール写真を最優先で読み込み（描画より先）
   try { loadProfilePhoto(); } catch(e) { console.error('[ONEs] loadProfilePhoto:', e); }
+  try { await syncMyPhoto(); } catch(e) {}
   try { autoCleanTrash(); } catch(e) {}
 
   // 各レンダリングを個別に try-catch で保護
