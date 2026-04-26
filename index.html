@@ -1541,14 +1541,43 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
 
     <!-- MESSAGE -->
     <div class="pg" id="pg-message">
-      <div class="sh" style="padding-top:14px;">メッセージ <a href="#" onclick="openComposeMsg('');return false;">＋ 作成</a></div>
-      <div id="msg-tabs" style="display:flex;gap:4px;padding:8px 12px;background:#fff;border-bottom:1px solid var(--og-pale);">
-        <button type="button" class="msg-tab-btn" data-msg-tab="inbox" onclick="setMsgTab('inbox',this)" style="border:1px solid var(--og-border);background:var(--og-pale);color:var(--og3);border-radius:999px;padding:6px 10px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;">受信箱</button>
-        <button type="button" class="msg-tab-btn" data-msg-tab="sent" onclick="setMsgTab('sent',this)" style="border:1px solid var(--og-border);background:#fff;color:var(--text3);border-radius:999px;padding:6px 10px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;">送信箱</button>
-        <button type="button" class="msg-tab-btn" data-msg-tab="starred" onclick="setMsgTab('starred',this)" style="border:1px solid var(--og-border);background:#fff;color:var(--text3);border-radius:999px;padding:6px 10px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;">重要</button>
-        <button type="button" class="msg-tab-btn" data-msg-tab="trash" onclick="setMsgTab('trash',this)" style="border:1px solid var(--og-border);background:#fff;color:var(--text3);border-radius:999px;padding:6px 10px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;">ゴミ箱</button>
+      <div class="sh" style="padding-top:14px;">
+        💌 メッセージ
+        <a href="#" onclick="openComposeMsg('');return false;">＋ 作成</a>
       </div>
-      <div class="card" style="margin:0 12px;"><div style="padding:0 14px;" id="msglist"></div></div>
+      <div id="msg-layout" style="display:flex;gap:10px;margin:0 12px 10px;">
+        <div id="msg-sidebar" style="width:200px;flex-shrink:0;background:#fff;border-radius:14px;box-shadow:var(--shadow);overflow:hidden;">
+          <div class="msg-folder-item" data-tab="inbox" onclick="setMsgTab('inbox',this)" style="display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;border-left:3px solid var(--og);background:var(--og-pale);transition:all .15s;">
+            <div style="font-size:20px;">📥</div>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:700;color:var(--og3);">受信箱</div>
+              <div style="font-size:10px;color:var(--text3);" id="cnt-inbox">-</div>
+            </div>
+          </div>
+          <div class="msg-folder-item" data-tab="sent" onclick="setMsgTab('sent',this)" style="display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;border-left:3px solid transparent;transition:all .15s;">
+            <div style="font-size:20px;">📤</div>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:700;color:var(--text);">送信箱</div>
+              <div style="font-size:10px;color:var(--text3);" id="cnt-sent">-</div>
+            </div>
+          </div>
+          <div class="msg-folder-item" data-tab="starred" onclick="setMsgTab('starred',this)" style="display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;border-left:3px solid transparent;transition:all .15s;">
+            <div style="font-size:20px;">⭐</div>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:700;color:var(--text);">重要</div>
+              <div style="font-size:10px;color:var(--text3);" id="cnt-starred">-</div>
+            </div>
+          </div>
+          <div class="msg-folder-item" data-tab="trash" onclick="setMsgTab('trash',this)" style="display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;border-left:3px solid transparent;transition:all .15s;">
+            <div style="font-size:20px;">🗑️</div>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:700;color:var(--text);">ゴミ箱</div>
+              <div style="font-size:10px;color:var(--text3);" id="cnt-trash">-</div>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="margin:0;flex:1;min-width:0;"><div style="padding:0 14px;" id="msglist"></div></div>
+      </div>
     </div>
 
   </div><!-- /maincol -->
@@ -3795,6 +3824,28 @@ async function renderMsgs(){
     console.log('[ONEs] messages r2:', r2.data, r2.error);
 
     var allMsgs = [...(r1.data||[]), ...(r2.data||[])];
+    var inboxCount = allMsgs.filter(function(m){
+      return m.to_id === currentUser.id && !(!!m.is_trashed || m.folder_name === 'trash');
+    }).length;
+    var sentCount = allMsgs.filter(function(m){
+      return m.from_id === currentUser.id && !(!!m.is_trashed || m.folder_name === 'trash');
+    }).length;
+    var starredCount = allMsgs.filter(function(m){
+      return (!!m.is_starred || m.folder_name === 'starred') && !(!!m.is_trashed || m.folder_name === 'trash');
+    }).length;
+    var trashCount = allMsgs.filter(function(m){
+      return !!m.is_trashed || m.folder_name === 'trash';
+    }).length;
+    var cntInbox = document.getElementById('cnt-inbox');
+    var cntSent = document.getElementById('cnt-sent');
+    var cntStarred = document.getElementById('cnt-starred');
+    var cntTrash = document.getElementById('cnt-trash');
+    if(cntInbox) cntInbox.textContent = inboxCount + '件';
+    if(cntSent) cntSent.textContent = sentCount + '件';
+    if(cntStarred) cntStarred.textContent = starredCount + '件';
+    if(cntTrash) cntTrash.textContent = trashCount + '件';
+
+    applyMsgLayoutMode();
     var tab = window.msgTab || 'inbox';
     var filteredMsgs = allMsgs.filter(function(m){
       var isInbox = m.to_id === currentUser.id;
@@ -3860,20 +3911,29 @@ async function renderMsgs(){
   }
 }
 window.msgTab = 'inbox';
+function applyMsgLayoutMode(){
+  var layout = document.getElementById('msg-layout');
+  var side = document.getElementById('msg-sidebar');
+  if(!layout || !side) return;
+  var isMobile = window.innerWidth <= 900;
+  layout.style.display = 'flex';
+  layout.style.flexDirection = isMobile ? 'column' : 'row';
+  side.style.width = isMobile ? '100%' : '200px';
+}
 function setMsgTab(tab, el){
   window.msgTab = tab || 'inbox';
-  var tabs = document.querySelectorAll('#msg-tabs .msg-tab-btn');
-  tabs.forEach(function(btn){
-    var isActive = btn.getAttribute('data-msg-tab') === window.msgTab;
-    btn.style.background = isActive ? 'var(--og-pale)' : '#fff';
-    btn.style.color = isActive ? 'var(--og3)' : 'var(--text3)';
+  applyMsgLayoutMode();
+  var tabs = document.querySelectorAll('#msg-sidebar .msg-folder-item');
+  tabs.forEach(function(item){
+    var isActive = item.getAttribute('data-tab') === window.msgTab;
+    item.style.background = isActive ? 'var(--og-pale)' : '#fff';
+    item.style.borderLeftColor = isActive ? 'var(--og)' : 'transparent';
+    var title = item.querySelector('div[style*="font-size:13px"]');
+    if(title) title.style.color = isActive ? 'var(--og3)' : 'var(--text)';
   });
-  if(el){
-    el.style.background = 'var(--og-pale)';
-    el.style.color = 'var(--og3)';
-  }
   renderMsgs();
 }
+window.addEventListener('resize', applyMsgLayoutMode);
 function renderNT(id,list){const el=document.getElementById(id);if(!el)return;el.innerHTML=list.map(n=>`<div class="nti"><div class="ntd ${n.type||'old'}"></div><div><div class="ntt">${n.t}</div><div class="ntm">${n.tm}</div></div></div>`).join('');}
 async function loadWanmikNotices(){
   if(!dbReady() || !currentUser || !currentUser.id) return;
