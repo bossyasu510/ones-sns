@@ -3505,7 +3505,45 @@ function openPhotoView(photoId) {
     console.error('[ONEs] openPhotoView:', err);
   }
 }
-function renderStories(){document.getElementById('strow-inner').innerHTML=FP.slice(0,8).map(u=>`<div class="sit" onclick="openUserSheet('${esc(u.n)}','${u.e}')"><div class="sring"><div class="sinn">${u.e}</div></div><div class="snm">${u.n}</div><div class="stm">${u.t}</div></div>`).join('');}
+async function renderStories() {
+  var rowEl = document.getElementById('strow-inner');
+  if(!rowEl) return;
+  if(!dbReady() || !currentUser || !currentUser.id) { rowEl.innerHTML = ''; return; }
+  try {
+    var r = await sb.from('footprints')
+      .select('*')
+      .eq('visited_id', currentUser.id)
+      .order('created_at', {ascending: false})
+      .limit(8);
+    var visitors = r.data || [];
+    if(visitors.length === 0) {
+      rowEl.innerHTML = '';
+      var strow = document.getElementById('strow');
+      if(strow) strow.style.display = 'none';
+      return;
+    }
+    var strow2 = document.getElementById('strow');
+    if(strow2) strow2.style.display = '';
+    var visitorIds = [...new Set(visitors.map(function(v){ return v.visitor_id; }))];
+    var photoMap = {};
+    try {
+      var pr = await sb.from('members').select('id,photo').in('id', visitorIds).not('photo','is',null);
+      if(pr.data) pr.data.forEach(function(m){ if(m.photo) photoMap[m.id] = m.photo; });
+    } catch(e){}
+    rowEl.innerHTML = visitors.map(function(v){
+      var ts = v.created_at ? new Date(v.created_at).getTime() : Date.now();
+      var photo = photoMap[v.visitor_id];
+      var inner = photo
+        ? '<div class="sinn" style="background:url('+photo+') center/cover;width:100%;height:100%;border-radius:50%;border:2.5px solid #fff;"></div>'
+        : '<div class="sinn">'+(v.visitor_emoji||'🙋')+'</div>';
+      return '<div class="sit" onclick="openUserSheet(\''+esc(v.visitor_name)+'\',\''+(v.visitor_emoji||'🙋')+'\')">'+
+        '<div class="sring">'+inner+'</div>'+
+        '<div class="snm">'+escHtml(v.visitor_name||'')+'</div>'+
+        '<div class="stm">'+timeAgoStr(ts)+'</div>'+
+      '</div>';
+    }).join('');
+  } catch(e){ console.error('[ONEs] renderStories:', e); }
+}
 function renderMxRow(){document.getElementById('mxrow-inner').innerHTML=USERS.map(u=>`<div class="mxi" onclick="openUserSheet('${esc(u.n)}','${u.e}')"><div class="av am" style="${AB};position:relative;">${u.e}${u.on?'<div class="odot"></div>':''}</div><div class="mn">${u.n}</div></div>`).join('');}
 async function renderDiary(){
   try {
@@ -3662,7 +3700,51 @@ async function renderWanmik(){
   var mpw = document.querySelector('.mps .n');
   if(mpw) mpw.textContent = accepted.length;
 }
-function renderFP(){document.getElementById('fplist').innerHTML=FP.map(u=>`<div style="display:flex;gap:12px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--og-pale);cursor:pointer;" onclick="openUserSheet('${esc(u.n)}','${u.e}')"><div class="sring" style="width:50px;height:50px;flex-shrink:0;"><div class="sinn" style="font-size:24px;">${u.e}</div></div><div style="flex:1;"><div style="font-size:14px;font-weight:700;">${u.n}</div><div style="font-size:12px;color:var(--text3);">訪問 ${u.t}</div></div><button class="bos" onclick="event.stopPropagation();">プロフィール</button></div>`).join('');}
+async function renderFP() {
+  var fpEl = document.getElementById('fplist');
+  if(!fpEl) return;
+  fpEl.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text3);">読み込み中...</div>';
+  if(!dbReady() || !currentUser || !currentUser.id) {
+    fpEl.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text3);">読み込みエラー</div>';
+    return;
+  }
+  try {
+    var r = await sb.from('footprints')
+      .select('*')
+      .eq('visited_id', currentUser.id)
+      .order('created_at', {ascending: false})
+      .limit(50);
+    var visitors = r.data || [];
+    if(visitors.length === 0) {
+      fpEl.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3);">'+
+        '👣 まだ足あとはありません<br>'+
+        '<span style="font-size:12px;">あなたのページに誰かが訪問すると、ここに表示されます</span></div>';
+      return;
+    }
+    var visitorIds = [...new Set(visitors.map(function(v){ return v.visitor_id; }))];
+    var photoMap = {};
+    try {
+      var pr = await sb.from('members').select('id,photo').in('id', visitorIds).not('photo','is',null);
+      if(pr.data) pr.data.forEach(function(m){ if(m.photo) photoMap[m.id] = m.photo; });
+    } catch(e){}
+    fpEl.innerHTML = visitors.map(function(v){
+      var ts = v.created_at ? new Date(v.created_at).getTime() : Date.now();
+      var photo = photoMap[v.visitor_id];
+      var avHtml = photo
+        ? '<img src="'+photo+'" style="width:50px;height:50px;border-radius:50%;object-fit:cover;border:2.5px solid #fff;">'
+        : '<div class="sinn" style="font-size:24px;">'+(v.visitor_emoji||'🙋')+'</div>';
+      return '<div style="display:flex;gap:12px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--og-pale);cursor:pointer;" '+
+        'onclick="openUserSheet(\''+esc(v.visitor_name)+'\',\''+(v.visitor_emoji||'🙋')+'\')">'+
+        '<div class="sring" style="width:50px;height:50px;flex-shrink:0;">'+avHtml+'</div>'+
+        '<div style="flex:1;">'+
+          '<div style="font-size:14px;font-weight:700;">'+escHtml(v.visitor_name||'')+'</div>'+
+          '<div style="font-size:12px;color:var(--text3);">訪問 '+timeAgoStr(ts)+'</div>'+
+        '</div>'+
+        '<button class="bos" onclick="event.stopPropagation();openUserSheet(\''+esc(v.visitor_name)+'\',\''+(v.visitor_emoji||'🙋')+'\')">プロフィール</button>'+
+      '</div>';
+    }).join('');
+  } catch(e){ console.error('[ONEs] renderFP:', e); fpEl.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text3);">読み込みエラー</div>'; }
+}
 async function renderCM(){
   try {
     var mk = function(list, id, isMember) {
@@ -3916,6 +3998,7 @@ async function renderMsgs(){
           subject: m.subject,
           body: m.body,
           created_at: m.created_at,
+          trashed_at: m.trashed_at,
           is_starred: !!m.is_starred || m.folder_name === 'starred',
           unread: !m.read && m.to_id === currentUser.id
         };
@@ -3942,6 +4025,18 @@ async function renderMsgs(){
         info.style.display = 'none';
       }
     }
+    var existingNote = document.getElementById('trash-note');
+    if(window.msgTab === 'trash' && list.length > 0) {
+      if(!existingNote) {
+        var noteDiv = document.createElement('div');
+        noteDiv.id = 'trash-note';
+        noteDiv.style.cssText = 'background:linear-gradient(135deg,#fef9e7,#fdf4d3);border-radius:10px;padding:10px 14px;margin:0 0 10px;font-size:11px;color:#7d6608;display:flex;align-items:center;gap:6px;';
+        noteDiv.innerHTML = '<span style="font-size:14px;">⏰</span><span>ゴミ箱内のメッセージは<strong>60日後に自動削除</strong>されます</span>';
+        el.parentNode.insertBefore(noteDiv, el);
+      }
+    } else {
+      if(existingNote) existingNote.remove();
+    }
 
     if(list.length === 0){
       var tabLabelMap = {inbox:'受信箱', sent:'送信箱', starred:'重要', trash:'ゴミ箱'};
@@ -3964,7 +4059,19 @@ async function renderMsgs(){
       var starIcon = isStarred ? '⭐' : '☆';
       var starColor = isStarred ? '#f4d03f' : '#ccc';
       var actionBtns = '';
+      var daysLeft = '';
       if(window.msgTab === 'trash') {
+        if(t.trashed_at) {
+          var trashedDate = new Date(t.trashed_at);
+          var now = new Date();
+          var diffDays = Math.floor((now - trashedDate) / (1000*60*60*24));
+          var remaining = 60 - diffDays;
+          if(remaining > 0) {
+            daysLeft = '<div style="font-size:10px;color:#d97706;font-weight:600;margin-top:2px;">⏰ あと'+remaining+'日で自動削除</div>';
+          } else {
+            daysLeft = '<div style="font-size:10px;color:#e53e3e;font-weight:700;margin-top:2px;">⚠️ 削除予定</div>';
+          }
+        }
         actionBtns = '<div onclick="event.stopPropagation();restoreMsgThread(\''+t.partnerId+'\')" style="padding:6px 10px;background:var(--og);color:#fff;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;margin-left:8px;">↩️ 復元</div>' +
                      '<div onclick="event.stopPropagation();permaDeleteThread(\''+t.partnerId+'\')" style="padding:6px 10px;background:#e53e3e;color:#fff;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;margin-left:4px;">🗑️ 完全削除</div>';
       } else {
@@ -3979,6 +4086,7 @@ async function renderMsgs(){
           '<div class="mlfrom" style="font-size:14px;font-weight:700;color:var(--text);">'+escHtml(t.partnerName)+(t.unread?' <span style="display:inline-block;width:7px;height:7px;background:var(--og);border-radius:50%;margin-left:4px;"></span>':'')+'</div>'+
           subjectHtml+
           '<div class="mlprev" style="font-size:12px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+escHtml(t.body)+'</div>'+
+          daysLeft+
         '</div>'+
         '<div class="mldate" style="font-size:10px;color:var(--text3);white-space:nowrap;flex-shrink:0;">'+timeAgoStr(ts)+'</div>'+
         actionBtns+
@@ -4220,22 +4328,45 @@ async function trashMsgThread(partnerId) {
   if(!confirm('このスレッドをゴミ箱に移動しますか？')) return;
   try {
     if(!dbReady() || !currentUser) return;
-    var r = await sb.from('messages').update({is_trashed: true})
+    var r = await sb.from('messages').update({
+      is_trashed: true,
+      trashed_at: new Date().toISOString()
+    })
       .or('and(from_id.eq.'+currentUser.id+',to_id.eq.'+partnerId+'),and(from_id.eq.'+partnerId+',to_id.eq.'+currentUser.id+')');
     if(r.error){ toast('❌ 失敗しました'); return; }
-    toast('🗑️ ゴミ箱に移動しました');
+    toast('🗑️ ゴミ箱に移動しました（60日後に自動削除）');
     renderMsgs();
   } catch(e){ console.error('[ONEs] trash:', e); }
 }
 async function restoreMsgThread(partnerId) {
   try {
     if(!dbReady() || !currentUser) return;
-    var r = await sb.from('messages').update({is_trashed: false})
+    var r = await sb.from('messages').update({
+      is_trashed: false,
+      trashed_at: null
+    })
       .or('and(from_id.eq.'+currentUser.id+',to_id.eq.'+partnerId+'),and(from_id.eq.'+partnerId+',to_id.eq.'+currentUser.id+')');
     if(r.error){ toast('❌ 失敗しました'); return; }
     toast('↩️ 受信箱に戻しました');
     renderMsgs();
   } catch(e){ console.error('[ONEs] restore:', e); }
+}
+async function autoCleanTrash() {
+  try {
+    if(!dbReady() || !currentUser || !currentUser.id) return;
+    var sixtyDaysAgo = new Date();
+    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+    var threshold = sixtyDaysAgo.toISOString();
+    var r = await sb.from('messages').delete()
+      .eq('is_trashed', true)
+      .lt('trashed_at', threshold)
+      .or('from_id.eq.'+currentUser.id+',to_id.eq.'+currentUser.id);
+    if(r.error) {
+      console.warn('[ONEs] autoCleanTrash:', r.error);
+      return;
+    }
+    console.log('[ONEs] 古いゴミ箱メッセージを自動削除しました');
+  } catch(e){ console.error('[ONEs] autoCleanTrash:', e); }
 }
 async function permaDeleteThread(partnerId) {
   if(!confirm('このスレッドを完全に削除しますか？\n（元に戻せません）')) return;
@@ -4328,7 +4459,34 @@ function renderMpDiary(){const all=[...ld('od'),...DI];document.getElementById('
 function renderCal(){const y=2024,m=2,first=new Date(y,m,1).getDay(),last=new Date(y,m+1,0).getDate(),tod=15,ev=[8,10,15,22];let h=`<div class="calhd"><button>◀</button><span class="calt">${y}年${m+1}月</span><button>▶</button></div><div class="calg">`;['日','月','火','水','木','金','土'].forEach(d=>{h+=`<div class="cdow">${d}</div>`;});for(let i=0;i<first;i++)h+=`<div class="cd oth"></div>`;for(let d=1;d<=last;d++){const c=d===tod?'tod':ev.includes(d)?'hev':'';h+=`<div class="cd ${c}">${d}</div>`;}h+='</div>';document.getElementById('calel').innerHTML=h;}
 function renderSide(){
   const sfp=document.getElementById('sfp');
-  if(sfp)sfp.innerHTML=FP.slice(0,10).map(u=>`<div style="text-align:center;cursor:pointer;" onclick="openUserSheet('${esc(u.n)}','${u.e}')"><div style="width:36px;height:36px;border-radius:8px;${AB};display:flex;align-items:center;justify-content:center;font-size:20px;border:1.5px solid var(--og-border);margin:0 auto 2px;">${u.e}</div><div style="font-size:9px;color:var(--text3);">${u.n}</div></div>`).join('');
+  if(sfp){
+    if(dbReady() && currentUser && currentUser.id) {
+      sb.from('footprints').select('*').eq('visited_id', currentUser.id).order('created_at',{ascending:false}).limit(10).then(function(r){
+        var visitors = r.data || [];
+        if(visitors.length === 0) {
+          sfp.innerHTML = '<div style="text-align:center;color:var(--text3);font-size:11px;padding:10px;">まだ足あとはありません</div>';
+          return;
+        }
+        var visitorIds = [...new Set(visitors.map(function(v){ return v.visitor_id; }))];
+        sb.from('members').select('id,photo').in('id', visitorIds).not('photo','is',null).then(function(pr){
+          var photoMap = {};
+          if(pr.data) pr.data.forEach(function(m){ if(m.photo) photoMap[m.id] = m.photo; });
+          sfp.innerHTML = visitors.map(function(v){
+            var photo = photoMap[v.visitor_id];
+            var inner = photo
+              ? '<div style="background:url('+photo+') center/cover;width:36px;height:36px;border-radius:8px;border:1.5px solid var(--og-border);margin:0 auto 2px;"></div>'
+              : '<div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,#a8ddb8,#3fa865);display:flex;align-items:center;justify-content:center;font-size:20px;border:1.5px solid var(--og-border);margin:0 auto 2px;">'+(v.visitor_emoji||'🙋')+'</div>';
+            return '<div style="text-align:center;cursor:pointer;" onclick="openUserSheet(\''+esc(v.visitor_name)+'\',\''+(v.visitor_emoji||'🙋')+'\')">'+
+              inner+
+              '<div style="font-size:9px;color:var(--text3);">'+escHtml(v.visitor_name||'')+'</div>'+
+            '</div>';
+          }).join('');
+        });
+      });
+    } else {
+      sfp.innerHTML = '';
+    }
+  }
   const smx=document.getElementById('smx');
   if(smx)smx.innerHTML=USERS.slice(0,8).map(u=>`<div style="text-align:center;cursor:pointer;" onclick="openUserSheet('${esc(u.n)}','${u.e}')"><div style="width:44px;height:44px;border-radius:10px;${AB};display:flex;align-items:center;justify-content:center;font-size:24px;border:1.5px solid var(--og-border);margin:0 auto 3px;position:relative;">${u.e}${u.on?'<div style="position:absolute;bottom:1px;right:1px;width:9px;height:9px;background:#33cc44;border-radius:50%;border:1.5px solid #fff;"></div>':''}</div><div style="font-size:10px;color:var(--text2);font-weight:600;">${u.n}</div></div>`).join('');
   renderNT('snt',NT.slice(0,5));
@@ -4784,6 +4942,7 @@ async function openUserSheet(name, emoji) {
         member = result.data;
         photoUrl = result.data.photo;
         emoji = result.data.emoji || emoji;
+        recordFootprint(result.data.id, name);
       }
     }
 
@@ -4844,6 +5003,28 @@ async function openUserSheet(name, emoji) {
   } catch(err) {
     console.error('[ONEs] openUserSheet:', err);
   }
+}
+async function recordFootprint(visitedId, visitedName) {
+  try {
+    if(!dbReady() || !currentUser || !currentUser.id) return;
+    if(visitedId === currentUser.id) return;
+    var oneHourAgo = new Date(Date.now() - 60*60*1000).toISOString();
+    var existing = await sb.from('footprints')
+      .select('id')
+      .eq('visitor_id', currentUser.id)
+      .eq('visited_id', visitedId)
+      .gte('created_at', oneHourAgo)
+      .maybeSingle();
+    if(existing.data) return;
+    await sb.from('footprints').insert({
+      visitor_id: currentUser.id,
+      visitor_name: currentUser.name,
+      visitor_emoji: currentUser.emoji || '🙋',
+      visited_id: visitedId,
+      visited_name: visitedName
+    });
+    console.log('[ONEs] 足あと記録:', visitedName);
+  } catch(e){ console.error('[ONEs] recordFootprint:', e); }
 }
 
 // ワンミク申請
@@ -6947,6 +7128,12 @@ function initApp(){
         stats[2].textContent = '0';  // 足あと
         stats[3].textContent = '1';  // 招待数（自分自身が入った時の1コード）
       }
+      if(currentUser && currentUser.id && dbReady()) {
+        sb.from('footprints').select('id', {count:'exact', head:true}).eq('visited_id', currentUser.id).then(function(r){
+          var stats2 = document.querySelectorAll('.mps .n');
+          if(stats2.length >= 3 && r.count != null) stats2[2].textContent = r.count;
+        });
+      }
 
       // フォトサンプルを消す
       const photoGrid = document.querySelector('.pgr');
@@ -7028,6 +7215,7 @@ function initApp(){
 
   // プロフィール写真を最優先で読み込み（描画より先）
   try { loadProfilePhoto(); } catch(e) { console.error('[ONEs] loadProfilePhoto:', e); }
+  try { autoCleanTrash(); } catch(e) {}
 
   // 各レンダリングを個別に try-catch で保護
   try { renderTL(); } catch(e) { console.error('[ONEs] renderTL:', e); }
