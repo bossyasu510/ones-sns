@@ -1089,7 +1089,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
     <div class="dn" onclick="logoutApp()" style="color:rgba(255,200,200,.9);">🚪 ログアウト</div>
   </nav>
   <button class="hd-icon" onclick="openSearch()" style="margin-left:auto;">🔍</button>
-  <button class="hd-icon" onclick="nav('notice',null)">🔔<div class="hb">7</div></button>
+  <button class="hd-icon" onclick="nav('notice',null)">🔔<div class="hb" id="notice-badge">0</div></button>
   <div id="hd-av" onclick="nav('mypage',null)">
     <img id="hd-av-img" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:50%;">
     <span id="hd-av-emoji">😊</span>
@@ -3400,6 +3400,30 @@ async function loadWanmikNotices(){
     el.innerHTML = notices + el.innerHTML;
   } catch(e){ console.error('[ONEs] loadWanmikNotices:',e); }
 }
+
+async function updateNoticeBadge() {
+  try {
+    var count = 0;
+
+    // ワンミク申請の未読数
+    if(dbReady() && currentUser && currentUser.id) {
+      var r = await sb.from('wanmik')
+        .select('id', {count: 'exact'})
+        .eq('to_id', currentUser.id)
+        .eq('status', 'pending');
+      count += (r.count || 0);
+    }
+
+    // バッジ更新
+    var badge = document.getElementById('notice-badge');
+    if(badge) {
+      badge.textContent = count;
+      badge.style.display = count > 0 ? 'flex' : 'none';
+    }
+  } catch(e) {
+    console.warn('[ONEs] updateNoticeBadge:', e);
+  }
+}
 function renderMpDiary(){const all=[...ld('od'),...DI];document.getElementById('mpdiary').innerHTML=all.slice(0,4).map(d=>`<div style="padding:8px 0;border-bottom:1px solid var(--og-pale);cursor:pointer;" onclick="openDiarySheet('${esc(d.title)}')"><div style="font-size:13px;font-weight:700;color:var(--og3);">${d.title}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${d.date}&nbsp;💬${d.comments||0}&nbsp;👍${d.good||0}</div></div>`).join('');}
 function renderCal(){const y=2024,m=2,first=new Date(y,m,1).getDay(),last=new Date(y,m+1,0).getDate(),tod=15,ev=[8,10,15,22];let h=`<div class="calhd"><button>◀</button><span class="calt">${y}年${m+1}月</span><button>▶</button></div><div class="calg">`;['日','月','火','水','木','金','土'].forEach(d=>{h+=`<div class="cdow">${d}</div>`;});for(let i=0;i<first;i++)h+=`<div class="cd oth"></div>`;for(let d=1;d<=last;d++){const c=d===tod?'tod':ev.includes(d)?'hev':'';h+=`<div class="cd ${c}">${d}</div>`;}h+='</div>';document.getElementById('calel').innerHTML=h;}
 function renderSide(){
@@ -3437,7 +3461,12 @@ function nav(name,el){
     try { if(name==='footprint' && typeof renderFP === 'function') renderFP(); } catch(e) { console.error(e); }
     try { if(name==='community' && typeof renderCM === 'function') renderCM(); } catch(e) { console.error(e); }
     try { if(name==='message' && typeof renderMsgs === 'function') renderMsgs(); } catch(e) { console.error(e); }
-    if(name==='notice'){ try { renderNT('ntlist',NT); loadWanmikNotices(); } catch(e){} }
+    if(name==='notice'){
+      try { renderNT('ntlist',NT); loadWanmikNotices(); } catch(e){}
+      // バッジをリセット
+      var badge = document.getElementById('notice-badge');
+      if(badge){ badge.textContent = '0'; badge.style.display = 'none'; }
+    }
   if(name==='mypage'){
     renderMpDiary();
     try { renderMypagePhotos(); } catch(e) { console.error(e); }
@@ -5856,6 +5885,7 @@ function initApp(){
   try { renderSide(); } catch(e) { console.error('[ONEs] renderSide:', e); }
   try { renderCal(); } catch(e) { console.error('[ONEs] renderCal:', e); }
   try { renderSelectedTags(); } catch(e) { console.error('[ONEs] renderSelectedTags:', e); }
+  try { updateNoticeBadge(); } catch(e) {}
 
   // 描画後にもう一度写真を反映（renderで上書きされる可能性に対応）
   setTimeout(function(){
