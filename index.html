@@ -3573,11 +3573,30 @@ async function renderWanmik(){
   }
 
   accepted.forEach(function(w){
-    var name  = w.from_id===currentUser.id ? w.to_name  : w.from_name;
+    var name  = w.from_id===currentUser.id ? w.to_name   : w.from_name;
     var emoji = w.from_id===currentUser.id ? (w.to_emoji||'🙋') : (w.from_emoji||'🙋');
-    html += '<div style="display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;padding:12px 4px;background:#fff;border-radius:12px;box-shadow:var(--shadow);" onclick="openUserSheet(\''+esc(name)+'\',\''+emoji+'\')">';
-    html += '<div style="position:relative;"><div class="av al" style="'+AB+';border-radius:18px;">'+emoji+'</div>';
-    html += '<div style="position:absolute;bottom:2px;right:2px;width:12px;height:12px;background:#33cc44;border-radius:50%;border:2px solid #fff;"></div></div>';
+    var memberId = w.from_id===currentUser.id ? w.to_id : w.from_id;
+
+    // Supabaseから写真を取得して表示
+    if(dbReady()){
+      sb.from('members').select('photo').eq('id', memberId).maybeSingle()
+        .then(function(r){
+          var photoUrl = r.data && r.data.photo ? r.data.photo : null;
+          var el = document.getElementById('wanmik-av-'+memberId);
+          if(el && photoUrl){
+            el.innerHTML = '<img src="'+photoUrl+'" style="width:100%;height:100%;object-fit:cover;border-radius:18px;">';
+          }
+        }).catch(function(){});
+    }
+
+    html += '<div style="display:flex;flex-direction:column;align-items:center;gap:5px;'+
+      'cursor:pointer;padding:12px 4px;background:#fff;border-radius:12px;'+
+      'box-shadow:var(--shadow);" onclick="openUserSheet(\''+esc(name)+'\',\''+emoji+'\')">';
+    html += '<div style="position:relative;">';
+    html += '<div id="wanmik-av-'+memberId+'" class="av al" style="'+AB+';border-radius:18px;'+
+      'display:flex;align-items:center;justify-content:center;font-size:28px;">'+emoji+'</div>';
+    html += '<div style="position:absolute;bottom:2px;right:2px;width:12px;height:12px;'+
+      'background:#33cc44;border-radius:50%;border:2px solid #fff;"></div></div>';
     html += '<div style="font-size:12px;font-weight:700;color:var(--text2);text-align:center;">'+escHtml(name)+'</div></div>';
   });
 
@@ -3745,7 +3764,74 @@ async function createCommunity() {
     toast('❌ 作成に失敗しました');
   }
 }
-function renderMsgs(){document.getElementById('msglist').innerHTML=MSG.map(m=>`<div class="mlit ${m.u?'unrd':''}" onclick="openMsgSheet('${esc(m.f)}','${m.e}','${esc(m.t)}')"><div class="av as" style="${AB}">${m.e}</div><div style="flex:1;min-width:0;"><div class="mlfrom">${m.f}</div><div class="mlprev">${m.t}</div></div><div class="mldate">${m.d}</div></div>`).join('');}
+async function renderMsgs(){
+  var el = document.getElementById('msglist');
+  if(!el) return;
+  el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);">読み込み中...</div>';
+
+  if(!dbReady() || !currentUser || !currentUser.id){
+    el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);">ログインが必要です</div>';
+    return;
+  }
+
+  try {
+    // 自分が送受信したメッセージスレッドを取得
+    var r1 = await sb.from('messages').select('*')
+      .eq('to_id', currentUser.id)
+      .order('created_at', {ascending: false});
+    var r2 = await sb.from('messages').select('*')
+      .eq('from_id', currentUser.id)
+      .order('created_at', {ascending: false});
+
+    var allMsgs = [...(r1.data||[]), ...(r2.data||[])];
+
+    // スレッドごとにグループ化（相手IDでまとめる）
+    var threads = {};
+    allMsgs.forEach(function(m){
+      var partnerId = m.from_id === currentUser.id ? m.to_id : m.from_id;
+      var partnerName = m.from_id === currentUser.id ? m.to_name : m.from_name;
+      var partnerEmoji = m.from_id === currentUser.id ? (m.to_emoji||'🙋') : (m.from_emoji||'🙋');
+      if(!threads[partnerId] || new Date(m.created_at) > new Date(threads[partnerId].created_at)){
+        threads[partnerId] = {
+          partnerId: partnerId,
+          partnerName: partnerName,
+          partnerEmoji: partnerEmoji,
+          body: m.body,
+          created_at: m.created_at,
+          unread: !m.read && m.to_id === currentUser.id
+        };
+      }
+    });
+
+    var list = Object.values(threads).sort(function(a,b){
+      return new Date(b.created_at) - new Date(a.created_at);
+    });
+
+    if(list.length === 0){
+      el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3);">'+
+        'メッセージはありません<br>'+
+        '<span style="font-size:12px;">ワンミクにメッセージを送ってみましょう</span></div>';
+      return;
+    }
+
+    el.innerHTML = list.map(function(t){
+      var ts = t.created_at ? new Date(t.created_at).getTime() : Date.now();
+      return '<div class="mlit '+(t.unread?'unrd':'')+'" '+
+        'onclick="openMsgThread(\''+t.partnerId+'\',\''+esc(t.partnerName)+'\',\''+t.partnerEmoji+'\')">'+
+        '<div class="av as" style="'+AB+';display:flex;align-items:center;justify-content:center;">'+t.partnerEmoji+'</div>'+
+        '<div style="flex:1;min-width:0;">'+
+          '<div class="mlfrom">'+escHtml(t.partnerName)+'</div>'+
+          '<div class="mlprev">'+escHtml(t.body)+'</div>'+
+        '</div>'+
+        '<div class="mldate">'+timeAgoStr(ts)+'</div>'+
+      '</div>';
+    }).join('');
+
+  } catch(e){
+    console.error('[ONEs] renderMsgs:', e);
+    el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);">読み込みエラー</div>';
+  }
+}
 function renderNT(id,list){const el=document.getElementById(id);if(!el)return;el.innerHTML=list.map(n=>`<div class="nti"><div class="ntd ${n.type||'old'}"></div><div><div class="ntt">${n.t}</div><div class="ntm">${n.tm}</div></div></div>`).join('');}
 async function loadWanmikNotices(){
   if(!dbReady() || !currentUser || !currentUser.id) return;
@@ -4639,7 +4725,165 @@ function escHtml(str) {
     .replace(/'/g,'&#39;');
 }
 function openMsgSheet(from,emoji,text){showSheet(from+'さんのメッセージ',`<div><div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;"><div class="av am" style="${AB}">${emoji}</div><div><div style="font-weight:700;color:var(--og3);">${from}</div><div style="font-size:11px;color:var(--text3);">ワンミク</div></div></div><div style="background:var(--og-pale);border-radius:12px;padding:14px;font-size:14px;color:var(--text);line-height:1.7;margin-bottom:16px;">${text}</div><textarea style="width:100%;background:var(--og-pale);border:1.5px solid var(--og-border);border-radius:12px;padding:12px;font-size:14px;font-family:inherit;outline:none;resize:none;height:90px;margin-bottom:10px;" placeholder="返信を入力..."></textarea><button class="bo" style="width:100%;" onclick="toast('返信を送信しました！');closeSheet()">送信する</button></div>`);}
-function openComposeMsg(to){showSheet('新しいメッセージ',`<div><div class="er"><label class="el">宛先</label><input class="ei" type="text" value="${to||''}" placeholder="ニックネームを入力"></div><div class="er"><label class="el">件名</label><input class="ei" type="text" placeholder="件名を入力"></div><div class="er"><label class="el">本文</label><textarea class="eta" placeholder="メッセージを入力してください..."></textarea></div><button class="bo" style="width:100%;" onclick="toast('メッセージを送信しました！');closeSheet()">送信する</button></div>`);}
+async function openMsgThread(partnerId, partnerName, partnerEmoji){
+  try {
+    if(!dbReady() || !currentUser){ toast('❌ 接続できません'); return; }
+
+    // メッセージ履歴取得
+    var r = await sb.from('messages').select('*')
+      .or('and(from_id.eq.'+currentUser.id+',to_id.eq.'+partnerId+'),and(from_id.eq.'+partnerId+',to_id.eq.'+currentUser.id+')')
+      .order('created_at', {ascending: true});
+    var msgs = r.data || [];
+
+    var msgsHtml = msgs.length === 0
+      ? '<div style="text-align:center;color:var(--text3);font-size:13px;padding:20px;">メッセージを送ってみましょう</div>'
+      : msgs.map(function(m){
+          var isMe = m.from_id === currentUser.id;
+          var ts = m.created_at ? new Date(m.created_at).getTime() : Date.now();
+          return '<div style="display:flex;justify-content:'+(isMe?'flex-end':'flex-start')+';margin-bottom:10px;">'+
+            '<div style="max-width:70%;background:'+(isMe?'var(--og)':'var(--og-pale)')+';'+
+              'color:'+(isMe?'#fff':'var(--text)')+';'+
+              'padding:10px 14px;border-radius:'+(isMe?'18px 18px 4px 18px':'18px 18px 18px 4px')+';'+
+              'font-size:13px;line-height:1.6;">'+
+              escHtml(m.body)+
+              '<div style="font-size:10px;opacity:.7;margin-top:4px;text-align:right;">'+timeAgoStr(ts)+'</div>'+
+            '</div>'+
+          '</div>';
+        }).join('');
+
+    showSheet('💌 '+partnerName, `
+      <div>
+        <div style="max-height:50vh;overflow-y:auto;margin-bottom:14px;padding:4px;" id="msg-thread">
+          ${msgsHtml}
+        </div>
+        <div style="border-top:1px solid var(--og-pale);padding-top:12px;">
+          <div style="display:flex;gap:8px;align-items:flex-end;">
+            <textarea id="msg-input" class="eta"
+              style="flex:1;min-height:60px;max-height:120px;font-size:14px;resize:none;"
+              placeholder="${partnerName}さんへメッセージ..."></textarea>
+            <button onclick="sendMessage('${partnerId}','${esc(partnerName)}','${partnerEmoji}')"
+              class="bo" style="padding:12px 16px;flex-shrink:0;">送信</button>
+          </div>
+        </div>
+      </div>`);
+
+    // スクロールを最下部に
+    setTimeout(function(){
+      var thread = document.getElementById('msg-thread');
+      if(thread) thread.scrollTop = thread.scrollHeight;
+    }, 100);
+
+  } catch(e){
+    console.error('[ONEs] openMsgThread:', e);
+    toast('❌ 読み込みエラー');
+  }
+}
+
+async function sendMessage(toId, toName, toEmoji){
+  try {
+    var inputEl = document.getElementById('msg-input');
+    if(!inputEl) return;
+    var body = inputEl.value.trim();
+    if(!body){ toast('メッセージを入力してください'); return; }
+    if(/<|>|script|javascript:|on\w+=/i.test(body)){
+      toast('使用できない文字が含まれています'); return;
+    }
+    if(!currentUser || !currentUser.id){ toast('❌ ログインが必要です'); return; }
+    if(!dbReady()){ toast('❌ 接続できません'); return; }
+
+    var result = await sb.from('messages').insert({
+      from_id:    currentUser.id,
+      from_name:  currentUser.name,
+      from_emoji: currentUser.emoji || '🙋',
+      to_id:      toId,
+      to_name:    toName,
+      to_emoji:   toEmoji,
+      body:       body,
+      read:       false
+    });
+
+    if(result.error){
+      console.error('[ONEs] sendMessage:', result.error);
+      toast('❌ 送信に失敗しました');
+      return;
+    }
+
+    inputEl.value = '';
+    toast('💌 送信しました！');
+
+    // スレッドを更新
+    setTimeout(function(){
+      openMsgThread(toId, toName, toEmoji);
+    }, 300);
+
+    // メッセージ一覧も更新
+    renderMsgs();
+
+  } catch(e){
+    console.error('[ONEs] sendMessage:', e);
+    toast('❌ エラーが発生しました');
+  }
+}
+
+function openComposeMsg(toName){
+  showSheet('💌 新しいメッセージ', `
+    <div>
+      <div class="er">
+        <label class="el">宛先（ニックネーム）</label>
+        <input id="msg-to-name" class="ei" type="text"
+          value="${toName||''}" placeholder="ニックネームを入力">
+      </div>
+      <div class="er">
+        <label class="el">メッセージ</label>
+        <textarea id="msg-new-body" class="eta"
+          style="min-height:120px;" placeholder="メッセージを入力..."></textarea>
+      </div>
+      <button class="bo" style="width:100%;"
+        onclick="sendNewMessage()">送信する</button>
+    </div>`);
+}
+
+async function sendNewMessage(){
+  try {
+    var toNameEl = document.getElementById('msg-to-name');
+    var bodyEl   = document.getElementById('msg-new-body');
+    if(!toNameEl || !bodyEl) return;
+
+    var toName = toNameEl.value.trim();
+    var body   = bodyEl.value.trim();
+
+    if(!toName){ toast('宛先を入力してください'); return; }
+    if(!body)  { toast('メッセージを入力してください'); return; }
+    if(!dbReady() || !currentUser){ toast('❌ 接続できません'); return; }
+
+    // 宛先メンバーを検索
+    var target = await sb.from('members').select('*').eq('name', toName).maybeSingle();
+    if(!target.data){ toast('❌ 「'+toName+'」さんが見つかりません'); return; }
+
+    var result = await sb.from('messages').insert({
+      from_id:    currentUser.id,
+      from_name:  currentUser.name,
+      from_emoji: currentUser.emoji || '🙋',
+      to_id:      target.data.id,
+      to_name:    target.data.name,
+      to_emoji:   target.data.emoji || '🙋',
+      body:       body,
+      read:       false
+    });
+
+    if(result.error){
+      toast('❌ 送信に失敗しました');
+      return;
+    }
+
+    closeSheet();
+    toast('💌 '+toName+'さんにメッセージを送りました！');
+    renderMsgs();
+  } catch(e){
+    console.error('[ONEs] sendNewMessage:', e);
+    toast('❌ エラーが発生しました');
+  }
+}
 function openEditProfile(){const nick=document.getElementById('pvnick').textContent;const loc=document.getElementById('pvloc').textContent;const job=document.getElementById('pvjob').textContent;const gender=document.getElementById('pvgender')?document.getElementById('pvgender').textContent:'未設定';const status=document.getElementById('mpstatus').textContent;const gOpts=['未設定','男性','女性','その他','回答しない'];const gSel=gOpts.map(g=>`<option${g===gender?' selected':''}>${g}</option>`).join('');showSheet('プロフィールを編集',`<div><div class="er"><label class="el">ニックネーム</label><input id="ep-nick" class="ei" type="text" value="${nick}"></div><div class="er"><label class="el">ひとこと</label><input id="ep-st" class="ei" type="text" value="${status}"></div><div class="er"><label class="el">性別</label><select id="ep-gender" class="ei">${gSel}</select></div><div class="er"><label class="el">居住地</label><input id="ep-loc" class="ei" type="text" placeholder="例：愛知県 名古屋市" value="${loc==='未設定'?'':loc}"></div><div class="er"><label class="el">職業</label><input id="ep-job" class="ei" type="text" placeholder="例：IT会社経営" value="${job==='未設定'?'':job}"></div><button class="bo" style="width:100%;" onclick="saveProfile()">保存する</button></div>`);}
 function openEditBio(){const cur=document.getElementById('pvbio').innerText;showSheet('自己紹介を編集',`<div><div class="er"><label class="el">自己紹介文</label><textarea id="ep-bio" class="eta" style="min-height:150px;">${cur}</textarea></div><button class="bo" style="width:100%;" onclick="saveBio()">保存する</button></div>`);}
 async function saveProfile(){
