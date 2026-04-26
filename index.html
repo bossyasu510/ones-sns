@@ -2974,6 +2974,24 @@ async function renderTL(){
       }
     } catch(e) {}
 
+    // TLに表示する投稿のコメント数を事前取得
+    var commentCountById = {};
+    try {
+      var commentTargetIds = []
+        .concat(allD.slice(0, 3).map(function(d){ return d.id; }))
+        .concat(allP.slice(0, 3).map(function(p){ return p.id; }))
+        .concat(allV.slice(0, 5).map(function(v){ return v.id; }))
+        .filter(Boolean);
+      commentTargetIds = Array.from(new Set(commentTargetIds));
+      if(dbReady() && commentTargetIds.length){
+        var commentResult = await sb.from('comments').select('topic_id').in('topic_id', commentTargetIds);
+        (commentResult.data || []).forEach(function(c){
+          if(!c || !c.topic_id) return;
+          commentCountById[c.topic_id] = (commentCountById[c.topic_id] || 0) + 1;
+        });
+      }
+    } catch(e) { console.error('[ONEs] comment count fetch:', e); }
+
     // 本物のデータのみ表示（デモデータは表示しない）
 
     var h = '';
@@ -3001,7 +3019,8 @@ async function renderTL(){
       var isLiked = recId && likedList.indexOf(recId) !== -1;
       var likeCount = d.good || 0;
       var diaryTitleEsc = esc(d.title || '');
-      h += '<div class="fc"><div class="fch">'+avHtml+'<div class="fui"><div class="fname">'+nameHtml+'</div><div class="fsub">'+dateStr+'&nbsp;<span class="fbadge bd">日記</span></div></div></div><div class="fcb"><div class="ftit" onclick="openDiarySheet(\''+diaryTitleEsc+'\')">'+escHtml(d.title)+'</div><div class="ftxt">'+escHtml(excerpt)+(excerpt.length >= 70 ? '…' : '')+'</div></div><div class="fcf"><div class="fbtn'+(isLiked?' lk':'')+'" onclick="likeThis(this,\'diaries\',\''+recId+'\')">👍 <span class="like-count">'+likeCount+'</span></div><div class="fbtn" onclick="openDiarySheet(\''+diaryTitleEsc+'\')">💬 '+(d.comments_count||0)+'件</div><div class="fbtn" onclick="sharePost(\''+diaryTitleEsc+'\')">↗️ シェア</div></div></div>';
+      var diaryCommentCount = (commentCountById[recId] != null) ? commentCountById[recId] : (d.comments_count || 0);
+      h += '<div class="fc"><div class="fch">'+avHtml+'<div class="fui"><div class="fname">'+nameHtml+'</div><div class="fsub">'+dateStr+'&nbsp;<span class="fbadge bd">日記</span></div></div></div><div class="fcb"><div class="ftit" onclick="openDiarySheet(\''+diaryTitleEsc+'\')">'+escHtml(d.title)+'</div><div class="ftxt">'+escHtml(excerpt)+(excerpt.length >= 70 ? '…' : '')+'</div></div><div class="fcf"><div class="fbtn'+(isLiked?' lk':'')+'" onclick="likeThis(this,\'diaries\',\''+recId+'\')">👍 <span class="like-count">'+likeCount+'</span></div><div class="fbtn" onclick="openCommentSheet(\'diary\',\''+recId+'\',\''+esc(d.title||'')+'\')">💬 <span id="cmt-'+recId+'">'+diaryCommentCount+'</span>件</div><div class="fbtn" onclick="sharePost(\''+diaryTitleEsc+'\')">↗️ シェア</div></div></div>';
     });
 
     // 写真（最大3件）
@@ -3030,7 +3049,8 @@ async function renderTL(){
       var recId = p.id || '';
       var isLikedP = recId && likedList.indexOf(recId) !== -1;
       var sharePhotoUrl = p.photo_url || '';
-      h += '<div class="fc"><div class="fch">'+pAvHtml+'<div class="fui"><div class="fname">'+photoNameHtml+'</div><div class="fsub">'+timeAgoStr(ts)+'&nbsp;<span class="fbadge" style="background:#fef3c7;color:#92400e;">📷 フォト</span></div></div></div><div class="fcb"><img src="'+photoUrl+'" style="width:100%;max-height:300px;object-fit:cover;border-radius:8px;">'+caption+'</div><div class="fcf"><div class="fbtn'+(isLikedP?' lk':'')+'" onclick="likeThis(this,\'photos\',\''+recId+'\')">👍 <span class="like-count">'+(p.good||0)+'</span></div><div class="fbtn" onclick="toast(\'💬 コメント機能は準備中です\')">💬 0件</div><div class="fbtn" onclick="sharePost(\'\',\''+esc(sharePhotoUrl)+'\')">↗️ シェア</div></div></div>';
+      var photoCommentCount = (commentCountById[recId] != null) ? commentCountById[recId] : (p.comments_count || 0);
+      h += '<div class="fc"><div class="fch">'+pAvHtml+'<div class="fui"><div class="fname">'+photoNameHtml+'</div><div class="fsub">'+timeAgoStr(ts)+'&nbsp;<span class="fbadge" style="background:#fef3c7;color:#92400e;">📷 フォト</span></div></div></div><div class="fcb"><img src="'+photoUrl+'" style="width:100%;max-height:300px;object-fit:cover;border-radius:8px;">'+caption+'</div><div class="fcf"><div class="fbtn'+(isLikedP?' lk':'')+'" onclick="likeThis(this,\'photos\',\''+recId+'\')">👍 <span class="like-count">'+(p.good||0)+'</span></div><div class="fbtn" onclick="openCommentSheet(\'photo\',\''+recId+'\',\'写真へのコメント\')">💬 <span id="cmt-'+recId+'">'+photoCommentCount+'</span>件</div><div class="fbtn" onclick="sharePost(\'\',\''+esc(sharePhotoUrl)+'\')">↗️ シェア</div></div></div>';
     });
 
     // つぶやき（最大5件）
@@ -3054,12 +3074,130 @@ async function renderTL(){
       var likedList = likeKey ? JSON.parse(localStorage.getItem(likeKey)||'[]') : [];
       var recId = v.id || '';
       var isLikedV = recId && likedList.indexOf(recId) !== -1;
-      h += '<div class="fc"><div class="fch">'+avHtml+'<div class="fui"><div class="fname">'+voiceNameHtml+'</div><div class="fsub">'+timeAgoStr(ts)+'&nbsp;<span class="fbadge bv">つぶやき</span></div></div></div><div class="fcb"><div class="ftxt" style="padding-bottom:2px;">'+escHtml(voiceBody)+'</div></div><div class="fcf"><div class="fbtn'+(isLikedV?' lk':'')+'" onclick="likeThis(this,\'voices\',\''+recId+'\')">👍 <span class="like-count">'+(v.good||0)+'</span></div><div class="fbtn" onclick="toast(\'💬 返信機能は準備中です\')">💬 返信</div><div class="fbtn" onclick="sharePost(\''+esc(voiceBody)+'\')">↗️ シェア</div></div></div>';
+      var voiceCommentCount = (commentCountById[recId] != null) ? commentCountById[recId] : 0;
+      h += '<div class="fc"><div class="fch">'+avHtml+'<div class="fui"><div class="fname">'+voiceNameHtml+'</div><div class="fsub">'+timeAgoStr(ts)+'&nbsp;<span class="fbadge bv">つぶやき</span></div></div></div><div class="fcb"><div class="ftxt" style="padding-bottom:2px;">'+escHtml(voiceBody)+'</div></div><div class="fcf"><div class="fbtn'+(isLikedV?' lk':'')+'" onclick="likeThis(this,\'voices\',\''+recId+'\')">👍 <span class="like-count">'+(v.good||0)+'</span></div><div class="fbtn" onclick="openCommentSheet(\'voice\',\''+recId+'\',\'つぶやき\')">💬 <span id="cmt-'+recId+'">'+voiceCommentCount+'</span>件</div><div class="fbtn" onclick="sharePost(\''+esc(voiceBody)+'\')">↗️ シェア</div></div></div>';
     });
 
     if(tlEl) tlEl.innerHTML = h || '<div style="padding:40px;text-align:center;color:var(--text3);">まだ投稿がありません<br><span style="font-size:12px;">最初の投稿をしてみましょう！</span></div>';
   } catch(err) {
     console.error('[ONEs] renderTL:', err);
+  }
+}
+
+async function openCommentSheet(type, recordId, title) {
+  try {
+    if(!dbReady()){ toast('❌ 接続できません'); return; }
+
+    // コメント取得
+    var comments = [];
+    try {
+      var r = await sb.from('comments')
+        .select('*')
+        .eq('topic_id', recordId)
+        .order('created_at', {ascending: true});
+      comments = r.data || [];
+    } catch(e){ console.error('[ONEs] comments fetch:', e); }
+
+    // コメントHTML生成
+    var commentsHtml = '';
+    if(comments.length === 0){
+      commentsHtml = '<div style="text-align:center;color:var(--text3);font-size:13px;padding:16px 0;">まだコメントがありません<br>最初のコメントを書きましょう！</div>';
+    } else {
+      commentsHtml = comments.map(function(c){
+        var ts = c.created_at ? new Date(c.created_at).getTime() : Date.now();
+        var isMe = currentUser && c.author_id === currentUser.id;
+        var avHtml = isMe
+          ? myAvHtml('ax')
+          : '<div class="av ax" style="background:linear-gradient(135deg,#a8ddb8,#3fa865);display:flex;align-items:center;justify-content:center;">'+(c.author_emoji||'🙋')+'</div>';
+        return '<div style="display:flex;gap:8px;margin-bottom:12px;align-items:flex-start;">'+
+          avHtml+
+          '<div style="flex:1;">'+
+            '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">'+
+              '<span style="font-size:12px;font-weight:700;color:var(--og3);">'+escHtml(c.author_name||'')+'</span>'+
+              '<span style="font-size:10px;color:var(--text3);">'+timeAgoStr(ts)+'</span>'+
+            '</div>'+
+            '<div style="background:var(--og-pale);border-radius:0 10px 10px 10px;padding:10px 12px;font-size:13px;color:var(--text);line-height:1.6;">'+
+              escHtml(c.body)+
+            '</div>'+
+          '</div>'+
+        '</div>';
+      }).join('');
+    }
+
+    showSheet('💬 '+title, `
+      <div>
+        <!-- コメント一覧 -->
+        <div id="comment-list" style="max-height:50vh;overflow-y:auto;margin-bottom:16px;padding-right:4px;">
+          ${commentsHtml}
+        </div>
+
+        <!-- 入力エリア -->
+        <div style="border-top:1px solid var(--og-pale);padding-top:14px;">
+          <div style="display:flex;gap:8px;align-items:flex-start;">
+            ${myAvHtml('ax')}
+            <textarea id="comment-input" class="eta" 
+              style="flex:1;min-height:70px;font-size:14px;" 
+              placeholder="コメントを入力..."></textarea>
+          </div>
+          <div style="display:flex;justify-content:flex-end;margin-top:10px;">
+            <button class="bos" onclick="submitComment('${type}','${recordId}','${esc(title)}')">
+              送信する
+            </button>
+          </div>
+        </div>
+      </div>`);
+
+  } catch(e){
+    console.error('[ONEs] openCommentSheet:', e);
+    toast('❌ 読み込みエラー');
+  }
+}
+
+async function submitComment(type, recordId, title) {
+  try {
+    var inputEl = document.getElementById('comment-input');
+    if(!inputEl) return;
+    var body = inputEl.value.trim();
+    if(!body){ toast('コメントを入力してください'); return; }
+    if(/<|>|script|javascript:|on\w+=/i.test(body)){
+      toast('使用できない文字が含まれています'); return;
+    }
+    if(!currentUser || !currentUser.id){ toast('❌ ログインが必要です'); return; }
+    if(!dbReady()){ toast('❌ 接続できません'); return; }
+
+    // Supabaseに保存
+    var result = await sb.from('comments').insert({
+      topic_id:     recordId,
+      author_id:    currentUser.id,
+      author_name:  currentUser.name,
+      author_emoji: currentUser.emoji || '🙋',
+      body:         body
+    });
+
+    if(result.error){
+      console.error('[ONEs] comment insert:', result.error);
+      toast('❌ 送信に失敗しました');
+      return;
+    }
+
+    // 入力クリア
+    inputEl.value = '';
+    toast('💬 コメントしました！');
+
+    // シートを更新（再表示）
+    setTimeout(function(){
+      openCommentSheet(type, recordId, title);
+    }, 300);
+
+    // タイムラインのコメント数を更新
+    var cntEl = document.getElementById('cmt-'+recordId);
+    if(cntEl){
+      cntEl.textContent = parseInt(cntEl.textContent||'0') + 1;
+    }
+
+  } catch(e){
+    console.error('[ONEs] submitComment:', e);
+    toast('❌ エラーが発生しました');
   }
 }
 
