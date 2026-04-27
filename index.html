@@ -6453,8 +6453,18 @@ if(typeof window.goMypage !== 'function'){
 }
 function openProfileEdit(){
   var u = currentUser || {};
-  var html = ''
+  var currentPhoto = u.photo || (u.id ? localStorage.getItem('ones_profile_photo_'+u.id) : null);
+  var topBarHtml = ''
+    + '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#f1f8e9;border-bottom:1px solid #c8e6c9;position:sticky;top:0;z-index:10;">'
+    +   '<button type="button" onclick="if(confirm(\'編集を破棄して閉じますか？\')) closeSheet()" style="background:transparent;border:none;color:#558b2f;font-size:14px;cursor:pointer;">← 戻る</button>'
+    +   '<div style="font-weight:700;color:#2e7d32;">プロフィール編集</div>'
+    +   '<button type="button" onclick="if(confirm(\'編集を破棄して閉じますか？\')) closeSheet()" style="background:transparent;border:none;font-size:22px;color:#558b2f;cursor:pointer;">✕</button>'
+    + '</div>';
+  var errorAreaHtml = ''
+    + '<div id="ed_error" style="display:none;background:#ffebee;border:2px solid #ef5350;color:#c62828;border-radius:10px;padding:12px 16px;margin:12px 16px;font-size:13px;font-weight:600;"></div>';
+  var formHtml = ''
     + '<div style="padding:16px;">'
+    + '<input id="ed_photo" type="hidden" value="'+escHtml(currentPhoto||'')+'">'
     + '<div style="margin-bottom:16px;">'
     +   '<label style="display:block;color:#2e7d32;font-weight:600;font-size:13px;margin-bottom:6px;">お名前</label>'
     +   '<input id="ed_name" type="text" maxlength="30" value="'+escHtml(u.name||'')+'" style="width:100%;padding:12px;border:1px solid #c8e6c9;border-radius:10px;font-size:14px;box-sizing:border-box;">'
@@ -6491,12 +6501,13 @@ function openProfileEdit(){
     + '<div style="margin-bottom:16px;">'
     +   '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">'
     +     '<label style="color:#2e7d32;font-weight:600;font-size:13px;">自己紹介</label>'
-    +     '<span id="bio_counter" style="color:#888;font-size:12px;">'+((u.bio||'').length)+' / 500</span>'
+    +     '<span id="bio_counter" style="color:#888;font-size:12px;">'+((u.bio||'').length)+' / 2000</span>'
     +   '</div>'
-    +   '<textarea id="ed_bio" maxlength="500" rows="8" placeholder="あなたのことを教えてください（500文字まで）" oninput="updateBioCounter()" style="width:100%;padding:12px;border:1px solid #c8e6c9;border-radius:10px;font-size:14px;box-sizing:border-box;line-height:1.7;resize:vertical;">'+escHtml(u.bio||'')+'</textarea>'
+    +   '<textarea id="ed_bio" maxlength="2000" rows="10" placeholder="あなたのことを教えてください（2000文字まで）" oninput="updateBioCounter()" style="width:100%;padding:12px;border:1px solid #c8e6c9;border-radius:10px;font-size:14px;box-sizing:border-box;line-height:1.7;resize:vertical;">'+escHtml(u.bio||'')+'</textarea>'
     + '</div>'
-    + '<button onclick="saveProfileEdit()" style="width:100%;background:#43a047;color:#fff;border:none;border-radius:24px;padding:14px;font-weight:600;font-size:15px;margin-top:8px;">💾 保存する</button>'
+    + '<button id="ed_save_btn" onclick="saveProfileEdit()" style="width:100%;background:#43a047;color:#fff;border:none;border-radius:24px;padding:14px;font-weight:600;font-size:15px;margin-top:8px;">💾 保存する</button>'
     + '</div>';
+  var html = topBarHtml + errorAreaHtml + formHtml;
   showSheet('プロフィール編集', html);
   updateBioCounter();
 }
@@ -6505,12 +6516,15 @@ function updateBioCounter(){
   var c = document.getElementById('bio_counter');
   if(!ta || !c) return;
   var len = ta.value.length;
-  c.textContent = len + ' / 500';
-  c.style.color = (len >= 480) ? '#e53935' : (len >= 400 ? '#fb8c00' : '#888');
+  c.textContent = len + ' / 2000';
+  c.style.color = (len >= 1900) ? '#e53935' : (len >= 1700 ? '#fb8c00' : '#888');
+  c.style.fontWeight = (len >= 1700) ? '600' : '400';
 }
 async function saveProfileEdit(){
   if(!currentUser || !currentUser.id) return;
+
   var get = function(id){ var el = document.getElementById(id); return el ? el.value.trim() : ''; };
+  var photoVal = get('ed_photo');
   var data = {
     name: get('ed_name'),
     gender: get('ed_gender') || null,
@@ -6519,22 +6533,88 @@ async function saveProfileEdit(){
     location: get('ed_location') || null,
     job: get('ed_job') || null,
     hobby: get('ed_hobby') || null,
-    bio: get('ed_bio') || null
+    bio: get('ed_bio') || null,
+    photo: photoVal || null
   };
-  if(!data.name){ alert('お名前は必須です'); return; }
-  if(data.bio && data.bio.length > 500){ alert('自己紹介は500文字以内にしてください'); return; }
-  if(dbReady()){
-    try {
-      var r = await sb.from('members').update(data).eq('id', currentUser.id);
-      if(r.error){ alert('保存に失敗しました: '+r.error.message); return; }
-    } catch(e){ alert('保存に失敗しました: '+e.message); return; }
+
+  var errEl = document.getElementById('ed_error');
+  if(errEl) errEl.style.display = 'none';
+
+  function showError(msg){
+    var el = document.getElementById('ed_error');
+    if(el){
+      el.innerHTML = '⚠️ ' + msg;
+      el.style.display = 'block';
+      el.scrollIntoView({behavior:'smooth', block:'center'});
+    } else {
+      alert(msg);
+    }
   }
-  Object.assign(currentUser, data);
-  saveSession(currentUser);
-  closeSheet();
-  alert('プロフィールを保存しました ✨');
-  if(typeof renderMypage === 'function') renderMypage();
+
+  if(!data.name){
+    showError('お名前を入力してください');
+    return;
+  }
+  if(data.bio && data.bio.length > 2000){
+    showError('自己紹介は2000文字以内にしてください（現在 '+data.bio.length+'文字）');
+    return;
+  }
+
+  var saveBtn = document.getElementById('ed_save_btn');
+  if(saveBtn){
+    saveBtn.disabled = true;
+    saveBtn.textContent = '💾 保存中...';
+  }
+
+  try {
+    if(dbReady()){
+      var r = await sb.from('members').update(data).eq('id', currentUser.id);
+      if(r.error){
+        showError('保存に失敗しました: '+r.error.message);
+        if(saveBtn){
+          saveBtn.disabled = false;
+          saveBtn.textContent = '💾 保存する';
+        }
+        return;
+      }
+    }
+
+    Object.assign(currentUser, data);
+    if(data.photo){
+      if(window._photoCache) window._photoCache[currentUser.id] = data.photo;
+      try { localStorage.setItem('ones_profile_photo_'+currentUser.id, data.photo); } catch(e){}
+    } else {
+      if(window._photoCache) delete window._photoCache[currentUser.id];
+      try { localStorage.removeItem('ones_profile_photo_'+currentUser.id); } catch(e){}
+    }
+    saveSession(currentUser);
+    closeSheet();
+    showToast('プロフィールを保存しました ✨');
+    if(typeof renderMypage === 'function') renderMypage();
+    if(typeof renderTL === 'function') renderTL();
+    if(typeof renderHome === 'function') renderHome();
+  } catch(e){
+    showError('保存に失敗しました: '+e.message);
+    if(saveBtn){
+      saveBtn.disabled = false;
+      saveBtn.textContent = '💾 保存する';
+    }
+  }
 }
+window.showToast = function(msg){
+  var existing = document.getElementById('toast_msg');
+  if(existing) existing.remove();
+  var toast = document.createElement('div');
+  toast.id = 'toast_msg';
+  toast.textContent = msg;
+  toast.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:rgba(46,125,50,0.95);color:#fff;padding:12px 24px;border-radius:24px;font-size:14px;font-weight:600;z-index:10000;box-shadow:0 4px 12px rgba(0,0,0,0.15);';
+  document.body.appendChild(toast);
+  setTimeout(function(){
+    toast.style.transition = 'opacity 0.4s';
+    toast.style.opacity = '0';
+    setTimeout(function(){ toast.remove(); }, 400);
+  }, 2500);
+};
 function openEditBio(){ openProfileEdit(); }
 async function saveProfile(){
   return saveProfileEdit();
