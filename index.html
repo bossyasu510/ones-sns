@@ -1912,6 +1912,40 @@ function isLoginLocked() {
 
 /* ══════════ INVITE SYSTEM ══════════ */
 let currentUser = null;
+window._photoCache = {};
+
+async function loadAllPhotos(){
+  if(!dbReady()) return;
+  try {
+    var r = await sb.from('members').select('id,photo,emoji');
+    if(r && r.data){
+      r.data.forEach(function(m){
+        if(m.photo){
+          window._photoCache[m.id] = m.photo;
+          try { localStorage.setItem('ones_profile_photo_'+m.id, m.photo); } catch(e){}
+        }
+      });
+    }
+    console.log('[loadAllPhotos] cached photos:', Object.keys(window._photoCache).length);
+  } catch(e){
+    console.warn('loadAllPhotos failed:', e);
+  }
+}
+
+function getPhotoFor(memberId){
+  if(!memberId) return null;
+  if(currentUser && memberId === currentUser.id && currentUser.photo){
+    return currentUser.photo;
+  }
+  if(window._photoCache[memberId]){
+    return window._photoCache[memberId];
+  }
+  try {
+    var ls = localStorage.getItem('ones_profile_photo_'+memberId);
+    if(ls) return ls;
+  } catch(e){}
+  return null;
+}
 
 function getMembers(){
   try {
@@ -2993,20 +3027,19 @@ function sharePost(text, url) {
 async function syncMyPhoto() {
   if(!dbReady() || !currentUser || !currentUser.id) return;
   try {
-    // モバイル回線で待ち続けて描画を止めないため、短いタイムアウトを設定
-    var queryPromise = sb.from('members')
-      .select('photo')
+    var r = await sb.from('members')
+      .select('photo,emoji')
       .eq('id', currentUser.id)
       .maybeSingle();
-    var timeoutPromise = new Promise(function(resolve){
-      setTimeout(function(){ resolve(null); }, 1500);
-    });
-    var r = await Promise.race([queryPromise, timeoutPromise]);
-    if(r && r.data && r.data.photo) {
-      try {
-        localStorage.setItem('ones_profile_photo_'+currentUser.id, r.data.photo);
+    if(r && r.data){
+      if(r.data.photo){
         currentUser.photo = r.data.photo;
-      } catch(e){}
+        window._photoCache[currentUser.id] = r.data.photo;
+        try { localStorage.setItem('ones_profile_photo_'+currentUser.id, r.data.photo); } catch(e){}
+      }
+      if(r.data.emoji){
+        currentUser.emoji = currentUser.emoji || r.data.emoji;
+      }
     }
   } catch(e){
     console.warn('syncMyPhoto failed:', e);
@@ -3030,8 +3063,28 @@ function myAvHtml(size){
   return '<div class="av ' + size + '" style="' + AB + '">' + userEmoji + '</div>';
 }
 
+function postAvatarHtml(post, sizeClass){
+  sizeClass = sizeClass || '';
+  if(!post) return '<div class="av '+sizeClass+'">👤</div>';
+
+  var memberId = post.author_id || post.user_id || post.member_id;
+  var photo = getPhotoFor(memberId);
+
+  if(currentUser && memberId === currentUser.id){
+    photo = currentUser.photo || photo;
+  }
+
+  if(photo){
+    return '<div class="av '+sizeClass+'" style="background-image:url('+photo+');background-size:cover;background-position:center;background-color:#fff;"></div>';
+  }
+
+  var emoji = post.author_emoji || post.emoji || post.authorEmoji || '👤';
+  return '<div class="av '+sizeClass+'">'+emoji+'</div>';
+}
+
 async function renderTL(){
   await syncMyPhoto();
+  await loadAllPhotos();
   try {
     var tlEl = document.getElementById('tlfeed');
     if(!tlEl) return;
@@ -3097,14 +3150,11 @@ async function renderTL(){
     function getAvHtml(authorId, authorName, authorEmoji, size, isMe, clickable) {
       size = size || 'am';
       if(isMe) return myAvHtml(size);
-      var photo = photoMap[authorId] || photoMap[authorName];
-      var radius = size === 'am' ? '10px' : '50%';
+      var photo = getPhotoFor(authorId);
       var onclick = clickable ? ' onclick="openUserSheet(\''+esc(authorName)+'\',\''+authorEmoji+'\')"' : '';
       var cursorStyle = clickable ? 'cursor:pointer;' : '';
       if(photo){
-        return '<div class="av '+size+'"'+onclick+' style="'+cursorStyle+'overflow:hidden;">'+
-          '<img src="'+photo+'" style="width:100%;height:100%;object-fit:cover;border-radius:'+radius+';">'+
-        '</div>';
+        return '<div class="av '+size+'"'+onclick+' style="'+cursorStyle+'background-image:url('+photo+');background-size:cover;background-position:center;background-color:#fff;"></div>';
       }
       return '<div class="av '+size+'" style="background:linear-gradient(135deg,#a8ddb8,#3fa865);'+
         'display:flex;align-items:center;justify-content:center;'+cursorStyle+'"'+onclick+'>'+authorEmoji+'</div>';
@@ -3329,9 +3379,7 @@ async function openCommentSheet(type, recordId, title) {
       commentsHtml = comments.map(function(c){
         var ts = c.created_at ? new Date(c.created_at).getTime() : Date.now();
         var isMe = currentUser && c.author_id === currentUser.id;
-        var avHtml = isMe
-          ? myAvHtml('ax')
-          : '<div class="av ax" style="background:linear-gradient(135deg,#a8ddb8,#3fa865);display:flex;align-items:center;justify-content:center;">'+(c.author_emoji||'🙋')+'</div>';
+        var avHtml = isMe ? myAvHtml('ax') : postAvatarHtml(c, 'ax');
         return '<div style="display:flex;gap:8px;margin-bottom:12px;align-items:flex-start;">'+
           avHtml+
           '<div style="flex:1;">'+
@@ -3626,6 +3674,7 @@ async function renderMxRow() {
 }
 async function renderDiary(){
   await syncMyPhoto();
+  await loadAllPhotos();
   try {
     var dlistEl = document.getElementById('dlist');
     if(!dlistEl) return;
@@ -3666,15 +3715,12 @@ async function renderDiary(){
       var dateStr = d.created_at ? new Date(d.created_at).toLocaleString('ja-JP', {year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit'}) : (d.date || '');
       var excerpt = (d.body || d.excerpt || '');
       var isMe = currentUser && (d.author_id === currentUser.id || dauthor === currentUser.name);
-      var photo = d.author_id ? photoMap[d.author_id] : null;
       var authorEsc = esc(dauthor);
       var avHtml;
       if(isMe) {
         avHtml = myAvHtml('as');
-      } else if(photo) {
-        avHtml = '<div class="av as" style="overflow:hidden;cursor:pointer;" onclick="event.stopPropagation();openUserSheet(\''+authorEsc+'\',\''+demoji+'\')"><img src="'+photo+'" style="width:100%;height:100%;object-fit:cover;border-radius:8px;"></div>';
       } else {
-        avHtml = '<div class="av as" style="background:linear-gradient(135deg,#a8ddb8,#3fa865);display:flex;align-items:center;justify-content:center;cursor:pointer;" onclick="event.stopPropagation();openUserSheet(\''+authorEsc+'\',\''+demoji+'\')">'+demoji+'</div>';
+        avHtml = '<div onclick="event.stopPropagation();openUserSheet(\''+authorEsc+'\',\''+demoji+'\')" style="cursor:pointer;">'+postAvatarHtml({ author_id:d.author_id, author_emoji:demoji }, 'as')+'</div>';
       }
       var nameHtml = isMe
         ? '<div class="fname" style="font-size:12px;">'+escHtml(dauthor)+'</div>'
@@ -3704,6 +3750,7 @@ async function renderDiary(){
 
 async function renderVoice(){
   await syncMyPhoto();
+  await loadAllPhotos();
   try {
     var vfeedEl = document.getElementById('vfeed');
     if(!vfeedEl) return;
@@ -3745,14 +3792,11 @@ async function renderVoice(){
       var ts = v.created_at ? new Date(v.created_at).getTime() : (v.ts || Date.now());
       var isMe = currentUser && (v.author_id === currentUser.id || vauthor === currentUser.name);
       var authorEsc = esc(vauthor);
-      var photo = v.author_id ? photoMap[v.author_id] : null;
       var avHtml;
       if(isMe) {
         avHtml = myAvHtml('am');
-      } else if(photo) {
-        avHtml = '<div class="av am" style="overflow:hidden;cursor:pointer;" onclick="openUserSheet(\''+authorEsc+'\',\''+vemoji+'\')"><img src="'+photo+'" style="width:100%;height:100%;object-fit:cover;border-radius:10px;"></div>';
       } else {
-        avHtml = '<div class="av am" style="background:linear-gradient(135deg,#a8ddb8,#3fa865);display:flex;align-items:center;justify-content:center;cursor:pointer;" onclick="openUserSheet(\''+authorEsc+'\',\''+vemoji+'\')">'+vemoji+'</div>';
+        avHtml = '<div onclick="openUserSheet(\''+authorEsc+'\',\''+vemoji+'\')" style="cursor:pointer;">'+postAvatarHtml({ author_id:v.author_id, author_emoji:vemoji }, 'am')+'</div>';
       }
       var userId = currentUser ? currentUser.id : '';
       var likeKey = userId ? 'ones_likes_'+userId : '';
@@ -3767,6 +3811,7 @@ async function renderVoice(){
 }
 async function renderHome(){
   await syncMyPhoto();
+  await loadAllPhotos();
   try { await renderTL(); } catch(e) { console.error('[ONEs] renderHome:', e); }
 }
 function renderProfileCard(member, isMyself){
@@ -3838,6 +3883,12 @@ function renderProfileCard(member, isMyself){
     editBtn = ''
       + '<div style="margin:0 16px 20px;">'
       +   '<button onclick="openProfileEdit()" style="width:100%;background:#43a047;color:#fff;border:none;border-radius:24px;padding:14px;font-weight:600;font-size:15px;box-shadow:0 2px 6px rgba(67,160,71,0.3);">✏️ プロフィールを編集</button>'
+      + '</div>';
+    editBtn += ''
+      + '<div style="margin:20px 16px;padding:12px;background:#fff3e0;border-radius:8px;font-size:12px;">'
+      +   '<div style="font-weight:600;margin-bottom:8px;color:#e65100;">🔧 デバッグ</div>'
+      +   '<button onclick="debugPhotoStatus()" style="background:#fb8c00;color:#fff;border:none;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:600;">写真状態を確認</button>'
+      +   '<button onclick="forceReloadPhotos()" style="background:#fb8c00;color:#fff;border:none;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:600;margin-left:8px;">強制再読込</button>'
       + '</div>';
   }
   return headerHtml + detailCard + tagsCard + bioCard + editBtn;
@@ -5885,8 +5936,9 @@ async function openTopicSheet(communityName, topicId) {
     } else {
       commentsHtml = comments.map(function(cm){
         var cmTs = cm.created_at ? new Date(cm.created_at).getTime() : Date.now();
+        var cmAvatar = postAvatarHtml(cm, 'as');
         return '<div style="display:flex;gap:10px;margin-bottom:10px;">'+
-               '<div class="av as" style="background:linear-gradient(135deg,#a8ddb8,#3fa865);display:flex;align-items:center;justify-content:center;flex-shrink:0;">'+(cm.author_emoji||'🙋')+'</div>'+
+               cmAvatar+
                '<div style="flex:1;background:#fff;border-radius:10px;padding:10px;border:1px solid var(--og-border);">'+
                '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">'+
                '<div style="font-size:12px;font-weight:700;color:var(--og3);">'+escHtml(cm.author_name||'')+'</div>'+
@@ -6442,6 +6494,14 @@ function handlePhotoUpload(event) {
 
         // 全アバターに反映
         applyProfilePhoto(finalPhoto);
+        if(currentUser){
+          currentUser.photo = finalPhoto;
+          window._photoCache[currentUser.id] = finalPhoto;
+          try { localStorage.setItem('ones_profile_photo_'+currentUser.id, finalPhoto); } catch(e){}
+        }
+        if(typeof renderTL === 'function') renderTL();
+        if(typeof renderHome === 'function') renderHome();
+        if(typeof renderMypage === 'function') renderMypage();
 
         toast('📷 プロフィール写真を更新しました！');
         console.log('[ONEs] 写真保存完了 - userId:', userId, ', userName:', userName);
@@ -6515,6 +6575,25 @@ function applyProfilePhoto(dataUrl) {
   if(cur==='voice') renderVoice();
   if(cur==='diary') renderDiary();
 }
+
+window.debugPhotoStatus = function(){
+  var msg = '=== 写真状態 ===\n';
+  msg += 'currentUser.id: '+((currentUser && currentUser.id) || 'なし')+'\n';
+  msg += 'currentUser.photo: '+((currentUser && currentUser.photo) ? ('あり('+currentUser.photo.length+'文字)') : 'なし')+'\n';
+  msg += 'currentUser.emoji: '+((currentUser && currentUser.emoji) || 'なし')+'\n';
+  msg += 'LocalStorage: '+((currentUser && localStorage.getItem('ones_profile_photo_'+currentUser.id)) ? 'あり' : 'なし')+'\n';
+  msg += 'Cache size: '+Object.keys(window._photoCache||{}).length+'\n';
+  msg += 'My in cache: '+((currentUser && window._photoCache && window._photoCache[currentUser.id]) ? 'あり' : 'なし');
+  alert(msg);
+};
+
+window.forceReloadPhotos = async function(){
+  await syncMyPhoto();
+  await loadAllPhotos();
+  if(typeof renderTL === 'function') renderTL();
+  if(typeof renderHome === 'function') renderHome();
+  alert('再読込完了！\nキャッシュ: '+Object.keys(window._photoCache||{}).length+'件');
+};
 
 async function loadProfilePhoto() {
   try {
@@ -8036,9 +8115,10 @@ async function initApp(){
     }
   }
 
-  // プロフィール写真を最優先で読み込み（描画より先）
-  try { loadProfilePhoto(); } catch(e) { console.error('[ONEs] loadProfilePhoto:', e); }
+  // プロフィール写真を最優先で同期（描画より先）
   try { await syncMyPhoto(); } catch(e) {}
+  try { await loadAllPhotos(); } catch(e) {}
+  try { loadProfilePhoto(); } catch(e) { console.error('[ONEs] loadProfilePhoto:', e); }
   try { autoCleanTrash(); } catch(e) {}
 
   // 各レンダリングを個別に try-catch で保護
