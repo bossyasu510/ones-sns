@@ -4001,13 +4001,15 @@ async function renderFP() {
 }
 async function renderCM(){
   try {
-    var avatarHtmlFor = function(member){
-      if(!member) return '<div class="av">👤</div>';
+    var avatarHtmlFor = function(member, size){
+      var s = size || 36;
+      var baseStyle = 'width:'+s+'px;height:'+s+'px;border-radius:'+Math.round(s*0.28)+'px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;';
+      if(!member) return '<div style="'+baseStyle+'background:linear-gradient(135deg,#a8ddb8,#3fa865);color:#fff;font-size:'+Math.round(s*0.52)+'px;">👤</div>';
       var photo = member.photo || (member.id ? localStorage.getItem('ones_profile_photo_'+member.id) : null);
       if(photo){
-        return '<div class="av" style="background-image:url('+photo+');background-size:cover;background-position:center;"></div>';
+        return '<div style="'+baseStyle+'background-image:url('+photo+');background-size:cover;background-position:center;background-color:#f1f5f9;"></div>';
       }
-      return '<div class="av">'+(member.emoji||'👤')+'</div>';
+      return '<div style="'+baseStyle+'background:linear-gradient(135deg,#a8ddb8,#3fa865);color:#fff;font-size:'+Math.round(s*0.52)+'px;">'+(member.emoji||'👤')+'</div>';
     };
     var mk = function(list, id, isMember, ownerMap) {
       var el = document.getElementById(id);
@@ -4023,7 +4025,7 @@ async function renderCM(){
         var cowner = c.owner || c.owner_name || '';
         var ownerId = c.creator_id || c.owner_id || '';
         var owner = ownerId && ownerMap ? ownerMap[ownerId] : null;
-        var ownerAvatar = owner ? avatarHtmlFor(owner) : '';
+        var ownerAvatar = owner ? avatarHtmlFor(owner, 36) : '';
         var ownerText = (isMember && cowner) ? '<div class="cc" style="font-size:11px;">主催: '+escHtml(cowner)+'</div>' : '';
         return '<div class="cmi" onclick="openCmSheet(\''+esc(cname)+'\')">'+
                '<div class="cmico">'+cemoji+'</div>'+
@@ -5685,13 +5687,15 @@ async function rejectWanmik(wanmikId){
 }
 async function openCmSheet(name){
   try {
-    function avatarHtmlFor(member){
-      if(!member) return '<div class="av">👤</div>';
+    function avatarHtmlFor(member, size){
+      var s = size || 44;
+      var baseStyle = 'width:'+s+'px;height:'+s+'px;border-radius:'+Math.round(s*0.28)+'px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;';
+      if(!member) return '<div style="'+baseStyle+'background:linear-gradient(135deg,#a8ddb8,#3fa865);color:#fff;font-size:'+Math.round(s*0.52)+'px;">👤</div>';
       var photo = member.photo || (member.id ? localStorage.getItem('ones_profile_photo_'+member.id) : null);
       if(photo){
-        return '<div class="av" style="background-image:url('+photo+');background-size:cover;background-position:center;"></div>';
+        return '<div style="'+baseStyle+'background-image:url('+photo+');background-size:cover;background-position:center;background-color:#f1f5f9;"></div>';
       }
-      return '<div class="av">'+(member.emoji||'👤')+'</div>';
+      return '<div style="'+baseStyle+'background:linear-gradient(135deg,#a8ddb8,#3fa865);color:#fff;font-size:'+Math.round(s*0.52)+'px;">'+(member.emoji||'👤')+'</div>';
     }
     // Supabaseから取得
     var c = null;
@@ -5726,7 +5730,7 @@ async function openCmSheet(name){
         if(r && r.data) creator = r.data;
       } catch(e){}
     }
-    var creatorAvatar = avatarHtmlFor(creator || { id: creatorId, emoji: c.ownerEmoji || '👤' });
+    var creatorAvatar = avatarHtmlFor(creator || { id: creatorId, emoji: c.ownerEmoji || '👤' }, 44);
 
     var cntDisplay = (c.cnt || 1).toLocaleString();
 
