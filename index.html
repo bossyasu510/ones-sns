@@ -1096,6 +1096,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
     <img id="hd-av-img" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:50%;">
     <span id="hd-av-emoji">😊</span>
   </div>
+  <button id="btn_hamburger" onclick="openHamburgerMenu()" style="background:rgba(255,255,255,0.2);border:none;width:40px;height:40px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:20px;color:#fff;cursor:pointer;margin-left:8px;">☰</button>
 </header>
 
 <div id="body" style="display:none;">
@@ -3919,6 +3920,40 @@ async function renderMypage(){
   if(typeof renderMyTimeline === 'function'){
     try { timelineHtml = renderMyTimeline(); } catch(e){}
   }
+  var otherMenuHtml = ''
+    + '<div style="background:#fff;border-radius:16px;margin:20px 16px;box-shadow:0 1px 4px rgba(0,0,0,0.06);overflow:hidden;">'
+    +   '<div style="background:#f1f8e9;padding:14px 18px;color:#2e7d32;font-weight:700;font-size:14px;border-bottom:1px solid #e8f5e9;">📋 その他メニュー</div>'
+    +   '<button onclick="goEveryone()" style="display:flex;align-items:center;gap:14px;width:100%;background:#fff;border:none;border-bottom:1px solid #f0f4ec;padding:16px 20px;font-size:14px;color:#333;text-align:left;cursor:pointer;">'
+    +     '<span style="font-size:20px;width:28px;">🌍</span>'
+    +     '<span style="flex:1;">みんな（メンバー一覧）</span>'
+    +     '<span style="color:#aaa;">›</span>'
+    +   '</button>'
+    +   '<button onclick="goCommunities()" style="display:flex;align-items:center;gap:14px;width:100%;background:#fff;border:none;border-bottom:1px solid #f0f4ec;padding:16px 20px;font-size:14px;color:#333;text-align:left;cursor:pointer;">'
+    +     '<span style="font-size:20px;width:28px;">🏘️</span>'
+    +     '<span style="flex:1;">コミュニティ</span>'
+    +     '<span style="color:#aaa;">›</span>'
+    +   '</button>'
+    +   '<button onclick="goFootprints()" style="display:flex;align-items:center;gap:14px;width:100%;background:#fff;border:none;border-bottom:1px solid #f0f4ec;padding:16px 20px;font-size:14px;color:#333;text-align:left;cursor:pointer;">'
+    +     '<span style="font-size:20px;width:28px;">👣</span>'
+    +     '<span style="flex:1;">足あと一覧</span>'
+    +     '<span style="color:#aaa;">›</span>'
+    +   '</button>'
+    +   '<button onclick="openNotifications()" style="display:flex;align-items:center;gap:14px;width:100%;background:#fff;border:none;border-bottom:1px solid #f0f4ec;padding:16px 20px;font-size:14px;color:#333;text-align:left;cursor:pointer;">'
+    +     '<span style="font-size:20px;width:28px;">🔔</span>'
+    +     '<span style="flex:1;">お知らせ</span>'
+    +     '<span style="color:#aaa;">›</span>'
+    +   '</button>'
+    +   '<button onclick="openHelp()" style="display:flex;align-items:center;gap:14px;width:100%;background:#fff;border:none;border-bottom:1px solid #f0f4ec;padding:16px 20px;font-size:14px;color:#333;text-align:left;cursor:pointer;">'
+    +     '<span style="font-size:20px;width:28px;">❓</span>'
+    +     '<span style="flex:1;">取扱説明書・ヘルプ</span>'
+    +     '<span style="color:#aaa;">›</span>'
+    +   '</button>'
+    +   '<button onclick="confirmLogout()" style="display:flex;align-items:center;gap:14px;width:100%;background:#fff;border:none;padding:16px 20px;font-size:14px;color:#e53935;text-align:left;cursor:pointer;">'
+    +     '<span style="font-size:20px;width:28px;">🚪</span>'
+    +     '<span style="flex:1;">ログアウト</span>'
+    +     '<span style="color:#aaa;">›</span>'
+    +   '</button>'
+    + '</div>';
   var debugHtml = ''
     + '<div style="margin:20px 16px;padding:12px;background:#fff3e0;border-radius:8px;font-size:12px;">'
     +   '<div style="font-weight:600;margin-bottom:8px;color:#e65100;">🔧 デバッグ</div>'
@@ -3926,7 +3961,7 @@ async function renderMypage(){
     +   '<button onclick="forceReloadPhotos()" style="background:#fb8c00;color:#fff;border:none;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:600;margin-left:8px;">強制再読込</button>'
     + '</div>';
 
-  var html = profileHtml + statsHtml + timelineHtml + debugHtml;
+  var html = profileHtml + statsHtml + timelineHtml + otherMenuHtml + debugHtml;
   var container = document.getElementById('pg-mypage') || document.getElementById('main') || document.getElementById('content') || document.querySelector('.main-content') || document.getElementById('mypage-profile-card');
   if(container) container.innerHTML = html;
 }
@@ -6319,6 +6354,103 @@ async function sendNewMessage(){
   }
 }
 function openEditProfile(){ openProfileEdit(); }
+
+window.openHamburgerMenu = function(){
+  var existing = document.getElementById('hamburger_overlay');
+  if(existing){ existing.remove(); }
+
+  var menuItems = [
+    { icon:'🏠', label:'ホーム', action:"goHome();closeHamburgerMenu();" },
+    { icon:'👥', label:'ワンミク（友達）', action:"goWanmik();closeHamburgerMenu();" },
+    { icon:'🌍', label:'みんな（メンバー一覧）', action:"goEveryone();closeHamburgerMenu();" },
+    { icon:'🏘️', label:'コミュニティ', action:"goCommunities();closeHamburgerMenu();" },
+    { icon:'📅', label:'カレンダー', action:"goCalendar();closeHamburgerMenu();" },
+    { icon:'💌', label:'メッセージ', action:"goMessages();closeHamburgerMenu();" },
+    { icon:'👣', label:'足あと一覧', action:"goFootprints();closeHamburgerMenu();" },
+    { icon:'🔔', label:'お知らせ', action:"openNotifications();closeHamburgerMenu();" },
+    { icon:'😊', label:'マイページ', action:"goMypage();closeHamburgerMenu();" },
+    { icon:'❓', label:'取扱説明書・ヘルプ', action:"openHelp();closeHamburgerMenu();" },
+    { icon:'🚪', label:'ログアウト', action:"confirmLogout();closeHamburgerMenu();" }
+  ];
+
+  var itemsHtml = menuItems.map(function(m){
+    return '<button onclick="'+m.action+'" style="display:flex;align-items:center;gap:14px;width:100%;background:#fff;border:none;border-bottom:1px solid #f0f4ec;padding:18px 20px;font-size:15px;color:#333;text-align:left;cursor:pointer;">'
+      + '<span style="font-size:22px;width:32px;">'+m.icon+'</span>'
+      + '<span style="flex:1;font-weight:500;">'+m.label+'</span>'
+      + '<span style="color:#aaa;">›</span>'
+      + '</button>';
+  }).join('');
+
+  var html = ''
+    + '<div id="hamburger_overlay" style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.5);" onclick="closeHamburgerMenu()">'
+    +   '<div style="position:absolute;top:0;right:0;bottom:0;width:80%;max-width:340px;background:#f1f8e9;overflow-y:auto;animation:slideInRight 0.25s ease-out;" onclick="event.stopPropagation()">'
+    +     '<div style="background:linear-gradient(135deg,#43a047,#66bb6a);color:#fff;padding:20px;display:flex;justify-content:space-between;align-items:center;">'
+    +       '<div style="font-size:18px;font-weight:700;">📋 メニュー</div>'
+    +       '<button onclick="closeHamburgerMenu()" style="background:rgba(255,255,255,0.2);border:none;width:36px;height:36px;border-radius:50%;color:#fff;font-size:20px;cursor:pointer;">✕</button>'
+    +     '</div>'
+    +     '<div style="padding:0;">'+itemsHtml+'</div>'
+    +     '<div style="padding:20px;text-align:center;color:#999;font-size:11px;">ONEs - つながりを、ひとつに。</div>'
+    +   '</div>'
+    + '</div>'
+    + '<style>@keyframes slideInRight{from{transform:translateX(100%);}to{transform:translateX(0);}}</style>';
+
+  document.body.insertAdjacentHTML('beforeend', html);
+};
+
+window.closeHamburgerMenu = function(){
+  var el = document.getElementById('hamburger_overlay');
+  if(el) el.remove();
+};
+
+window.confirmLogout = function(){
+  if(!confirm('ログアウトしますか？')) return;
+  try {
+    localStorage.clear();
+    sessionStorage.clear();
+  } catch(e){}
+  alert('ログアウトしました');
+  location.href = '/';
+};
+
+window.openHelp = function(){
+  if(typeof nav === 'function'){
+    nav('help', null);
+  } else if(typeof renderHelp === 'function'){
+    renderHelp();
+  } else if(typeof openHelpSheet === 'function'){
+    openHelpSheet();
+  } else {
+    alert('取扱説明書は準備中です');
+  }
+};
+
+if(typeof window.openNotifications !== 'function'){
+  window.openNotifications = function(){ if(typeof nav === 'function') nav('notice', null); };
+}
+if(typeof window.goHome !== 'function'){
+  window.goHome = function(){ if(typeof nav === 'function') nav('home', null); else if(typeof renderHome === 'function') renderHome(); else location.hash = '#home'; };
+}
+if(typeof window.goWanmik !== 'function'){
+  window.goWanmik = function(){ if(typeof nav === 'function') nav('wanmik', null); else if(typeof renderWanmik === 'function') renderWanmik(); else location.hash = '#wanmik'; };
+}
+if(typeof window.goEveryone !== 'function'){
+  window.goEveryone = function(){ if(typeof nav === 'function') nav('members', null); else if(typeof renderMembersPage === 'function') renderMembersPage(); else location.hash = '#everyone'; };
+}
+if(typeof window.goCommunities !== 'function'){
+  window.goCommunities = function(){ if(typeof nav === 'function') nav('community', null); else if(typeof renderCM === 'function') renderCM(); else location.hash = '#communities'; };
+}
+if(typeof window.goCalendar !== 'function'){
+  window.goCalendar = function(){ if(typeof nav === 'function') nav('calendar', null); else if(typeof renderCal === 'function') renderCal(); else location.hash = '#calendar'; };
+}
+if(typeof window.goMessages !== 'function'){
+  window.goMessages = function(){ if(typeof nav === 'function') nav('message', null); else if(typeof renderMsgs === 'function') renderMsgs(); else location.hash = '#messages'; };
+}
+if(typeof window.goFootprints !== 'function'){
+  window.goFootprints = function(){ if(typeof nav === 'function') nav('footprint', null); else if(typeof renderFP === 'function') renderFP(); else location.hash = '#footprints'; };
+}
+if(typeof window.goMypage !== 'function'){
+  window.goMypage = function(){ if(typeof nav === 'function') nav('mypage', null); else if(typeof renderMypage === 'function') renderMypage(); else location.hash = '#mypage'; };
+}
 function openProfileEdit(){
   var u = currentUser || {};
   var html = ''
