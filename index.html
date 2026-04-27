@@ -1162,35 +1162,10 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
         </button>
       </div>
 
-      <div class="psec">
-        <div class="psh"><span class="t">👤 基本情報</span><a href="#" onclick="openEditProfile();return false;">編集</a></div>
-        <div class="psb">
-          <div class="pr"><div class="pk">ニックネーム</div><div class="pv" id="pvnick">BOSS YASU</div></div>
-          <div class="pr"><div class="pk">性別</div><div class="pv" id="pvgender">未設定</div></div>
-          <div class="pr"><div class="pk">居住地</div><div class="pv" id="pvloc">愛知県 名古屋市</div></div>
-          <div class="pr"><div class="pk">職業</div><div class="pv" id="pvjob">IT会社経営</div></div>
-          <div class="pr"><div class="pk">招待者</div><div class="pv">🌱 創設メンバー（管理者）</div></div>
-          <div class="pr"><div class="pk">登録日</div><div class="pv">2005年4月3日</div></div>
-        </div>
-      </div>
-      <div class="psec">
-        <div class="psh"><span class="t">📝 自己紹介</span><a href="#" onclick="openEditBio();return false;">編集</a></div>
-        <div class="psb"><div class="bio" id="pvbio">名古屋を拠点にIT会社を30年経営しています。<br>SNS集客・マーケティング自動化・個人ブランディング支援が専門です。<br>「経験を自動化して収益化する」をテーマに活動中 🔥</div></div>
-      </div>
+      <div id="mypage-profile-card"></div>
       <div class="psec">
         <div class="psh"><span class="t">📔 最近の日記</span><a href="#" onclick="nav('diary',null);return false;">すべて</a></div>
         <div class="psb" id="mpdiary"></div>
-      </div>
-      <div class="psec" id="interest-section">
-        <div class="psh">
-          <span class="t">🎯 興味・関心</span>
-          <a href="#" onclick="openInterestEditor();return false;">編集</a>
-        </div>
-        <div class="psb">
-          <!-- 選択済みタグ表示 -->
-          <div class="tgw" id="selected-tags-display"></div>
-          <div style="font-size:11px;color:var(--text3);margin-top:8px;" id="selected-count-label"></div>
-        </div>
       </div>
       <div class="psec">
         <div class="psh"><span class="t">📷 フォト</span><a href="#" onclick="openSheet('photo');return false;">＋投稿</a></div>
@@ -3794,8 +3769,96 @@ async function renderHome(){
   await syncMyPhoto();
   try { await renderTL(); } catch(e) { console.error('[ONEs] renderHome:', e); }
 }
+function renderProfileCard(member, isMyself){
+  if(!member) return '';
+  var photoUrl = member.photo || localStorage.getItem('ones_profile_photo_'+member.id);
+  var avatarHtml = photoUrl
+    ? '<div style="width:88px;height:88px;border-radius:50%;background-image:url('+photoUrl+');background-size:cover;background-position:center;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.15);"></div>'
+    : '<div style="width:88px;height:88px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:42px;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.15);">'+(member.emoji||'🙋')+'</div>';
+
+  var headerHtml = ''
+    + '<div style="background:linear-gradient(135deg,#43a047,#66bb6a);padding:24px 20px 32px;text-align:center;color:#fff;border-radius:0 0 24px 24px;margin-bottom:-20px;">'
+    +   '<div style="display:flex;justify-content:center;margin-bottom:12px;">'+avatarHtml+'</div>'
+    +   '<div style="font-size:22px;font-weight:700;letter-spacing:0.5px;">'+escHtml(member.name||'')+'</div>'
+    +   (member.location ? '<div style="font-size:13px;opacity:0.9;margin-top:4px;">📍 '+escHtml(member.location)+'</div>' : '')
+    + '</div>';
+
+  var rows = [];
+  if(member.gender) rows.push({ icon:'👤', label:'性別', value:member.gender });
+  if(member.age) rows.push({ icon:'🎂', label:'年齢', value:String(member.age)+'歳' });
+  if(member.birthday) rows.push({ icon:'🎁', label:'誕生日', value:member.birthday });
+  if(member.location) rows.push({ icon:'📍', label:'居住地', value:member.location });
+  if(member.job) rows.push({ icon:'💼', label:'職業', value:member.job });
+  if(member.hobby) rows.push({ icon:'🎵', label:'趣味', value:member.hobby });
+
+  var detailCard = '';
+  if(rows.length > 0){
+    detailCard = ''
+      + '<div style="background:#fff;border-radius:16px;padding:8px 0;margin:20px 16px;box-shadow:0 1px 4px rgba(0,0,0,0.06);position:relative;z-index:2;">'
+      +   rows.map(function(r, i){
+            var isLast = (i === rows.length-1);
+            return '<div style="display:flex;align-items:center;padding:14px 18px;'+(isLast?'':'border-bottom:1px solid #f0f4ec;')+'">'
+              + '<div style="width:32px;font-size:18px;">'+r.icon+'</div>'
+              + '<div style="flex:0 0 80px;color:#558b2f;font-weight:600;font-size:14px;">'+r.label+'</div>'
+              + '<div style="flex:1;color:#333;font-size:14px;text-align:right;">'+escHtml(String(r.value))+'</div>'
+              + '</div>';
+          }).join('')
+      + '</div>';
+  }
+
+  var tagsCard = '';
+  if(member.interests){
+    try {
+      var tags = Array.isArray(member.interests) ? member.interests : JSON.parse(member.interests);
+      if(Array.isArray(tags) && tags.length > 0){
+        tagsCard = ''
+          + '<div style="background:#fff;border-radius:16px;padding:16px 18px;margin:0 16px 20px;box-shadow:0 1px 4px rgba(0,0,0,0.06);">'
+          +   '<div style="color:#2e7d32;font-weight:700;font-size:14px;margin-bottom:12px;">🏷️ 興味のあること</div>'
+          +   '<div style="display:flex;flex-wrap:wrap;gap:6px;">'
+          +     tags.map(function(t){
+                  return '<span style="background:#e8f5e9;color:#1b5e20;padding:6px 12px;border-radius:14px;font-size:13px;border:1px solid #c8e6c9;">'+escHtml(String(t))+'</span>';
+                }).join('')
+          +   '</div>'
+          + '</div>';
+      }
+    } catch(e){}
+  }
+
+  var bioCard = '';
+  if(member.bio){
+    bioCard = ''
+      + '<div style="background:#fff;border-radius:16px;padding:16px 18px;margin:0 16px 20px;box-shadow:0 1px 4px rgba(0,0,0,0.06);">'
+      +   '<div style="color:#2e7d32;font-weight:700;font-size:14px;margin-bottom:10px;">📝 自己紹介</div>'
+      +   '<div style="color:#333;font-size:14px;line-height:1.9;white-space:pre-wrap;word-break:break-word;">'+escHtml(member.bio)+'</div>'
+      + '</div>';
+  }
+
+  var editBtn = '';
+  if(isMyself){
+    editBtn = ''
+      + '<div style="margin:0 16px 20px;">'
+      +   '<button onclick="openProfileEdit()" style="width:100%;background:#43a047;color:#fff;border:none;border-radius:24px;padding:14px;font-weight:600;font-size:15px;box-shadow:0 2px 6px rgba(67,160,71,0.3);">✏️ プロフィールを編集</button>'
+      + '</div>';
+  }
+  return headerHtml + detailCard + tagsCard + bioCard + editBtn;
+}
 async function renderMypage(){
   await syncMyPhoto();
+  try {
+    if(dbReady() && currentUser && currentUser.id){
+      var meR = await sb.from('members').select('*').eq('id', currentUser.id).maybeSingle();
+      if(meR && meR.data) {
+        currentUser = Object.assign({}, currentUser, meR.data);
+        saveSession(currentUser);
+      }
+    }
+    var wrap = document.getElementById('mypage-profile-card');
+    if(wrap && currentUser) wrap.innerHTML = renderProfileCard(currentUser, true);
+    var mpname = document.getElementById('mpname');
+    if(mpname && currentUser && currentUser.name) mpname.textContent = currentUser.name;
+    var mpstatus = document.getElementById('mpstatus');
+    if(mpstatus) mpstatus.textContent = (currentUser && currentUser.bio) ? currentUser.bio : 'よろしくお願いします！';
+  } catch(e) { console.error('[ONEs] renderMypage profile:', e); }
   try { renderMpDiary(); } catch(e) { console.error('[ONEs] renderMypage diary:', e); }
   try { await renderMypagePhotos(); } catch(e) { console.error('[ONEs] renderMypage photos:', e); }
 }
@@ -3938,7 +4001,15 @@ async function renderFP() {
 }
 async function renderCM(){
   try {
-    var mk = function(list, id, isMember) {
+    var avatarHtmlFor = function(member){
+      if(!member) return '<div class="av">👤</div>';
+      var photo = member.photo || (member.id ? localStorage.getItem('ones_profile_photo_'+member.id) : null);
+      if(photo){
+        return '<div class="av" style="background-image:url('+photo+');background-size:cover;background-position:center;"></div>';
+      }
+      return '<div class="av">'+(member.emoji||'👤')+'</div>';
+    };
+    var mk = function(list, id, isMember, ownerMap) {
       var el = document.getElementById(id);
       if(!el) return;
       if(!list || list.length === 0) {
@@ -3950,26 +4021,40 @@ async function renderCM(){
         var cemoji = c.e || c.emoji;
         var cnt = (c.cnt || c.member_count || 1).toLocaleString();
         var cowner = c.owner || c.owner_name || '';
+        var ownerId = c.creator_id || c.owner_id || '';
+        var owner = ownerId && ownerMap ? ownerMap[ownerId] : null;
+        var ownerAvatar = owner ? avatarHtmlFor(owner) : '';
         var ownerText = (isMember && cowner) ? '<div class="cc" style="font-size:11px;">主催: '+escHtml(cowner)+'</div>' : '';
         return '<div class="cmi" onclick="openCmSheet(\''+esc(cname)+'\')">'+
                '<div class="cmico">'+cemoji+'</div>'+
                '<div><div class="cn">'+escHtml(cname)+'</div>'+
                '<div class="cc">👥 '+cnt+'人参加</div>'+
                ownerText+'</div>'+
+               (ownerAvatar ? '<div style="margin-left:auto;display:flex;align-items:center;justify-content:center;">'+ownerAvatar+'</div>' : '')+
                '<div style="color:var(--og);font-size:18px;">›</div></div>';
       }).join('');
     };
 
     // デモコミュニティ
-    mk(CM, 'cmjoined');
-    mk(RCM, 'cmrec');
+    mk(CM, 'cmjoined', false, null);
+    mk(RCM, 'cmrec', false, null);
 
     // Supabaseから全メンバーが作ったコミュニティを取得
     var allCommunities = [];
+    var ownerMap = {};
     if(dbReady()) {
       allCommunities = await dbFetchCommunities();
+      var ownerIds = [...new Set((allCommunities || []).map(function(c){
+        return c.creator_id || c.owner_id;
+      }).filter(Boolean))];
+      if(ownerIds.length){
+        try {
+          var or = await sb.from('members').select('id,name,emoji,photo').in('id', ownerIds);
+          (or.data || []).forEach(function(m){ ownerMap[m.id] = m; });
+        } catch(e){}
+      }
     }
-    mk(allCommunities, 'cm-mine', true);
+    mk(allCommunities, 'cm-mine', true, ownerMap);
   } catch(e) { console.error('[ONEs] renderCM:', e); }
 }
 var membersAllList = [];
@@ -4107,6 +4192,26 @@ function sortMembersBy(sort, el) {
 }
 
 function openCreateCommunity() {
+  var COMMUNITY_EMOJIS = [
+    '🏠','🎉','💼','🎵','🎨','📚','🍳','✈️',
+    '🏃','⚽','🎮','📷','🎬','☕','🍺','🌸',
+    '💪','🧘','🐶','🐱','🌟','💡','🔥','💎',
+    '🎤','🎸','🍷','🎂','🌍','🚗','🏖️','⛰️',
+    '💻','📱','🛍️','💰','🎯','🏆','❤️','🤝'
+  ];
+  var iconPickerHtml = ''
+    + '<div style="margin-bottom:16px;">'
+    +   '<label style="display:block;color:#2e7d32;font-weight:600;font-size:13px;margin-bottom:6px;">アイコン（絵文字）</label>'
+    +   '<input type="hidden" id="cc_emoji" value="🏠">'
+    +   '<div id="cc_emoji_preview" style="background:#e8f5e9;border:2px solid #66bb6a;border-radius:12px;padding:14px;font-size:36px;text-align:center;margin-bottom:8px;cursor:pointer;" onclick="toggleEmojiPicker()">🏠</div>'
+    +   '<div id="cc_emoji_picker" style="display:none;background:#fff;border:1px solid #c8e6c9;border-radius:12px;padding:12px;max-height:240px;overflow-y:auto;">'
+    +     '<div style="display:grid;grid-template-columns:repeat(8,1fr);gap:6px;">'
+    +       COMMUNITY_EMOJIS.map(function(e){
+              return '<button type="button" onclick="selectCommunityEmoji(\''+e+'\')" style="background:#f1f8e9;border:1px solid transparent;border-radius:8px;padding:8px 0;font-size:22px;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.background=\'#c8e6c9\';this.style.borderColor=\'#66bb6a\'" onmouseout="this.style.background=\'#f1f8e9\';this.style.borderColor=\'transparent\'">'+e+'</button>';
+            }).join('')
+    +     '</div>'
+    +   '</div>'
+    + '</div>';
   showSheet('🏘️ コミュニティを作成', `
     <div>
       <div style="font-size:13px;color:var(--text3);margin-bottom:16px;">
@@ -4116,10 +4221,7 @@ function openCreateCommunity() {
         <label class="el">コミュニティ名 <span style="color:#e53e3e;">*</span></label>
         <input id="cc-name" class="ei" type="text" placeholder="例：名古屋IT勉強会" maxlength="30">
       </div>
-      <div class="er">
-        <label class="el">アイコン（絵文字）</label>
-        <input id="cc-emoji" class="ei" type="text" placeholder="例：💻" value="🏘️" maxlength="2">
-      </div>
+      ${iconPickerHtml}
       <div class="er">
         <label class="el">カテゴリー</label>
         <select id="cc-category" class="ei">
@@ -4157,11 +4259,24 @@ function openCreateCommunity() {
       <button class="bo" style="width:100%;" onclick="createCommunity()">🏘️ 作成する</button>
     </div>`);
 }
+window.toggleEmojiPicker = function(){
+  var p = document.getElementById('cc_emoji_picker');
+  if(!p) return;
+  p.style.display = (p.style.display === 'none') ? 'block' : 'none';
+};
+window.selectCommunityEmoji = function(emoji){
+  var input = document.getElementById('cc_emoji');
+  var preview = document.getElementById('cc_emoji_preview');
+  var picker = document.getElementById('cc_emoji_picker');
+  if(input) input.value = emoji;
+  if(preview) preview.textContent = emoji;
+  if(picker) picker.style.display = 'none';
+};
 
 async function createCommunity() {
   try {
     var nameEl = document.getElementById('cc-name');
-    var emojiEl = document.getElementById('cc-emoji');
+    var emojiEl = document.getElementById('cc_emoji');
     var catEl = document.getElementById('cc-category');
     var descEl = document.getElementById('cc-desc');
     var visEl = document.querySelector('input[name="cc-vis"]:checked');
@@ -4169,7 +4284,7 @@ async function createCommunity() {
     if(!nameEl || !descEl) return;
 
     var name = nameEl.value.trim();
-    var emoji = emojiEl.value.trim() || '🏘️';
+    var emoji = emojiEl ? (emojiEl.value || '🏠') : '🏠';
     var category = catEl ? catEl.value : '';
     var desc = descEl.value.trim();
     var vis = visEl ? visEl.value : 'public';
@@ -5441,109 +5556,23 @@ async function postPhoto() {
 function openDiarySheet(title){const all=[...ld('od'),...DI];const d=all.find(x=>x.title===title)||{title,excerpt:'',comments:0,good:0,date:''};var dsAuthor = d.author || ((currentUser && currentUser.name) ? currentUser.name : 'BOSS YASU');showSheet(d.title,`<div><div style="font-size:11px;color:var(--text3);margin-bottom:10px;">🗓️ ${d.date||'---'}&nbsp;👤 ${escHtml(dsAuthor)}</div><div style="font-size:14px;color:var(--text);line-height:1.8;margin-bottom:16px;">${d.excerpt}</div><div style="background:var(--og-pale);border-radius:12px;padding:14px;"><div style="font-weight:700;color:var(--og3);margin-bottom:10px;font-size:13px;">💬 コメント（${d.comments}件）</div>${d.comments>0?`<div style="display:flex;gap:10px;margin-bottom:10px;"><div class="av as" style="${AB}">🌸</div><div style="flex:1;background:#fff;border-radius:10px;padding:10px;"><div style="font-size:12px;font-weight:700;color:var(--og3);">さくらんぼ</div><div style="font-size:13px;color:var(--text);margin-top:3px;">素敵な内容ですね！参考になりました😊</div></div></div>`:'<div style="font-size:13px;color:var(--text3);margin-bottom:10px;">まだコメントはありません</div>'}<div style="display:flex;gap:8px;"><div class="av ax" style="${AB}">😊</div><textarea style="flex:1;background:#fff;border:1.5px solid var(--og-border);border-radius:10px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none;resize:none;height:60px;" placeholder="コメントを書く..."></textarea></div><div style="display:flex;justify-content:flex-end;margin-top:8px;"><button class="bos" onclick="toast('💬 コメントしました！')">送信</button></div></div></div>`);}
 async function openUserSheet(name, emoji) {
   try {
-    // Supabaseからメンバー情報を取得
     var member = null;
-    var photoUrl = null;
     if(dbReady()) {
       var result = await sb.from('members').select('*').eq('name', name).maybeSingle();
       if(result.data) {
         member = result.data;
-        photoUrl = result.data.photo;
-        emoji = result.data.emoji || emoji;
         recordFootprint(result.data.id, name);
       }
     }
-
-    var bio = (member && member.bio) ? member.bio : '';
-    var joinDate = (member && member.join_date) ? member.join_date : '';
-    var invitedBy = (member && member.invited_by) ? member.invited_by : '';
-
-    var avHtml = '';
-    if(photoUrl) {
-      avHtml = '<img src="'+photoUrl+'" style="width:80px;height:80px;border-radius:20px;object-fit:cover;border:3px solid var(--og-border);">';
-    } else {
-      avHtml = '<div style="width:80px;height:80px;border-radius:20px;'+AB+';display:flex;align-items:center;justify-content:center;font-size:46px;border:3px solid var(--og-border);">'+emoji+'</div>';
-    }
-
-    var friendScore = 0;
-    if(member && member.id) friendScore = calcFriendship(member.id);
-    var meterHtml = friendshipMeterHtml(friendScore);
-
-    var detailsHtml = '';
-    var tagsExtraHtml = '';
-    if(member) {
-      var details = [];
-      var genderVal = member.gender || member.sex || '';
-      var locationVal = member.location || member.loc || member.address || '';
-      var jobVal = member.job || member.occupation || member.work || '';
-      var ageVal = member.age || member.age_text || member.generation || '';
-      if(genderVal) details.push('👤 性別：'+escHtml(String(genderVal)));
-      if(locationVal) details.push('📍 居住地：'+escHtml(String(locationVal)));
-      if(jobVal) details.push('💼 職業：'+escHtml(String(jobVal)));
-      if(ageVal) details.push('🎂 年齢：'+escHtml(String(ageVal)));
-
-      var memberTags = [];
-      var rawInterests = member.interests || member.tags || member.interest_tags || '';
-      if(rawInterests) {
-        if(Array.isArray(rawInterests)) {
-          memberTags = rawInterests;
-        } else if(typeof rawInterests === 'string') {
-          try {
-            var parsed = JSON.parse(rawInterests);
-            if(Array.isArray(parsed)) {
-              memberTags = parsed;
-            } else if(typeof parsed === 'string' && parsed.trim()) {
-              memberTags = parsed.split(/[,\n、]/).map(function(x){ return x.trim(); }).filter(Boolean);
-            }
-          } catch(e) {
-            memberTags = rawInterests.split(/[,\n、]/).map(function(x){ return x.trim(); }).filter(Boolean);
-          }
-        }
-      }
-      if(memberTags.length > 0) {
-        tagsExtraHtml = '<div style="margin-top:14px;text-align:left;">'+
-          '<div style="font-size:12px;color:var(--og3);font-weight:700;margin-bottom:8px;">🏷️ 興味・関心</div>'+
-          '<div style="display:flex;flex-wrap:wrap;gap:6px;">'+
-            memberTags.map(function(t){
-              return '<span style="background:var(--og-pale);color:var(--og3);padding:4px 12px;border-radius:14px;font-size:12px;font-weight:600;">'+escHtml(String(t))+'</span>';
-            }).join('')+
-          '</div>'+
-        '</div>';
-      }
-      if(details.length > 0) {
-        detailsHtml = '<div style="background:var(--og-pale);border-radius:14px;padding:14px;margin-bottom:16px;text-align:left;">'+
-          details.map(function(d){
-            return '<div style="font-size:13px;color:var(--text);padding:5px 0;">'+d+'</div>';
-          }).join('')+
-        '</div>';
-      }
-    }
-    if(bio) {
-      detailsHtml += '<div style="background:var(--og-pale);border-radius:10px;padding:12px;margin:10px 0;font-size:13px;color:var(--text);line-height:1.7;text-align:left;">'+escHtml(bio)+'</div>';
-    }
-    detailsHtml += tagsExtraHtml;
-
-    var metaHtml = '';
-    if(joinDate || invitedBy) {
-      metaHtml = '<div style="font-size:11px;color:var(--text3);margin-bottom:14px;">';
-      if(joinDate) metaHtml += '🌱 '+joinDate+'参加';
-      if(invitedBy) metaHtml += '<br>🤝 招待者：'+escHtml(invitedBy);
-      metaHtml += '</div>';
-    }
-
-    showSheet(name+'さん', '<div style="text-align:center;padding:14px 0;">'+
-      avHtml+
-      '<div style="font-size:20px;font-weight:700;color:var(--og3);margin-top:10px;margin-bottom:4px;">'+escHtml(name)+'</div>'+
-      '<div style="font-size:12px;color:var(--text3);margin-bottom:10px;">🤝 ワンミク候補</div>'+
-      meterHtml+
-      detailsHtml+
-      metaHtml+
-      '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">'+
-        '<button class="bo" onclick="requestWanmik(\''+esc(name)+'\')" style="flex:1;min-width:130px;">🤝 ワンミク申請</button>'+
-        '<button class="bo" onclick="openComposeMsg(\''+esc(name)+'\')" style="flex:1;min-width:130px;">💌 メッセージ</button>'+
-      '</div>'+
-      '<button class="bg" onclick="closeSheet()" style="width:100%;margin-top:10px;">閉じる</button>'+
-    '</div>');
+    if(!member) member = { id:'', name:name, emoji:emoji || '🙋' };
+    var profileHtml = renderProfileCard(member, false);
+    var actionHtml = ''
+      + '<div style="display:flex;gap:8px;margin:0 16px 20px;">'
+      +   '<button style="flex:1;background:#43a047;color:#fff;border:none;border-radius:24px;padding:14px;font-weight:600;" onclick="requestWanmik(\''+esc(name)+'\')">🤝 ワンミク申請</button>'
+      +   '<button style="flex:1;background:#fff;color:#43a047;border:2px solid #43a047;border-radius:24px;padding:12px;font-weight:600;" onclick="openComposeMsg(\''+esc(name)+'\')">💌 メッセージ</button>'
+      + '</div>'
+      + '<div style="margin:0 16px 20px;"><button class="bg" onclick="closeSheet()" style="width:100%;">閉じる</button></div>';
+    showSheet((member.name || name)+'のプロフィール', '<div style="margin:-16px;">'+profileHtml+actionHtml+'</div>');
   } catch(err) {
     console.error('[ONEs] openUserSheet:', err);
   }
@@ -5656,6 +5685,14 @@ async function rejectWanmik(wanmikId){
 }
 async function openCmSheet(name){
   try {
+    function avatarHtmlFor(member){
+      if(!member) return '<div class="av">👤</div>';
+      var photo = member.photo || (member.id ? localStorage.getItem('ones_profile_photo_'+member.id) : null);
+      if(photo){
+        return '<div class="av" style="background-image:url('+photo+');background-size:cover;background-position:center;"></div>';
+      }
+      return '<div class="av">'+(member.emoji||'👤')+'</div>';
+    }
     // Supabaseから取得
     var c = null;
     if(dbReady()) {
@@ -5665,6 +5702,7 @@ async function openCmSheet(name){
         c = {
           n: sup.name, e: sup.emoji || '🏘️', cnt: sup.member_count || 1,
           owner: sup.owner_name, ownerEmoji: '👤',
+          owner_id: sup.owner_id, creator_id: sup.creator_id || sup.owner_id,
           since: sup.created_at ? new Date(sup.created_at).getFullYear()+'年'+(new Date(sup.created_at).getMonth()+1)+'月' : '-',
           desc: sup.description || ''
         };
@@ -5680,6 +5718,15 @@ async function openCmSheet(name){
     if(!c) {
       c = {n:name, e:'🏘️', cnt:1, owner:'不明', ownerEmoji:'👤', since:'-', desc:''};
     }
+    var creator = null;
+    var creatorId = c.creator_id || c.owner_id;
+    if(creatorId && dbReady()){
+      try {
+        var r = await sb.from('members').select('id,name,emoji,photo').eq('id', creatorId).maybeSingle();
+        if(r && r.data) creator = r.data;
+      } catch(e){}
+    }
+    var creatorAvatar = avatarHtmlFor(creator || { id: creatorId, emoji: c.ownerEmoji || '👤' });
 
     var cntDisplay = (c.cnt || 1).toLocaleString();
 
@@ -5708,10 +5755,10 @@ async function openCmSheet(name){
     <div>
       <!-- 主催者情報 -->
       <div style="display:flex;align-items:center;gap:10px;background:var(--og-pale);border-radius:12px;padding:12px;margin-bottom:14px;">
-        <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#a8ddb8,#3fa865);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">${c.ownerEmoji||'👤'}</div>
+        <div style="width:44px;height:44px;flex-shrink:0;">${creatorAvatar}</div>
         <div>
           <div style="font-size:11px;color:var(--text3);margin-bottom:2px;">🎯 主催者</div>
-          <div style="font-size:14px;font-weight:700;color:var(--og3);">${c.owner||'不明'}</div>
+          <div style="font-size:14px;font-weight:700;color:var(--og3);">${(creator && creator.name) ? creator.name : (c.owner||'不明')}</div>
           <div style="font-size:11px;color:var(--text3);">🗓️ ${c.since||'-'} 設立</div>
         </div>
       </div>
@@ -6190,110 +6237,98 @@ async function sendNewMessage(){
     toast('❌ エラーが発生しました');
   }
 }
-function openEditProfile(){const nick=document.getElementById('pvnick').textContent;const loc=document.getElementById('pvloc').textContent;const job=document.getElementById('pvjob').textContent;const gender=document.getElementById('pvgender')?document.getElementById('pvgender').textContent:'未設定';const status=document.getElementById('mpstatus').textContent;const gOpts=['未設定','男性','女性','その他','回答しない'];const gSel=gOpts.map(g=>`<option${g===gender?' selected':''}>${g}</option>`).join('');showSheet('プロフィールを編集',`<div><div class="er"><label class="el">ニックネーム</label><input id="ep-nick" class="ei" type="text" value="${nick}"></div><div class="er"><label class="el">ひとこと</label><input id="ep-st" class="ei" type="text" value="${status}"></div><div class="er"><label class="el">性別</label><select id="ep-gender" class="ei">${gSel}</select></div><div class="er"><label class="el">居住地</label><input id="ep-loc" class="ei" type="text" placeholder="例：愛知県 名古屋市" value="${loc==='未設定'?'':loc}"></div><div class="er"><label class="el">職業</label><input id="ep-job" class="ei" type="text" placeholder="例：IT会社経営" value="${job==='未設定'?'':job}"></div><button class="bo" style="width:100%;" onclick="saveProfile()">保存する</button></div>`);}
-function openEditBio(){const cur=document.getElementById('pvbio').innerText;showSheet('自己紹介を編集',`<div><div class="er"><label class="el">自己紹介文</label><textarea id="ep-bio" class="eta" style="min-height:150px;">${cur}</textarea></div><button class="bo" style="width:100%;" onclick="saveBio()">保存する</button></div>`);}
-async function saveProfile(){
-  try {
-    const nick = document.getElementById('ep-nick') ? document.getElementById('ep-nick').value.trim() : '';
-    const st   = document.getElementById('ep-st')   ? document.getElementById('ep-st').value.trim()   : '';
-    const loc  = document.getElementById('ep-loc')  ? document.getElementById('ep-loc').value.trim()  : '';
-    const job  = document.getElementById('ep-job')  ? document.getElementById('ep-job').value.trim()  : '';
-    const genderEl = document.getElementById('ep-gender');
-    const gender = genderEl ? genderEl.value : '未設定';
-
-    if(!nick){ toast('ニックネームを入力してください'); return; }
-    if(/<|>|script|javascript:|on\w+=/i.test(nick+st+loc+job)){
-      toast('使用できない文字が含まれています'); return;
-    }
-
-    // 画面に即時反映
-    const fields = {
-      pvnick:   nick,
-      pvgender: gender || '未設定',
-      pvloc:    loc    || '未設定',
-      pvjob:    job    || '未設定',
-      mpname:   nick,
-      mpstatus: st
-    };
-    Object.entries(fields).forEach(([id, val]) => {
-      const el = document.getElementById(id);
-      if(el) el.textContent = val;
-    });
-
-    // currentUser更新
-    if(currentUser){
-      currentUser.name = nick;
-      saveSession(currentUser);
-    }
-
-    // LocalStorageに保存（オフライン対応）
-    if(currentUser && currentUser.id){
-      const key = 'ones_profile_' + currentUser.id;
-      const existing = JSON.parse(localStorage.getItem(key) || '{}');
-      const updated = Object.assign(existing, {
-        nick, status: st, bio: st, gender, loc, job, updatedAt: new Date().toISOString()
-      });
-      localStorage.setItem(key, JSON.stringify(updated));
-      console.log('[ONEs] プロフィールをLocalStorageに保存:', updated);
-    }
-
-    // Supabaseに保存（カラムが存在する場合のみ）
-    if(dbReady() && currentUser && currentUser.id){
-      console.log('[ONEs] Supabase保存開始:', {nick, st, gender, loc, job});
-      const updateResult = await sb.from('members').update({
-        name:     nick,
-        bio:      st,
-        gender:   gender,
-        location: loc,
-        job:      job
-      }).eq('id', currentUser.id);
-
-      if(updateResult.error){
-        console.error('[ONEs] Supabase保存エラー:', updateResult.error);
-        // エラーでもLocalStorageには保存済みなので続行
-        toast('⚠️ クラウド保存に失敗しましたがローカルに保存しました');
-      } else {
-        console.log('[ONEs] Supabase保存成功');
-      }
-    }
-
-    closeSheet();
-    toast('✅ プロフィールを保存しました');
-  } catch(err){
-    console.error('[ONEs] saveProfile error:', err);
-    toast('❌ 保存に失敗しました: ' + err.message);
+function openEditProfile(){ openProfileEdit(); }
+function openProfileEdit(){
+  var u = currentUser || {};
+  var html = ''
+    + '<div style="padding:16px;">'
+    + '<div style="margin-bottom:16px;">'
+    +   '<label style="display:block;color:#2e7d32;font-weight:600;font-size:13px;margin-bottom:6px;">お名前</label>'
+    +   '<input id="ed_name" type="text" maxlength="30" value="'+escHtml(u.name||'')+'" style="width:100%;padding:12px;border:1px solid #c8e6c9;border-radius:10px;font-size:14px;box-sizing:border-box;">'
+    + '</div>'
+    + '<div style="margin-bottom:16px;">'
+    +   '<label style="display:block;color:#2e7d32;font-weight:600;font-size:13px;margin-bottom:6px;">性別</label>'
+    +   '<select id="ed_gender" style="width:100%;padding:12px;border:1px solid #c8e6c9;border-radius:10px;font-size:14px;box-sizing:border-box;background:#fff;">'
+    +     '<option value="">選択しない</option>'
+    +     '<option value="男性"'+(u.gender==='男性'?' selected':'')+'>男性</option>'
+    +     '<option value="女性"'+(u.gender==='女性'?' selected':'')+'>女性</option>'
+    +     '<option value="その他"'+(u.gender==='その他'?' selected':'')+'>その他</option>'
+    +   '</select>'
+    + '</div>'
+    + '<div style="margin-bottom:16px;">'
+    +   '<label style="display:block;color:#2e7d32;font-weight:600;font-size:13px;margin-bottom:6px;">年齢</label>'
+    +   '<input id="ed_age" type="number" min="0" max="120" value="'+(u.age||'')+'" style="width:100%;padding:12px;border:1px solid #c8e6c9;border-radius:10px;font-size:14px;box-sizing:border-box;">'
+    + '</div>'
+    + '<div style="margin-bottom:16px;">'
+    +   '<label style="display:block;color:#2e7d32;font-weight:600;font-size:13px;margin-bottom:6px;">誕生日</label>'
+    +   '<input id="ed_birthday" type="text" maxlength="10" placeholder="例: 1980-01-15" value="'+escHtml(u.birthday||'')+'" style="width:100%;padding:12px;border:1px solid #c8e6c9;border-radius:10px;font-size:14px;box-sizing:border-box;">'
+    + '</div>'
+    + '<div style="margin-bottom:16px;">'
+    +   '<label style="display:block;color:#2e7d32;font-weight:600;font-size:13px;margin-bottom:6px;">居住地</label>'
+    +   '<input id="ed_location" type="text" maxlength="50" placeholder="例: 名古屋・愛知県" value="'+escHtml(u.location||'')+'" style="width:100%;padding:12px;border:1px solid #c8e6c9;border-radius:10px;font-size:14px;box-sizing:border-box;">'
+    + '</div>'
+    + '<div style="margin-bottom:16px;">'
+    +   '<label style="display:block;color:#2e7d32;font-weight:600;font-size:13px;margin-bottom:6px;">職業</label>'
+    +   '<input id="ed_job" type="text" maxlength="50" placeholder="例: 経営者・マーケター" value="'+escHtml(u.job||'')+'" style="width:100%;padding:12px;border:1px solid #c8e6c9;border-radius:10px;font-size:14px;box-sizing:border-box;">'
+    + '</div>'
+    + '<div style="margin-bottom:16px;">'
+    +   '<label style="display:block;color:#2e7d32;font-weight:600;font-size:13px;margin-bottom:6px;">趣味</label>'
+    +   '<input id="ed_hobby" type="text" maxlength="100" placeholder="例: ギター・旅行・cafe巡り" value="'+escHtml(u.hobby||'')+'" style="width:100%;padding:12px;border:1px solid #c8e6c9;border-radius:10px;font-size:14px;box-sizing:border-box;">'
+    + '</div>'
+    + '<div style="margin-bottom:16px;">'
+    +   '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">'
+    +     '<label style="color:#2e7d32;font-weight:600;font-size:13px;">自己紹介</label>'
+    +     '<span id="bio_counter" style="color:#888;font-size:12px;">'+((u.bio||'').length)+' / 500</span>'
+    +   '</div>'
+    +   '<textarea id="ed_bio" maxlength="500" rows="8" placeholder="あなたのことを教えてください（500文字まで）" oninput="updateBioCounter()" style="width:100%;padding:12px;border:1px solid #c8e6c9;border-radius:10px;font-size:14px;box-sizing:border-box;line-height:1.7;resize:vertical;">'+escHtml(u.bio||'')+'</textarea>'
+    + '</div>'
+    + '<button onclick="saveProfileEdit()" style="width:100%;background:#43a047;color:#fff;border:none;border-radius:24px;padding:14px;font-weight:600;font-size:15px;margin-top:8px;">💾 保存する</button>'
+    + '</div>';
+  showSheet('プロフィール編集', html);
+  updateBioCounter();
+}
+function updateBioCounter(){
+  var ta = document.getElementById('ed_bio');
+  var c = document.getElementById('bio_counter');
+  if(!ta || !c) return;
+  var len = ta.value.length;
+  c.textContent = len + ' / 500';
+  c.style.color = (len >= 480) ? '#e53935' : (len >= 400 ? '#fb8c00' : '#888');
+}
+async function saveProfileEdit(){
+  if(!currentUser || !currentUser.id) return;
+  var get = function(id){ var el = document.getElementById(id); return el ? el.value.trim() : ''; };
+  var data = {
+    name: get('ed_name'),
+    gender: get('ed_gender') || null,
+    age: get('ed_age') ? parseInt(get('ed_age'),10) : null,
+    birthday: get('ed_birthday') || null,
+    location: get('ed_location') || null,
+    job: get('ed_job') || null,
+    hobby: get('ed_hobby') || null,
+    bio: get('ed_bio') || null
+  };
+  if(!data.name){ alert('お名前は必須です'); return; }
+  if(data.bio && data.bio.length > 500){ alert('自己紹介は500文字以内にしてください'); return; }
+  if(dbReady()){
+    try {
+      var r = await sb.from('members').update(data).eq('id', currentUser.id);
+      if(r.error){ alert('保存に失敗しました: '+r.error.message); return; }
+    } catch(e){ alert('保存に失敗しました: '+e.message); return; }
   }
+  Object.assign(currentUser, data);
+  saveSession(currentUser);
+  closeSheet();
+  alert('プロフィールを保存しました ✨');
+  if(typeof renderMypage === 'function') renderMypage();
+}
+function openEditBio(){ openProfileEdit(); }
+async function saveProfile(){
+  return saveProfileEdit();
 }
 async function saveBio(){
-  try {
-    var bio = document.getElementById('ep-bio').value.trim();
-    if(/<|>|script|javascript:|on\w+=/i.test(bio)) {
-      toast('使用できない文字が含まれています'); return;
-    }
-
-    var pvbio = document.getElementById('pvbio');
-    if(pvbio) pvbio.innerHTML = escHtml(bio).replace(/\n/g,'<br>');
-
-    // LocalStorage
-    if(currentUser && currentUser.id) {
-      var existing = JSON.parse(localStorage.getItem('ones_profile_'+currentUser.id) || '{}');
-      existing.bio = bio;
-      localStorage.setItem('ones_profile_'+currentUser.id, JSON.stringify(existing));
-    }
-
-    // Supabase
-    if(dbReady() && currentUser && currentUser.id) {
-      await sb.from('members').update({ bio: bio }).eq('id', currentUser.id);
-    }
-
-    closeSheet();
-    toast('✅ 自己紹介を保存しました');
-  } catch(err) {
-    console.error('[ONEs] saveBio:', err);
-    toast('❌ 保存に失敗しました');
-  }
+  return saveProfileEdit();
 }
-
 function showSheet(title,html){document.getElementById('shtit').textContent=title;document.getElementById('shbody').innerHTML=html;document.getElementById('sbg').classList.add('show');requestAnimationFrame(()=>document.getElementById('sh').classList.add('open'));}
 function closeSheet(){document.getElementById('sh').classList.remove('open');document.getElementById('sbg').classList.remove('show');}
 
