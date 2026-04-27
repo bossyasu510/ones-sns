@@ -1091,7 +1091,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
     <div class="dn" onclick="logoutApp()" style="color:rgba(255,200,200,.9);">🚪 ログアウト</div>
   </nav>
   <button class="hd-icon" onclick="openSearch()" style="margin-left:auto;">🔍</button>
-  <button class="hd-icon" onclick="nav('notice',null)">🔔<div class="hb" id="notice-badge">0</div></button>
+  <button class="hd-icon" onclick="nav('notice',null)" title="お知らせ（メッセージ・足あと・イベント招待など全て）" aria-label="全通知">🔔<div class="hb" id="notice-badge">0</div></button>
   <div id="hd-av" onclick="nav('mypage',null)">
     <img id="hd-av-img" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:50%;">
     <span id="hd-av-emoji">😊</span>
@@ -1640,7 +1640,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
 </svg></div><span>ホーム</span></div>
   <div class="bi" onclick="nav('wanmik',this)" id="bn-wanmik"><div class="ic">👥</div><span>ワンミク</span></div>
   <div class="bi" onclick="nav('calendar',this)" id="bn-calendar"><div class="ic">📅</div><span>カレンダー</span></div>
-  <div class="bi" onclick="nav('message',this)" id="bn-message"><div class="ic">💌</div><span>メッセージ</span><div class="bn-badge">3</div></div>
+  <div class="bi" onclick="nav('message',this)" id="bn-message" title="メッセージ未読のみ" aria-label="メッセージ"><div class="ic">💌</div><span>メッセージ</span><div class="bn-badge">3</div></div>
   <div class="bi" onclick="nav('mypage',this)" id="bn-mypage"><div class="ic">😊</div><span>マイページ</span></div>
 </nav>
 
@@ -3884,34 +3884,51 @@ function renderProfileCard(member, isMyself){
       + '<div style="margin:0 16px 20px;">'
       +   '<button onclick="openProfileEdit()" style="width:100%;background:#43a047;color:#fff;border:none;border-radius:24px;padding:14px;font-weight:600;font-size:15px;box-shadow:0 2px 6px rgba(67,160,71,0.3);">✏️ プロフィールを編集</button>'
       + '</div>';
-    editBtn += ''
-      + '<div style="margin:20px 16px;padding:12px;background:#fff3e0;border-radius:8px;font-size:12px;">'
-      +   '<div style="font-weight:600;margin-bottom:8px;color:#e65100;">🔧 デバッグ</div>'
-      +   '<button onclick="debugPhotoStatus()" style="background:#fb8c00;color:#fff;border:none;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:600;">写真状態を確認</button>'
-      +   '<button onclick="forceReloadPhotos()" style="background:#fb8c00;color:#fff;border:none;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:600;margin-left:8px;">強制再読込</button>'
-      + '</div>';
   }
   return headerHtml + detailCard + tagsCard + bioCard + editBtn;
 }
 async function renderMypage(){
-  await syncMyPhoto();
-  try {
-    if(dbReady() && currentUser && currentUser.id){
-      var meR = await sb.from('members').select('*').eq('id', currentUser.id).maybeSingle();
-      if(meR && meR.data) {
-        currentUser = Object.assign({}, currentUser, meR.data);
-        saveSession(currentUser);
+  if(typeof syncMyPhoto === 'function') await syncMyPhoto();
+  if(typeof loadAllPhotos === 'function') await loadAllPhotos();
+
+  if(!currentUser){
+    var noLoginContainer = document.getElementById('pg-mypage') || document.getElementById('main') || document.getElementById('content') || document.body;
+    if(noLoginContainer) noLoginContainer.innerHTML = '<div style="padding:24px;text-align:center;">ログインしてください</div>';
+    return;
+  }
+
+  var member = currentUser;
+  if(dbReady()){
+    try {
+      var r = await sb.from('members').select('*').eq('id', currentUser.id).maybeSingle();
+      if(r && r.data){
+        member = r.data;
+        Object.assign(currentUser, r.data);
       }
+    } catch(e){
+      console.warn('renderMypage member load failed:', e);
     }
-    var wrap = document.getElementById('mypage-profile-card');
-    if(wrap && currentUser) wrap.innerHTML = renderProfileCard(currentUser, true);
-    var mpname = document.getElementById('mpname');
-    if(mpname && currentUser && currentUser.name) mpname.textContent = currentUser.name;
-    var mpstatus = document.getElementById('mpstatus');
-    if(mpstatus) mpstatus.textContent = (currentUser && currentUser.bio) ? currentUser.bio : 'よろしくお願いします！';
-  } catch(e) { console.error('[ONEs] renderMypage profile:', e); }
-  try { renderMpDiary(); } catch(e) { console.error('[ONEs] renderMypage diary:', e); }
-  try { await renderMypagePhotos(); } catch(e) { console.error('[ONEs] renderMypage photos:', e); }
+  }
+
+  var profileHtml = renderProfileCard(member, true);
+  var statsHtml = '';
+  if(typeof renderMypageStats === 'function'){
+    try { statsHtml = await renderMypageStats(); } catch(e){}
+  }
+  var timelineHtml = '';
+  if(typeof renderMyTimeline === 'function'){
+    try { timelineHtml = renderMyTimeline(); } catch(e){}
+  }
+  var debugHtml = ''
+    + '<div style="margin:20px 16px;padding:12px;background:#fff3e0;border-radius:8px;font-size:12px;">'
+    +   '<div style="font-weight:600;margin-bottom:8px;color:#e65100;">🔧 デバッグ</div>'
+    +   '<button onclick="debugPhotoStatus()" style="background:#fb8c00;color:#fff;border:none;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:600;">写真状態を確認</button>'
+    +   '<button onclick="forceReloadPhotos()" style="background:#fb8c00;color:#fff;border:none;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:600;margin-left:8px;">強制再読込</button>'
+    + '</div>';
+
+  var html = profileHtml + statsHtml + timelineHtml + debugHtml;
+  var container = document.getElementById('pg-mypage') || document.getElementById('main') || document.getElementById('content') || document.querySelector('.main-content') || document.getElementById('mypage-profile-card');
+  if(container) container.innerHTML = html;
 }
 async function renderWanmik(){
   var grid = document.getElementById('mxgrid');
@@ -4387,10 +4404,13 @@ async function createCommunity() {
 async function renderMsgs(){
   var el = document.getElementById('msglist');
   if(!el) return;
-  el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);">読み込み中...</div>';
+  var headerInfo = '<div style="background:#fff3e0;border-radius:10px;padding:10px 14px;margin:0 0 12px;font-size:12px;color:#e65100;">'
+    + '💌 メッセージのみ表示されています。他の通知は右上の🔔から確認できます'
+    + '</div>';
+  el.innerHTML = headerInfo + '<div style="padding:20px;text-align:center;color:var(--text3);">読み込み中...</div>';
 
   if(!dbReady() || !currentUser || !currentUser.id){
-    el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);">ログインが必要です</div>';
+    el.innerHTML = headerInfo + '<div style="padding:20px;text-align:center;color:var(--text3);">ログインが必要です</div>';
     return;
   }
 
@@ -4538,13 +4558,13 @@ async function renderMsgs(){
         var openFolder = userFolders.find(function(f){ return f.id === openFolderId; });
         if(openFolder) tabLabel = (openFolder.icon || '📁') + ' ' + openFolder.name;
       }
-      el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3);">'+
+      el.innerHTML = headerInfo + '<div style="padding:40px;text-align:center;color:var(--text3);">'+
         tabLabel+'にメッセージはありません<br>'+
         '<span style="font-size:12px;">ワンミクにメッセージを送ってみましょう</span></div>';
       return;
     }
 
-    el.innerHTML = list.map(function(t){
+    el.innerHTML = headerInfo + list.map(function(t){
       var ts = t.created_at ? new Date(t.created_at).getTime() : Date.now();
       var subjectHtml = t.subject ? '<div class="mlsubject" style="font-size:13px;font-weight:700;color:var(--og3);margin:2px 0;">' + escHtml(t.subject) + '</div>' : '';
       var isStarred = t.is_starred || false;
@@ -4587,7 +4607,7 @@ async function renderMsgs(){
 
   } catch(e){
     console.error('[ONEs] renderMsgs:', e);
-    el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);">読み込みエラー</div>';
+    el.innerHTML = headerInfo + '<div style="padding:20px;text-align:center;color:var(--text3);">読み込みエラー</div>';
   }
 }
 var userFolders = [];
@@ -4922,8 +4942,13 @@ async function createNotification(userId, type, title, body, fromUserId, fromUse
 async function renderNotifications(limit) {
   var el = document.getElementById('ntlist');
   if(!el) return;
+  var headerInfo = '<div style="background:#e8f5e9;border-radius:10px;padding:10px 14px;margin:0 0 12px;font-size:12px;color:#558b2f;">'
+    + '💡 ここにはメッセージ・足あと・イベント招待など、全ての通知が表示されます'
+    + '</div>';
   if(!dbReady() || !currentUser || !currentUser.id) {
     renderNT('ntlist', NT);
+    var fallbackEl = document.getElementById('ntlist');
+    if(fallbackEl) fallbackEl.innerHTML = headerInfo + fallbackEl.innerHTML;
     return;
   }
   try {
@@ -4934,10 +4959,10 @@ async function renderNotifications(limit) {
       .limit(limit || 50);
     var list = r.data || [];
     if(list.length === 0) {
-      el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);">お知らせはありません</div>';
+      el.innerHTML = headerInfo + '<div style="padding:20px;text-align:center;color:var(--text3);">お知らせはありません</div>';
       return;
     }
-    el.innerHTML = list.map(function(n){
+    el.innerHTML = headerInfo + list.map(function(n){
       var ts = n.created_at ? new Date(n.created_at).getTime() : Date.now();
       var dotClass = n.is_read ? 'old' : 'new';
       return '<div class="nti" style="'+(n.is_read?'':'background:var(--og-pale);border-radius:8px;')+'">'+
