@@ -3163,9 +3163,10 @@ async function renderTL(){
 
     // TLに表示する投稿のコメント数を事前取得
     var commentCountById = {};
+    var diaryCommentCounts = {};
     try {
+      diaryCommentCounts = await getCommentCountsBatch(allD.slice(0, 3).map(function(d){ return d.id; }));
       var commentTargetIds = []
-        .concat(allD.slice(0, 3).map(function(d){ return d.id; }))
         .concat(allP.slice(0, 3).map(function(p){ return p.id; }))
         .concat(allV.slice(0, 5).map(function(v){ return v.id; }))
         .filter(Boolean);
@@ -3201,8 +3202,8 @@ async function renderTL(){
       var isLiked = recId && likedList.indexOf(recId) !== -1;
       var likeCount = d.good || 0;
       var diaryTitleEsc = esc(d.title || '');
-      var diaryCommentCount = (commentCountById[recId] != null) ? commentCountById[recId] : (d.comments_count || 0);
-      h += '<div class="fc"><div class="fch">'+avHtml+'<div class="fui"><div class="fname">'+nameHtml+'</div><div class="fsub">'+dateStr+'&nbsp;<span class="fbadge bd">日記</span></div></div></div><div class="fcb"><div class="ftit" onclick="openDiarySheet(\''+diaryTitleEsc+'\')">'+escHtml(d.title)+'</div><div class="ftxt">'+escHtml(excerpt)+(excerpt.length >= 70 ? '…' : '')+'</div></div><div id="stamps-'+recId+'" style="padding:4px 14px 0;display:flex;flex-wrap:wrap;gap:4px;"></div><div class="fcf"><div class="fbtn'+(isLiked?' lk':'')+'" onclick="likeThis(this,\'diaries\',\''+recId+'\')">👍 <span class="like-count">'+likeCount+'</span></div><div class="fbtn" onclick="openCommentSheet(\'diary\',\''+recId+'\',\''+esc(d.title||'')+'\')">💬 <span id="cmt-'+recId+'">'+diaryCommentCount+'</span>件</div><div class="fbtn" onclick="sharePost(\''+diaryTitleEsc+'\')">↗️ シェア</div><div class="fbtn" onclick="openStampSheet(\'diary\',\''+recId+'\')">🎁 スタンプ</div></div></div>';
+      var diaryCommentCount = (diaryCommentCounts[recId] != null) ? diaryCommentCounts[recId] : (d.comments_count || 0);
+      h += '<div class="fc"><div class="fch">'+avHtml+'<div class="fui"><div class="fname">'+nameHtml+'</div><div class="fsub">'+dateStr+'&nbsp;<span class="fbadge bd">日記</span></div></div></div><div class="fcb"><div class="ftit" onclick="openDiaryDetail(\''+esc(recId)+'\')">'+escHtml(d.title)+'</div><div class="ftxt">'+escHtml(excerpt)+(excerpt.length >= 70 ? '…' : '')+'</div></div><div id="stamps-'+recId+'" style="padding:4px 14px 0;display:flex;flex-wrap:wrap;gap:4px;"></div><div class="fcf"><div class="fbtn'+(isLiked?' lk':'')+'" onclick="likeThis(this,\'diaries\',\''+recId+'\')">👍 <span class="like-count">'+likeCount+'</span></div><button class="fbtn" onclick="event.stopPropagation();openDiaryDetail(\''+esc(recId)+'\')" style="background:transparent;border:none;color:#558b2f;font-size:13px;cursor:pointer;padding:4px 8px;display:inline-flex;align-items:center;gap:4px;">💬 <span id="cmt-'+recId+'">'+diaryCommentCount+'</span>件</button><div class="fbtn" onclick="sharePost(\''+diaryTitleEsc+'\')">↗️ シェア</div><div class="fbtn" onclick="openStampSheet(\'diary\',\''+recId+'\')">🎁 スタンプ</div></div></div>';
     });
 
     // 写真（最大3件）
@@ -3412,7 +3413,7 @@ async function openCommentSheet(type, recordId, title) {
               placeholder="コメントを入力..."></textarea>
           </div>
           <div style="display:flex;justify-content:flex-end;margin-top:10px;">
-            <button class="bos" onclick="submitComment('${type}','${recordId}','${esc(title)}')">
+            <button class="bos" onclick="submitGeneralComment('${type}','${recordId}','${esc(title)}')">
               送信する
             </button>
           </div>
@@ -3425,7 +3426,7 @@ async function openCommentSheet(type, recordId, title) {
   }
 }
 
-async function submitComment(type, recordId, title) {
+async function submitGeneralComment(type, recordId, title) {
   try {
     var inputEl = document.getElementById('comment-input');
     if(!inputEl) return;
@@ -3489,7 +3490,7 @@ async function submitComment(type, recordId, title) {
     }
 
   } catch(e){
-    console.error('[ONEs] submitComment:', e);
+    console.error('[ONEs] submitGeneralComment:', e);
     toast('❌ エラーが発生しました');
   }
 }
@@ -3710,6 +3711,8 @@ async function renderDiary(){
         if(cached) photoMap[id] = cached;
       }
     });
+    var diaryIds = all.map(function(d){ return d.id; });
+    var diaryCommentCounts = await getCommentCountsBatch(diaryIds);
     dlistEl.innerHTML = all.map(function(d){
       var dauthor = d.author_name || d.author || 'メンバー';
       var demoji = d.author_emoji || d.authorEmoji || '🙋';
@@ -3727,6 +3730,8 @@ async function renderDiary(){
         ? '<div class="fname" style="font-size:12px;">'+escHtml(dauthor)+'</div>'
         : '<div class="fname" style="font-size:12px;cursor:pointer;" onclick="event.stopPropagation();openUserSheet(\''+authorEsc+'\',\''+demoji+'\')">'+escHtml(dauthor)+'</div>';
       var titleEsc = esc(d.title || '');
+      var diaryIdEsc = esc(d.id || '');
+      var diaryCommentCount = (diaryCommentCounts[d.id] != null) ? diaryCommentCounts[d.id] : (d.comments_count || 0);
       var userId = currentUser ? currentUser.id : '';
       var dlikeKey = userId ? 'ones_likes_'+userId : '';
       var dlikedList = dlikeKey ? JSON.parse(localStorage.getItem(dlikeKey)||'[]') : [];
@@ -3738,11 +3743,11 @@ async function renderDiary(){
             '<div class="dcm" style="margin-bottom:0;">🗓️ '+dateStr+'</div>'+
           '</div>'+
         '</div>'+
-        '<div class="dctit" onclick="openDiarySheet(\''+titleEsc+'\')">'+escHtml(d.title)+'</div>'+
+        '<div class="dctit" onclick="openDiaryDetail(\''+diaryIdEsc+'\')">'+escHtml(d.title)+'</div>'+
         '<div class="dcex">'+escHtml(excerpt)+'</div>'+
       '</div>'+
       '<div class="dcf">'+
-        '<div class="dcfb" onclick="openDiarySheet(\''+titleEsc+'\')">💬 '+(d.comments_count||0)+'件</div>'+
+        '<button class="dcfb" onclick="event.stopPropagation();openDiaryDetail(\''+diaryIdEsc+'\')" style="background:transparent;border:none;color:#558b2f;font-size:13px;cursor:pointer;">💬 '+diaryCommentCount+'件</button>'+
         '<div class="dcfb'+(dIsLiked?' lk':'')+'" onclick="likeThis(this,\'diaries\',\''+d.id+'\')">👍 <span class="like-count">'+(d.good||0)+'</span></div>'+
       '</div></div>';
     }).join('');
@@ -5666,7 +5671,268 @@ async function postPhoto() {
     toast('❌ 投稿に失敗しました');
   }
 }
-function openDiarySheet(title){const all=[...ld('od'),...DI];const d=all.find(x=>x.title===title)||{title,excerpt:'',comments:0,good:0,date:''};var dsAuthor = d.author || ((currentUser && currentUser.name) ? currentUser.name : 'BOSS YASU');showSheet(d.title,`<div><div style="font-size:11px;color:var(--text3);margin-bottom:10px;">🗓️ ${d.date||'---'}&nbsp;👤 ${escHtml(dsAuthor)}</div><div style="font-size:14px;color:var(--text);line-height:1.8;margin-bottom:16px;">${d.excerpt}</div><div style="background:var(--og-pale);border-radius:12px;padding:14px;"><div style="font-weight:700;color:var(--og3);margin-bottom:10px;font-size:13px;">💬 コメント（${d.comments}件）</div>${d.comments>0?`<div style="display:flex;gap:10px;margin-bottom:10px;"><div class="av as" style="${AB}">🌸</div><div style="flex:1;background:#fff;border-radius:10px;padding:10px;"><div style="font-size:12px;font-weight:700;color:var(--og3);">さくらんぼ</div><div style="font-size:13px;color:var(--text);margin-top:3px;">素敵な内容ですね！参考になりました😊</div></div></div>`:'<div style="font-size:13px;color:var(--text3);margin-bottom:10px;">まだコメントはありません</div>'}<div style="display:flex;gap:8px;"><div class="av ax" style="${AB}">😊</div><textarea style="flex:1;background:#fff;border:1.5px solid var(--og-border);border-radius:10px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none;resize:none;height:60px;" placeholder="コメントを書く..."></textarea></div><div style="display:flex;justify-content:flex-end;margin-top:8px;"><button class="bos" onclick="toast('💬 コメントしました！')">送信</button></div></div></div>`);}
+// 特定の日記のコメント数を取得
+async function getCommentCount(diaryId){
+  if(!dbReady() || !diaryId) return 0;
+  try {
+    var r = await sb.from('comments')
+      .select('id', { count:'exact', head:true })
+      .eq('target_type', 'diary')
+      .eq('target_id', String(diaryId));
+    return r.count || 0;
+  } catch(e){
+    console.warn('getCommentCount failed:', e);
+    return 0;
+  }
+}
+
+// 複数の日記のコメント数を一括取得（パフォーマンス向上）
+async function getCommentCountsBatch(diaryIds){
+  if(!dbReady() || !diaryIds || diaryIds.length === 0) return {};
+  try {
+    var ids = diaryIds.map(String).filter(Boolean);
+    if(ids.length === 0) return {};
+    var r = await sb.from('comments')
+      .select('target_id')
+      .eq('target_type', 'diary')
+      .in('target_id', ids);
+    var counts = {};
+    if(r && r.data){
+      r.data.forEach(function(c){
+        if(!c || !c.target_id) return;
+        counts[c.target_id] = (counts[c.target_id] || 0) + 1;
+      });
+    }
+    return counts;
+  } catch(e){
+    console.warn('getCommentCountsBatch failed:', e);
+    return {};
+  }
+}
+
+// 日記詳細画面を開く
+async function openDiaryDetail(diaryId){
+  if(!diaryId) return;
+
+  var diary = null;
+  try {
+    var r = await sb.from('diaries').select('*').eq('id', diaryId).maybeSingle();
+    if(r && r.data) diary = r.data;
+  } catch(e){
+    console.warn('openDiaryDetail load failed:', e);
+  }
+
+  if(!diary){
+    alert('日記が見つかりません');
+    return;
+  }
+
+  var comments = [];
+  try {
+    var rc = await sb.from('comments')
+      .select('*')
+      .eq('target_type', 'diary')
+      .eq('target_id', String(diaryId))
+      .order('created_at', { ascending: true });
+    if(rc && rc.data) comments = rc.data;
+  } catch(e){
+    console.warn('comments load failed:', e);
+  }
+
+  var authorPhoto = getPhotoFor(diary.author_id);
+  var authorAvatar = authorPhoto
+    ? '<div style="width:48px;height:48px;border-radius:14px;background-image:url('+authorPhoto+');background-size:cover;background-position:center;flex-shrink:0;"></div>'
+    : '<div style="width:48px;height:48px;border-radius:14px;background:#e8f5e9;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">'+(diary.author_emoji||'🙋')+'</div>';
+
+  var diaryHtml = ''
+    + '<div style="background:#fff;border-radius:16px;padding:16px;margin:12px 16px;box-shadow:0 1px 4px rgba(0,0,0,0.06);">'
+    +   '<div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;">'
+    +     authorAvatar
+    +     '<div style="flex:1;">'
+    +       '<div style="font-weight:700;color:#2e7d32;font-size:15px;">'+escHtml(diary.author_name||'')+'</div>'
+    +       '<div style="color:#888;font-size:12px;">📝 '+formatDate(diary.created_at)+'</div>'
+    +     '</div>'
+    +   '</div>'
+    +   '<div style="font-size:18px;font-weight:700;color:#2e7d32;margin-bottom:10px;">'+escHtml(diary.title||'')+'</div>'
+    +   '<div style="font-size:14px;color:#333;line-height:1.8;white-space:pre-wrap;word-break:break-word;">'+escHtml(diary.body||'')+'</div>'
+    + '</div>';
+
+  var commentsHtml = ''
+    + '<div style="background:#fff;border-radius:16px;padding:16px;margin:12px 16px;box-shadow:0 1px 4px rgba(0,0,0,0.06);">'
+    +   '<div style="color:#2e7d32;font-weight:700;font-size:14px;margin-bottom:12px;border-bottom:1px solid #e8f5e9;padding-bottom:8px;">💬 コメント ('+comments.length+'件)</div>';
+
+  if(comments.length === 0){
+    commentsHtml += '<div style="color:#999;font-size:13px;text-align:center;padding:20px 0;">まだコメントがありません<br>最初のコメントを書いてみよう ✨</div>';
+  } else {
+    comments.forEach(function(c){
+      var cPhoto = getPhotoFor(c.author_id);
+      var cAvatar = cPhoto
+        ? '<div style="width:36px;height:36px;border-radius:12px;background-image:url('+cPhoto+');background-size:cover;background-position:center;flex-shrink:0;"></div>'
+        : '<div style="width:36px;height:36px;border-radius:12px;background:#e8f5e9;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">'+(c.author_emoji||'🙋')+'</div>';
+      var deleteBtn = '';
+      if(currentUser && c.author_id === currentUser.id){
+        deleteBtn = '<button onclick="deleteComment(\''+esc(c.id)+'\',\''+esc(diaryId)+'\')" style="background:transparent;border:none;color:#e53935;font-size:11px;cursor:pointer;padding:2px 6px;">🗑️ 削除</button>';
+      }
+      commentsHtml += ''
+        + '<div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #f5f5f5;">'
+        +   cAvatar
+        +   '<div style="flex:1;">'
+        +     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">'
+        +       '<div style="font-weight:600;color:#2e7d32;font-size:13px;">'+escHtml(c.author_name||'')+'</div>'
+        +       '<div style="display:flex;align-items:center;gap:8px;">'
+        +         '<span style="color:#888;font-size:11px;">'+formatDate(c.created_at)+'</span>'
+        +         deleteBtn
+        +       '</div>'
+        +     '</div>'
+        +     '<div style="font-size:13px;color:#333;line-height:1.6;white-space:pre-wrap;word-break:break-word;">'+escHtml(c.body||'')+'</div>'
+        +   '</div>'
+        + '</div>';
+    });
+  }
+  commentsHtml += '</div>';
+
+  var inputHtml = ''
+    + '<div style="position:sticky;bottom:0;background:#f1f8e9;padding:12px 16px;border-top:1px solid #c8e6c9;margin:0 -16px -16px;">'
+    +   '<div style="display:flex;gap:8px;align-items:flex-end;">'
+    +     '<textarea id="comment_input" maxlength="500" rows="2" placeholder="コメントを入力（500文字まで）..." style="flex:1;padding:10px 12px;border:1px solid #c8e6c9;border-radius:18px;font-size:14px;line-height:1.5;resize:none;background:#fff;"></textarea>'
+    +     '<button onclick="submitComment(\''+esc(diaryId)+'\',\''+esc(diary.author_id)+'\',\''+esc(diary.author_name||'')+'\')" style="background:#43a047;color:#fff;border:none;border-radius:50%;width:44px;height:44px;font-size:18px;cursor:pointer;flex-shrink:0;">📤</button>'
+    +   '</div>'
+    +   '<div id="comment_counter" style="color:#888;font-size:11px;text-align:right;margin-top:4px;">0 / 500</div>'
+    + '</div>';
+
+  var html = '<div style="margin:-16px;padding-bottom:0;">'
+    + diaryHtml
+    + commentsHtml
+    + inputHtml
+    + '</div>';
+
+  showSheet('📖 日記詳細', html);
+
+  setTimeout(function(){
+    var ta = document.getElementById('comment_input');
+    var c = document.getElementById('comment_counter');
+    if(ta && c){
+      ta.addEventListener('input', function(){
+        var len = ta.value.length;
+        c.textContent = len + ' / 500';
+        c.style.color = (len >= 480) ? '#e53935' : (len >= 400 ? '#fb8c00' : '#888');
+      });
+    }
+  }, 100);
+}
+
+async function submitComment(diaryId, diaryAuthorId, diaryAuthorName){
+  if(!currentUser || !currentUser.id){
+    alert('ログインしてください');
+    return;
+  }
+  if(!dbReady()){
+    alert('接続できません');
+    return;
+  }
+
+  var ta = document.getElementById('comment_input');
+  if(!ta) return;
+  var body = ta.value.trim();
+  if(!body){
+    alert('コメントを入力してください');
+    return;
+  }
+  if(body.length > 500){
+    alert('500文字以内にしてください');
+    return;
+  }
+
+  var btn = ta.parentElement ? ta.parentElement.querySelector('button') : null;
+  if(btn){ btn.disabled = true; btn.style.opacity = '0.5'; }
+
+  try {
+    var r = await sb.from('comments').insert({
+      target_type: 'diary',
+      target_id: String(diaryId),
+      author_id: currentUser.id,
+      author_name: currentUser.name,
+      author_emoji: currentUser.emoji,
+      body: body
+    });
+    if(r.error){
+      alert('送信に失敗しました: '+r.error.message);
+      if(btn){ btn.disabled = false; btn.style.opacity = '1'; }
+      return;
+    }
+
+    if(diaryAuthorId && diaryAuthorId !== currentUser.id){
+      try {
+        await createNotification(
+          diaryAuthorId,
+          'comment',
+          (currentUser.name || '誰か') + 'さんが日記にコメントしました',
+          (diaryAuthorName ? '「'+diaryAuthorName+'さんの日記」へ' : '日記への新着コメントです'),
+          currentUser.id,
+          currentUser.name,
+          currentUser.emoji || '🙋',
+          'diary',
+          diaryId
+        );
+      } catch(e){
+        console.warn('notification insert failed:', e);
+      }
+    }
+
+    ta.value = '';
+    var c = document.getElementById('comment_counter');
+    if(c){ c.textContent = '0 / 500'; c.style.color = '#888'; }
+    closeSheet();
+    setTimeout(function(){
+      openDiaryDetail(diaryId);
+      renderTL();
+      renderDiary();
+    }, 100);
+  } catch(e){
+    alert('送信に失敗しました: '+e.message);
+    if(btn){ btn.disabled = false; btn.style.opacity = '1'; }
+  }
+}
+
+async function deleteComment(commentId, diaryId){
+  if(!confirm('このコメントを削除しますか？')) return;
+  try {
+    var r = await sb.from('comments').delete().eq('id', commentId);
+    if(r.error){
+      alert('削除に失敗しました: '+r.error.message);
+      return;
+    }
+    closeSheet();
+    setTimeout(function(){
+      openDiaryDetail(diaryId);
+      renderTL();
+      renderDiary();
+    }, 100);
+  } catch(e){
+    alert('削除に失敗しました: '+e.message);
+  }
+}
+
+// 日付フォーマット関数（既存があれば既存を使用）
+if(typeof formatDate !== 'function'){
+  window.formatDate = function(dt){
+    if(!dt) return '';
+    var d = new Date(dt);
+    var y = d.getFullYear();
+    var m = String(d.getMonth()+1).padStart(2,'0');
+    var day = String(d.getDate()).padStart(2,'0');
+    var h = String(d.getHours()).padStart(2,'0');
+    var mn = String(d.getMinutes()).padStart(2,'0');
+    return y+'年'+m+'月'+day+'日 '+h+':'+mn;
+  };
+}
+
+function openDiarySheet(title){
+  const all = [...ld('od'), ...DI];
+  const d = all.find(function(x){ return x.title === title; }) || {title:title, excerpt:'', comments:0, good:0, date:''};
+  var dsAuthor = d.author || ((currentUser && currentUser.name) ? currentUser.name : 'BOSS YASU');
+  showSheet(d.title,`<div><div style="font-size:11px;color:var(--text3);margin-bottom:10px;">🗓️ ${d.date||'---'}&nbsp;👤 ${escHtml(dsAuthor)}</div><div style="font-size:14px;color:var(--text);line-height:1.8;margin-bottom:16px;">${d.excerpt}</div><div style="background:var(--og-pale);border-radius:12px;padding:14px;"><div style="font-weight:700;color:var(--og3);margin-bottom:10px;font-size:13px;">💬 コメント（${d.comments}件）</div>${d.comments>0?`<div style="display:flex;gap:10px;margin-bottom:10px;"><div class="av as" style="${AB}">🌸</div><div style="flex:1;background:#fff;border-radius:10px;padding:10px;"><div style="font-size:12px;font-weight:700;color:var(--og3);">さくらんぼ</div><div style="font-size:13px;color:var(--text);margin-top:3px;">素敵な内容ですね！参考になりました😊</div></div></div>`:'<div style="font-size:13px;color:var(--text3);margin-bottom:10px;">まだコメントはありません</div>'}<div style="display:flex;gap:8px;"><div class="av ax" style="${AB}">😊</div><textarea style="flex:1;background:#fff;border:1.5px solid var(--og-border);border-radius:10px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none;resize:none;height:60px;" placeholder="コメントを書く..."></textarea></div><div style="display:flex;justify-content:flex-end;margin-top:8px;"><button class="bos" onclick="toast('💬 コメントしました！')">送信</button></div></div></div>`);
+}
 async function openUserSheet(name, emoji) {
   try {
     var member = null;
