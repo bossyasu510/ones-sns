@@ -1,1 +1,0 @@
-cd ~/Desktop/ones-sns && git add . && git commit -m "サイドバーバッジ実データ化" && git push origin main

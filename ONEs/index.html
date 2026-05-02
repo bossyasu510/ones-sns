@@ -24,6 +24,11 @@ if(location.protocol !== 'file:') {
 <script>
 const SUPABASE_URL = 'https://iywkhawhgxkoqehoyhsh.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_OvlYWlHuKnzp5utaqj8EAw_q5H100tl';
+// ========================================
+// サイト基本URL定数(サブディレクトリ移行対応)
+// ========================================
+const SITE_BASE_URL = 'https://brandyou.love/ONEs';
+const SITE_BASE_PATH = '/ONEs/';
 let sb = null;
 window.addEventListener('load', function(){
   if(typeof supabase !== 'undefined') {
@@ -1467,7 +1472,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
 
           <div style="background:var(--og-pale);border-radius:10px;padding:12px;font-size:12px;color:var(--text3);">
             運営：ONEs 管理者（BOSS YASU）<br>
-            サービスURL：https://brandyou.love
+            サービスURL：https://brandyou.love/ONEs/
           </div>
         </div>
       </div>
@@ -1521,7 +1526,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
 
           <div style="background:var(--og-pale);border-radius:10px;padding:12px;font-size:12px;color:var(--text3);">
             運営：ONEs 管理者（BOSS YASU）<br>
-            サービスURL：https://brandyou.love<br>
+            サービスURL：https://brandyou.love/ONEs/<br>
             制定日：2026年4月25日
           </div>
         </div>
@@ -2954,7 +2959,7 @@ function generateInviteQR(code) {
   const container = document.getElementById('invite-qr-container');
   if(!container) return;
   try {
-    const url = 'https://brandyou.love?code=' + code;
+    const url = SITE_BASE_URL + '/?code=' + code;
     const qr = qrcode(0, 'H');
     qr.addData(url);
     qr.make();
@@ -2977,7 +2982,7 @@ function generateInviteQRSmall(code) {
   const container = document.getElementById('mypage-qr-container');
   if(!container) return;
   try {
-    const url = 'https://brandyou.love?code=' + code;
+    const url = SITE_BASE_URL + '/?code=' + code;
     const qr = qrcode(0, 'H');
     qr.addData(url);
     qr.make();
@@ -2997,7 +3002,7 @@ function generateInviteQRSmall(code) {
 
 function shareInviteQR() {
   var _mc = document.getElementById('my-invite-code'); var code = (currentUser && currentUser.code) ? currentUser.code : (_mc && _mc.textContent ? _mc.textContent : 'ONES-7X3K');
-  const url = 'https://brandyou.love?code=' + code;
+  const url = SITE_BASE_URL + '/?code=' + code;
   if(navigator.share) {
     navigator.share({
       title: 'ONEs への招待',
@@ -6675,7 +6680,7 @@ window.confirmLogout = function(){
     sessionStorage.clear();
   } catch(e){}
   alert('ログアウトしました');
-  location.href = '/';
+  location.href = SITE_BASE_PATH;
 };
 
 window.openHelp = function(){
@@ -7361,7 +7366,7 @@ function getManualHTML() {
   // セクション2: アクセス方法
   html += manualSec(2, 'ACCESS', 'サービスへのアクセス方法',
     manualSubH('URL')+
-    '<div style="font-family:Italiana,serif;font-size:22px;color:#1e6e3a;font-style:italic;text-align:center;padding:14px;background:#edf8f1;border-radius:10px;margin:8px 0 14px;">brandyou.love</div>'+
+    '<div style="font-family:Italiana,serif;font-size:22px;color:#1e6e3a;font-style:italic;text-align:center;padding:14px;background:#edf8f1;border-radius:10px;margin:8px 0 14px;">brandyou.love/ONEs/</div>'+
     manualSubH('対応デバイス')+
     manualTb(['デバイス','対応状況'],[['iPhone','Safari/Chrome 完全対応'],['iPad','Safari/Chrome 完全対応'],['Android','Chrome 完全対応'],['PC','主要ブラウザ対応']])
   );
@@ -7574,7 +7579,7 @@ function getManualHTML() {
   html += manualSec(19, 'CONTACT', 'お問い合わせ',
     '<p style="font-size:14px;color:#4a5d4f;margin-bottom:12px;">ご不明な点がございましたら、以下までお問い合わせください。</p>'+
     manualSubH('運営者情報')+
-    manualTb(null,[['サービス名','ONEs（ワンズ）'],['URL','brandyou.love'],['創設者','BOSS YASU'],['所在地','愛知県名古屋市']])+
+    manualTb(null,[['サービス名','ONEs（ワンズ）'],['URL','brandyou.love/ONEs/'],['創設者','BOSS YASU'],['所在地','愛知県名古屋市']])+
     manualSubH('お問い合わせ方法')+
     manualNl(['メニューから「ヘルプ」を開く','「管理者に問い合わせる」フォームに記入','または、ヘルプ内のFAQで自己解決'])
   );
