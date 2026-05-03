@@ -1715,7 +1715,24 @@ const STAMPS = [
 ];
 
 /* ══════════ UTILS ══════════ */
-function esc(s){return String(s||'').replace(/'/g,"\\'")}
+/**
+ * HTML属性内のJS文字列リテラル（onclick="foo('${esc(x)}')" 等）と
+ * HTML本文 innerHTML への埋め込みの両方で安全に使えるエスケープ。
+ * 二段階：① JS文字列エスケープ（バックスラッシュ・改行・シングルクォート）
+ *         ② HTML属性/本文エスケープ（&<>"）
+ * 順序が重要：先に \ を倍化してから他のエスケープを足す。
+ */
+function esc(s){
+  return String(s||'')
+    .replace(/\\/g,'\\\\')
+    .replace(/\n/g,'\\n')
+    .replace(/\r/g,'\\r')
+    .replace(/'/g,"\\'")
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
 function pad(n){return String(n).padStart(2,'0')}
 function ld(k){
   try {
