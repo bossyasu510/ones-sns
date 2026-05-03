@@ -3172,14 +3172,22 @@ async function renderTL(){
         'display:flex;align-items:center;justify-content:center;'+cursorStyle+'"'+onclick+'>'+authorEmoji+'</div>';
     }
 
+    // 全投稿を統合して時系列ソート（新しい順）、最大15件（コメント数取得と表示で共通利用）
+    var combinedPosts = [];
+    allD.slice(0, 10).forEach(function(d){ combinedPosts.push({type:'diary', data:d, ts: d.created_at ? new Date(d.created_at).getTime() : 0}); });
+    allP.slice(0, 10).forEach(function(p){ combinedPosts.push({type:'photo', data:p, ts: p.created_at ? new Date(p.created_at).getTime() : 0}); });
+    allV.slice(0, 10).forEach(function(v){ combinedPosts.push({type:'voice', data:v, ts: v.created_at ? new Date(v.created_at).getTime() : 0}); });
+    combinedPosts.sort(function(a,b){ return b.ts - a.ts; });
+    combinedPosts = combinedPosts.slice(0, 15);
+
     // TLに表示する投稿のコメント数を事前取得
     var commentCountById = {};
     var diaryCommentCounts = {};
     try {
-      diaryCommentCounts = await getCommentCountsBatch(allD.slice(0, 3).map(function(d){ return d.id; }));
+      diaryCommentCounts = await getCommentCountsBatch(combinedPosts.filter(function(x){ return x.type === 'diary'; }).map(function(x){ return x.data && x.data.id; }).filter(Boolean));
       var commentTargetIds = []
-        .concat(allP.slice(0, 3).map(function(p){ return p.id; }))
-        .concat(allV.slice(0, 5).map(function(v){ return v.id; }))
+        .concat(combinedPosts.filter(function(x){ return x.type === 'photo'; }).map(function(x){ return x.data && x.data.id; }))
+        .concat(combinedPosts.filter(function(x){ return x.type === 'voice'; }).map(function(x){ return x.data && x.data.id; }))
         .filter(Boolean);
       commentTargetIds = Array.from(new Set(commentTargetIds));
       if(dbReady() && commentTargetIds.length){
@@ -3195,8 +3203,9 @@ async function renderTL(){
 
     var h = '';
 
-    // 日記（最大3件）
-    allD.slice(0, 3).forEach(function(d){
+    combinedPosts.forEach(function(item){
+      if(item.type === 'diary') {
+        var d = item.data;
       var diaryAuthor = d.author_name || d.author || 'メンバー';
       var diaryEmoji = d.author_emoji || d.authorEmoji || '🙋';
       var dateStr = d.created_at ? new Date(d.created_at).toLocaleString('ja-JP', {year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit'}) : (d.date || '');
@@ -3215,10 +3224,8 @@ async function renderTL(){
       var diaryTitleEsc = esc(d.title || '');
       var diaryCommentCount = (diaryCommentCounts[recId] != null) ? diaryCommentCounts[recId] : (d.comments_count || 0);
       h += '<div class="fc"><div class="fch">'+avHtml+'<div class="fui"><div class="fname">'+nameHtml+'</div><div class="fsub">'+dateStr+'&nbsp;<span class="fbadge bd">日記</span></div></div></div><div class="fcb"><div class="ftit" onclick="openDiaryDetail(\''+esc(recId)+'\')">'+escHtml(d.title)+'</div><div class="ftxt">'+escHtml(excerpt)+(excerpt.length >= 70 ? '…' : '')+'</div></div><div id="stamps-'+recId+'" style="padding:4px 14px 0;display:flex;flex-wrap:wrap;gap:4px;"></div><div class="fcf"><div class="fbtn'+(isLiked?' lk':'')+'" onclick="likeThis(this,\'diaries\',\''+recId+'\')">👍 <span class="like-count">'+likeCount+'</span></div><button class="fbtn" onclick="event.stopPropagation();openDiaryDetail(\''+esc(recId)+'\')" style="background:transparent;border:none;color:#558b2f;font-size:13px;cursor:pointer;padding:4px 8px;display:inline-flex;align-items:center;gap:4px;">💬 <span id="cmt-'+recId+'">'+diaryCommentCount+'</span>件</button><div class="fbtn" onclick="sharePost(\''+diaryTitleEsc+'\')">↗️ シェア</div><div class="fbtn" onclick="openStampSheet(\'diary\',\''+recId+'\')">🎁 スタンプ</div></div></div>';
-    });
-
-    // 写真（最大3件）
-    allP.slice(0, 3).forEach(function(p){
+      } else if(item.type === 'photo') {
+        var p = item.data;
       var photoAuthor = p.author_name || 'メンバー';
       var photoEmoji = p.author_emoji || '🙋';
       var photoUrl = p.photo_url || p.photo || '';
@@ -3240,10 +3247,8 @@ async function renderTL(){
       var sharePhotoUrl = p.photo_url || '';
       var photoCommentCount = (commentCountById[recId] != null) ? commentCountById[recId] : (p.comments_count || 0);
       h += '<div class="fc"><div class="fch">'+pAvHtml+'<div class="fui"><div class="fname">'+photoNameHtml+'</div><div class="fsub">'+timeAgoStr(ts)+'&nbsp;<span class="fbadge" style="background:#fef3c7;color:#92400e;">📷 フォト</span></div></div></div><div class="fcb"><img src="'+photoUrl+'" style="width:100%;max-height:300px;object-fit:cover;border-radius:8px;">'+caption+'</div><div id="stamps-'+recId+'" style="padding:4px 14px 0;display:flex;flex-wrap:wrap;gap:4px;"></div><div class="fcf"><div class="fbtn'+(isLikedP?' lk':'')+'" onclick="likeThis(this,\'photos\',\''+recId+'\')">👍 <span class="like-count">'+(p.good||0)+'</span></div><div class="fbtn" onclick="openCommentSheet(\'photo\',\''+recId+'\',\'写真へのコメント\')">💬 <span id="cmt-'+recId+'">'+photoCommentCount+'</span>件</div><div class="fbtn" onclick="sharePost(\'\',\''+esc(sharePhotoUrl)+'\')">↗️ シェア</div><div class="fbtn" onclick="openStampSheet(\'photo\',\''+recId+'\')">🎁 スタンプ</div></div></div>';
-    });
-
-    // つぶやき（最大5件）
-    allV.slice(0, 5).forEach(function(v){
+      } else if(item.type === 'voice') {
+        var v = item.data;
       var voiceAuthor = v.author_name || v.u || 'メンバー';
       var voiceEmoji = v.author_emoji || v.e || '🙋';
       var voiceBody = v.body || v.t || '';
@@ -3266,13 +3271,12 @@ async function renderTL(){
         ? '<span style="font-size:10px;background:#1a1a2e;color:#8395a7;padding:2px 8px;border-radius:10px;margin-left:6px;">🌙 深夜モード</span>'
         : '';
       h += '<div class="fc" style="'+nightStyle+'"><div class="fch">'+avHtml+'<div class="fui"><div class="fname">'+voiceNameHtml+nightLabel+'</div><div class="fsub">'+timeAgoStr(ts)+'&nbsp;<span class="fbadge bv">つぶやき</span></div></div></div><div class="fcb"><div class="ftxt" style="padding-bottom:2px;'+(v.is_night?'color:#c8d6e5;':'')+'">'+escHtml(voiceBody)+'</div></div><div id="stamps-'+recId+'" style="padding:4px 14px 0;display:flex;flex-wrap:wrap;gap:4px;"></div><div class="fcf"><div class="fbtn'+(isLikedV?' lk':'')+'" onclick="likeThis(this,\'voices\',\''+recId+'\')">👍 <span class="like-count">'+(v.good||0)+'</span></div><div class="fbtn" onclick="openCommentSheet(\'voice\',\''+recId+'\',\'つぶやき\')">💬 <span id="cmt-'+recId+'">'+voiceCommentCount+'</span>件</div><div class="fbtn" onclick="sharePost(\''+esc(voiceBody)+'\')">↗️ シェア</div><div class="fbtn" onclick="openStampSheet(\'voice\',\''+recId+'\')">🎁 スタンプ</div></div></div>';
+      }
     });
 
     if(tlEl) tlEl.innerHTML = h || '<div style="padding:40px;text-align:center;color:var(--text3);">まだ投稿がありません<br><span style="font-size:12px;">最初の投稿をしてみましょう！</span></div>';
     if(h){
-      allD.slice(0,3).forEach(function(d){ if(d && d.id) renderStamps(d.id); });
-      allP.slice(0,3).forEach(function(p){ if(p && p.id) renderStamps(p.id); });
-      allV.slice(0,5).forEach(function(v){ if(v && v.id) renderStamps(v.id); });
+      combinedPosts.forEach(function(item){ if(item.data && item.data.id) renderStamps(item.data.id); });
     }
   } catch(err) {
     console.error('[ONEs] renderTL:', err);
