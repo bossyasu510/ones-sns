@@ -3964,14 +3964,8 @@ async function renderMypage(){
     +     '<span style="color:#aaa;">›</span>'
     +   '</button>'
     + '</div>';
-  var debugHtml = ''
-    + '<div style="margin:20px 16px;padding:12px;background:#fff3e0;border-radius:8px;font-size:12px;">'
-    +   '<div style="font-weight:600;margin-bottom:8px;color:#e65100;">🔧 デバッグ</div>'
-    +   '<button onclick="debugPhotoStatus()" style="background:#fb8c00;color:#fff;border:none;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:600;">写真状態を確認</button>'
-    +   '<button onclick="forceReloadPhotos()" style="background:#fb8c00;color:#fff;border:none;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:600;margin-left:8px;">強制再読込</button>'
-    + '</div>';
 
-  var html = profileHtml + statsHtml + timelineHtml + otherMenuHtml + debugHtml;
+  var html = profileHtml + statsHtml + timelineHtml + otherMenuHtml;
   var container = document.getElementById('pg-mypage') || document.getElementById('main') || document.getElementById('content') || document.querySelector('.main-content') || document.getElementById('mypage-profile-card');
   if(container) container.innerHTML = html;
 }
