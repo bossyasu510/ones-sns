@@ -2930,7 +2930,13 @@ async function renderInvitePage(){
     listEl.innerHTML = invited.map(function(u){
       var statusText = u.status === 'active' ? '✅ 参加中' : (u.status === 'pending' ? '⏳ 承認待ち' : '❌ 退会');
       return '<div class="inv-tree-item">'+
-        '<div class="inv-tree-icon">'+(u.emoji || '🙋')+'</div>'+
+        (function(){
+          var photo = (typeof getPhotoFor === 'function') ? getPhotoFor(u.id) : null;
+          if(photo){
+            return '<div class="inv-tree-icon" style="background-image:url('+photo+');background-size:cover;background-position:center;background-color:#fff;"></div>';
+          }
+          return '<div class="inv-tree-icon">'+(u.emoji || '🙋')+'</div>';
+        })()+
         '<div style="flex:1;">'+
           '<div class="inv-tree-name">'+escHtml(u.name)+'</div>'+
           '<div class="inv-tree-date">'+(u.join_date || '-')+' / <span>'+statusText+'</span></div>'+
@@ -4632,7 +4638,13 @@ async function renderMsgs(){
       }
       return '<div class="mlit '+(t.unread?'unrd':'')+'" style="display:flex;align-items:center;gap:10px;padding:14px 4px;border-bottom:1px solid var(--og-pale);" '+
         'onclick="openMsgThread(\''+t.partnerId+'\',\''+esc(t.partnerName)+'\',\''+t.partnerEmoji+'\')">'+
-        '<div class="av as" style="background:linear-gradient(135deg,#a8ddb8,#3fa865);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">'+t.partnerEmoji+'</div>'+
+        (function(){
+          var photo = (typeof getPhotoFor === 'function') ? getPhotoFor(t.partnerId) : null;
+          if(photo){
+            return '<div class="av as" style="background-image:url('+photo+');background-size:cover;background-position:center;background-color:#fff;cursor:pointer;flex-shrink:0;"></div>';
+          }
+          return '<div class="av as" style="background:linear-gradient(135deg,#a8ddb8,#3fa865);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">'+t.partnerEmoji+'</div>';
+        })()+
         '<div style="flex:1;min-width:0;cursor:pointer;">'+
           '<div class="mlfrom" style="font-size:14px;font-weight:700;color:var(--text);">'+escHtml(t.partnerName)+(t.unread?' <span style="display:inline-block;width:7px;height:7px;background:var(--og);border-radius:50%;margin-left:4px;"></span>':'')+'</div>'+
           subjectHtml+
