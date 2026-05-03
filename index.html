@@ -1714,7 +1714,7 @@ const STAMPS = [
 ];
 
 /* ══════════ UTILS ══════════ */
-function esc(s){return(s||'').replace(/'/g,"\\'")}
+function esc(s){return String(s||'').replace(/'/g,"\\'")}
 function pad(n){return String(n).padStart(2,'0')}
 function ld(k){
   try {
