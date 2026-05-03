@@ -1618,6 +1618,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
     <div class="sc">
       <div class="sch">🎟️ 招待状況</div>
       <div class="scb">
+        <div id="side-invite-qr" style="text-align:center;margin-bottom:6px;"></div>
         <div style="font-size:12px;color:var(--text3);margin-bottom:6px;">あなたのコード</div>
         <div id="side-invite-code" style="background:var(--og-pale);border-radius:8px;padding:8px;text-align:center;font-size:16px;font-weight:900;color:var(--og3);letter-spacing:.1em;cursor:pointer;" onclick="copyInviteCode()">ONES-7X3K</div>
         <div style="font-size:11px;color:var(--og);text-align:center;margin-top:4px;">招待済み 5人</div>
@@ -2974,25 +2975,29 @@ function generateInviteQR(code) {
 }
 
 function generateInviteQRSmall(code) {
-  const container = document.getElementById('mypage-qr-container');
-  if(!container) return;
-  try {
-    const url = 'https://brandyou.love?code=' + code;
-    const qr = qrcode(0, 'H');
-    qr.addData(url);
-    qr.make();
-    container.innerHTML = qr.createSvgTag(3, 0);
-    const svg = container.querySelector('svg');
-    if(svg) {
-      svg.style.borderRadius = '8px';
-      svg.style.border = '2px solid #9dd4b0';
-      svg.querySelectorAll('rect').forEach(r => {
-        if(r.getAttribute('fill') === '#000000' || r.getAttribute('fill') === 'black') {
-          r.setAttribute('fill', '#1e6e3a');
-        }
-      });
+  ['mypage-qr-container','side-invite-qr'].forEach(id => {
+    const container = document.getElementById(id);
+    if(!container) return;
+    try {
+      const url = 'https://brandyou.love?code=' + code;
+      const qr = qrcode(0, 'H');
+      qr.addData(url);
+      qr.make();
+      container.innerHTML = qr.createSvgTag(3, 0);
+      const svg = container.querySelector('svg');
+      if(svg) {
+        svg.style.borderRadius = '8px';
+        svg.style.border = '2px solid #9dd4b0';
+        svg.querySelectorAll('rect').forEach(r => {
+          if(r.getAttribute('fill') === '#000000' || r.getAttribute('fill') === 'black') {
+            r.setAttribute('fill', '#1e6e3a');
+          }
+        });
+      }
+    } catch(e) {
+      container.innerHTML = '';
     }
-  } catch(e) {}
+  });
 }
 
 function shareInviteQR() {
@@ -5258,6 +5263,17 @@ function nav(name,el){
     try { if(name==='diary' && typeof renderDiary === 'function') renderDiary(); } catch(e) { console.error(e); }
     try { if(name==='voice' && typeof renderVoice === 'function') renderVoice(); } catch(e) { console.error(e); }
     try { if(name==='home' && typeof renderHome === 'function') renderHome(); } catch(e) { console.error(e); }
+    if(name==='home'){
+      const myCode = (currentUser && currentUser.code) ? currentUser.code : 'ONES-7X3K';
+      const tryQRSide = (attempts) => {
+        if(typeof qrcode !== 'undefined') {
+          try { generateInviteQRSmall(myCode); } catch(e) {}
+        } else if(attempts > 0) {
+          setTimeout(()=>tryQRSide(attempts-1), 300);
+        }
+      };
+      setTimeout(()=>tryQRSide(10), 200);
+    }
     try { if(name==='wanmik' && typeof renderWanmik === 'function') renderWanmik(); } catch(e) { console.error(e); }
     try { if(name==='members' && typeof renderMembersPage === 'function') renderMembersPage(); } catch(e) { console.error(e); }
     try { if(name==='footprint' && typeof renderFP === 'function') renderFP(); } catch(e) { console.error(e); }
@@ -8551,6 +8567,12 @@ async function initApp(){
   try { renderNT('ntlist',NT); } catch(e) { console.error('[ONEs] renderNT:', e); }
   try { renderMpDiary(); } catch(e) { console.error('[ONEs] renderMpDiary:', e); }
   try { renderSide(); } catch(e) { console.error('[ONEs] renderSide:', e); }
+  setTimeout(function(){
+    try {
+      var myCode = (currentUser && currentUser.code) ? currentUser.code : 'ONES-7X3K';
+      if(typeof generateInviteQRSmall === 'function') generateInviteQRSmall(myCode);
+    } catch(e) {}
+  }, 500);
   try { renderCal(); } catch(e) { console.error('[ONEs] renderCal:', e); }
   try { if(typeof loadSelectedTagsFromDb === 'function') loadSelectedTagsFromDb().then(function(){ renderSelectedTags(); }); } catch(e) {}
   try { renderSelectedTags(); } catch(e) { console.error('[ONEs] renderSelectedTags:', e); }
