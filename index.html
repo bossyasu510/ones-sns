@@ -25,14 +25,27 @@ if(location.protocol !== 'file:') {
 const SUPABASE_URL = 'https://iywkhawhgxkoqehoyhsh.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_OvlYWlHuKnzp5utaqj8EAw_q5H100tl';
 let sb = null;
+
+/**
+ * RLS用に x-member-id ヘッダーを乗せて Supabase クライアントを再生成。
+ * 未ログイン時は空文字を渡す（公開READのみ可能）。
+ * currentUser を更新したら必ずこの関数を呼ぶこと。
+ */
+function setSupabaseHeader(memberId) {
+  if(typeof supabase === 'undefined') return;
+  try {
+    sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+      global: { headers: { 'x-member-id': memberId || '' } }
+    });
+  } catch(e) {
+    console.error('❌ Supabase 再初期化エラー:', e);
+  }
+}
+
 window.addEventListener('load', function(){
   if(typeof supabase !== 'undefined') {
-    try {
-      sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-      console.log('✅ Supabase接続完了');
-    } catch(e) {
-      console.error('❌ Supabase接続エラー:', e);
-    }
+    setSupabaseHeader('');
+    console.log('✅ Supabase接続完了（RLS有効・ヘッダー未設定）');
   } else {
     console.warn('⚠️ Supabase library not loaded');
   }
@@ -2050,6 +2063,7 @@ async function showBossYasuLogin() {
   if(checkYasuPass(inputHash)) {
     resetLoginAttempts();
     currentUser = {id:'m001', name:'BOSS YASU', emoji:'😊', role:'admin'};
+    setSupabaseHeader(currentUser.id);
     saveSession(currentUser);
     document.getElementById('invite-screen').style.display = 'none';
     document.getElementById('body').style.display = '';
@@ -2371,6 +2385,8 @@ function checkSession(){
       if(!currentUser.role) currentUser.role = 'member';
       if(!currentUser.emoji) currentUser.emoji = '🙋';
 
+      setSupabaseHeader(currentUser.id);
+
       // 修正情報を保存
       try { saveSession(currentUser); } catch(e) {}
 
@@ -2485,6 +2501,7 @@ async function joinWithCode(){
         invitedBy: existingMember.invited_by,
         joinDate: existingMember.join_date
       };
+      setSupabaseHeader(currentUser.id);
       saveSession(currentUser);
       enterApp();
       setTimeout(function(){ toast('👋 おかえりなさい、'+name+'さん！'); }, 300);
@@ -2539,6 +2556,7 @@ async function joinWithCode(){
       invitedBy: code.issued_by,
       joinDate: new Date().toISOString().slice(0,10)
     };
+    setSupabaseHeader(currentUser.id);
     saveSession(currentUser);
 
     // 参加完了画面を表示してからアプリへ
@@ -2597,6 +2615,7 @@ async function showAdminLogin(){
     resetLoginAttempts();
     setAdminUnlocked();
     currentUser = {id:'m001', name:'BOSS YASU', emoji:'😊', role:'admin'};
+    setSupabaseHeader(currentUser.id);
     saveSession(currentUser);
     document.getElementById('invite-screen').style.display = 'none';
     document.getElementById('body').style.display = '';
@@ -2617,6 +2636,7 @@ async function showAdminLogin(){
 
 function devLogin(){
   currentUser={id:'m001',name:'BOSS YASU',emoji:'😊',role:'admin'};
+  setSupabaseHeader(currentUser.id);
   localStorage.setItem('ones_session',JSON.stringify(currentUser));
   document.getElementById('invite-screen').style.display='none';
   document.getElementById('body').style.display='';
