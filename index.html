@@ -3456,10 +3456,13 @@ function postAvatarHtml(post, sizeClass){
 }
 
 var TL_BATCH = 15;
-var _tlOffset = 0;
 /** renderTL 同時実行ガード（多重フェッチ・表示ちらつき抑制） */
 var _tlRendering = false;
 var _tlSeenKeys = {};
+/** 全投稿キャッシュ — 初回に全件取得し、ページ送りでは再取得しない */
+var _tlCachedDiaries = null;
+var _tlCachedVoices = null;
+var _tlCachedPhotos = null;
 
 function timelinePostKey(type, id){
   if(id === undefined || id === null || id === '') return '';
@@ -3467,8 +3470,10 @@ function timelinePostKey(type, id){
 }
 
 function invalidateTimelineCache(){
-  _tlOffset = 0;
   _tlSeenKeys = {};
+  _tlCachedDiaries = null;
+  _tlCachedVoices = null;
+  _tlCachedPhotos = null;
 }
 
 async function loadMoreTL(){
@@ -3483,28 +3488,16 @@ async function loadMoreTL(){
   btn.textContent = '⏳ 読み込み中...';
 
   try {
-    if(!dbReady()){
-      toast('接続できません');
-      btn.dataset.loading = '';
-      btn.disabled = false;
-      btn.textContent = '📜 もっと見る';
+    /* キャッシュが空なら表示するものが無い */
+    if(!_tlCachedDiaries && !_tlCachedVoices && !_tlCachedPhotos){
+      if(noMoreEl){ noMoreEl.style.display = 'block'; noMoreEl.textContent = 'これ以上投稿はありません'; }
+      btn.style.display = 'none';
       return;
     }
-    await syncMyPhoto();
-    await loadAllPhotos();
 
-    var off = _tlOffset;
-    var tlFetch = await Promise.all([
-      dbFetchDiaries(TL_BATCH, off).catch(function(){ return []; }),
-      dbFetchVoices(TL_BATCH, off).catch(function(){ return []; }),
-      dbFetchPhotos(TL_BATCH, off).catch(function(){ return []; })
-    ]);
-    var allD = tlFetch[0] || [];
-    var allV = tlFetch[1] || [];
-    var allP = tlFetch[2] || [];
-
-    var built = await buildTimelineCardsFromFetched(allD, allV, allP);
-    _tlOffset += TL_BATCH;
+    /* DB再取得はしない — キャッシュ済み全件から _tlSeenKeys でスキップし次の TL_BATCH を取得 */
+    var built = await buildTimelineCardsFromFetched(
+      _tlCachedDiaries || [], _tlCachedVoices || [], _tlCachedPhotos || []);
 
     if(!built.html){
       if(noMoreEl){
@@ -3516,7 +3509,7 @@ async function loadMoreTL(){
       cardsEl.insertAdjacentHTML('beforeend', built.html);
       if(noMoreEl) noMoreEl.style.display = 'none';
       built.slicePosts.forEach(function(item){ if(item.data && item.data.id) renderStamps(item.data.id); });
-      btn.style.display = (built.slicePosts.length >= TL_BATCH && dbReady()) ? '' : 'none';
+      btn.style.display = (built.slicePosts.length >= TL_BATCH) ? '' : 'none';
     }
   } catch(err){
     console.error('[ONEs] loadMoreTL:', err);
@@ -3742,15 +3735,18 @@ async function renderTL(){
     await syncMyPhoto();
     await loadAllPhotos();
 
-    _tlOffset = 0;
     _tlSeenKeys = {};
+    _tlCachedDiaries = null;
+    _tlCachedVoices = null;
+    _tlCachedPhotos = null;
 
     if(dbReady()) {
       try {
+        /* 全件一括取得（limit=1000）。統合ソート後に JS 側で TL_BATCH ずつ表示する */
         var tlFetch = await Promise.all([
-          dbFetchDiaries(TL_BATCH, 0).catch(function(){ return []; }),
-          dbFetchVoices(TL_BATCH, 0).catch(function(){ return []; }),
-          dbFetchPhotos(TL_BATCH, 0).catch(function(){ return []; })
+          dbFetchDiaries(1000, 0).catch(function(){ return []; }),
+          dbFetchVoices(1000, 0).catch(function(){ return []; }),
+          dbFetchPhotos(1000, 0).catch(function(){ return []; })
         ]);
         diaries = tlFetch[0] || [];
         voices = tlFetch[1] || [];
@@ -3759,8 +3755,12 @@ async function renderTL(){
     }
     console.log('[renderTL] diaries:', diaries.length, 'voices:', voices.length, 'photos:', photos.length);
 
+    /* キャッシュに保存 — loadMoreTL はこれを再利用する */
+    _tlCachedDiaries = diaries;
+    _tlCachedVoices = voices;
+    _tlCachedPhotos = photos;
+
     var built = await buildTimelineCardsFromFetched(diaries, voices, photos);
-    _tlOffset += TL_BATCH;
 
     var btnStyle = 'width:100%;padding:14px;margin:16px 0;background:#f1f8e9;color:#558b2f;border:2px solid #c8e6c9;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;';
     var btnHtml = '<button type="button" id="tl-load-more" onclick="loadMoreTL()" style="'+btnStyle+'">📜 もっと見る</button>';
