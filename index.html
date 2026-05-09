@@ -198,15 +198,14 @@ async function dbPostDiary(authorId, authorName, authorEmoji, title, body, visib
   } catch(e) { return { data: null, error: e }; }
 }
 
-// 日記取得（全ユーザー）
-async function dbFetchDiaries(limit, offset) {
+// 日記取得（全ユーザー）— cursor: created_at ISO文字列（それより古いものを取得）
+async function dbFetchDiaries(limit, cursor) {
   if(!sb) return [];
   try {
-    var lim = limit || 50;
-    var off = offset || 0;
-    var to = off + Math.max(lim - 1, 0);
-    const { data } = await sb.from('diaries').select('*').order('created_at', {ascending: false}).range(off, to);
-    return data || [];
+    var q = sb.from('diaries').select('*').order('created_at', {ascending: false}).limit(limit || 30);
+    if(cursor) q = q.lt('created_at', cursor);
+    var r = await q;
+    return r.data || [];
   } catch(e) { return []; }
 }
 
@@ -221,15 +220,14 @@ async function dbPostVoice(authorId, authorName, authorEmoji, body) {
   } catch(e) { return { data: null, error: e }; }
 }
 
-// つぶやき取得
-async function dbFetchVoices(limit, offset) {
+// つぶやき取得 — cursor: created_at ISO文字列（それより古いものを取得）
+async function dbFetchVoices(limit, cursor) {
   if(!sb) return [];
   try {
-    var lim = limit || 50;
-    var off = offset || 0;
-    var to = off + Math.max(lim - 1, 0);
-    const { data } = await sb.from('voices').select('*').order('created_at', {ascending: false}).range(off, to);
-    return data || [];
+    var q = sb.from('voices').select('*').order('created_at', {ascending: false}).limit(limit || 30);
+    if(cursor) q = q.lt('created_at', cursor);
+    var r = await q;
+    return r.data || [];
   } catch(e) { return []; }
 }
 
@@ -279,15 +277,14 @@ async function dbPostPhoto(authorId, authorName, authorEmoji, photoUrl, caption,
   } catch(e) { return { data: null, error: e }; }
 }
 
-// 写真取得
-async function dbFetchPhotos(limit, offset) {
+// 写真取得 — cursor: created_at ISO文字列（それより古いものを取得）
+async function dbFetchPhotos(limit, cursor) {
   if(!sb) return [];
   try {
-    var lim = limit || 50;
-    var off = offset || 0;
-    var to = off + Math.max(lim - 1, 0);
-    const { data } = await sb.from('photos').select('*').order('created_at', {ascending: false}).range(off, to);
-    return data || [];
+    var q = sb.from('photos').select('*').order('created_at', {ascending: false}).limit(limit || 30);
+    if(cursor) q = q.lt('created_at', cursor);
+    var r = await q;
+    return r.data || [];
   } catch(e) { return []; }
 }
 
@@ -3457,14 +3454,13 @@ function postAvatarHtml(post, sizeClass){
   return '<div class="av '+sizeClass+'">'+emoji+'</div>';
 }
 
-var TL_BATCH = 15;
+var TL_PAGE_SIZE = 30;
 /** renderTL 同時実行ガード（多重フェッチ・表示ちらつき抑制） */
 var _tlRendering = false;
 var _tlSeenKeys = {};
-/** 全投稿キャッシュ — 初回に全件取得し、ページ送りでは再取得しない */
-var _tlCachedDiaries = null;
-var _tlCachedVoices = null;
-var _tlCachedPhotos = null;
+/** カーソルベースページネーション — 最古表示アイテムの created_at */
+var _tlCursor = null;
+var _tlHasMore = true;
 /** 写真キャプション全文マップ（truncate→展開用） */
 var _photoCaptions = {};
 function expandCaption(id){
@@ -3480,9 +3476,8 @@ function timelinePostKey(type, id){
 
 function invalidateTimelineCache(){
   _tlSeenKeys = {};
-  _tlCachedDiaries = null;
-  _tlCachedVoices = null;
-  _tlCachedPhotos = null;
+  _tlCursor = null;
+  _tlHasMore = true;
 }
 
 async function loadMoreTL(){
@@ -3497,40 +3492,38 @@ async function loadMoreTL(){
   btn.textContent = '⏳ 読み込み中...';
 
   try {
-    /* キャッシュが空なら全件再取得（refreshTimelineAfterAuth 等でクリアされた場合の安全策） */
-    if(!_tlCachedDiaries && !_tlCachedVoices && !_tlCachedPhotos){
-      if(dbReady()){
-        var refetch = await Promise.all([
-          dbFetchDiaries(1000, 0).catch(function(){ return []; }),
-          dbFetchVoices(1000, 0).catch(function(){ return []; }),
-          dbFetchPhotos(1000, 0).catch(function(){ return []; })
-        ]);
-        _tlCachedDiaries = refetch[0] || [];
-        _tlCachedVoices = refetch[1] || [];
-        _tlCachedPhotos = refetch[2] || [];
-      }
-      if(!_tlCachedDiaries && !_tlCachedVoices && !_tlCachedPhotos){
-        if(noMoreEl){ noMoreEl.style.display = 'block'; noMoreEl.textContent = 'これ以上投稿はありません'; }
-        btn.style.display = 'none';
-        return;
-      }
+    if(!dbReady() || !_tlHasMore){
+      if(noMoreEl){ noMoreEl.style.display = 'block'; noMoreEl.textContent = 'これ以上投稿はありません'; }
+      btn.style.display = 'none';
+      return;
     }
 
-    /* キャッシュ全件から _tlSeenKeys でスキップし次の TL_BATCH を取得 */
-    var built = await buildTimelineCardsFromFetched(
-      _tlCachedDiaries || [], _tlCachedVoices || [], _tlCachedPhotos || []);
+    /* カーソル（最古表示アイテムの created_at）より古いものを各テーブルから取得 */
+    var tlFetch = await Promise.all([
+      dbFetchDiaries(TL_PAGE_SIZE, _tlCursor).catch(function(){ return []; }),
+      dbFetchVoices(TL_PAGE_SIZE, _tlCursor).catch(function(){ return []; }),
+      dbFetchPhotos(TL_PAGE_SIZE, _tlCursor).catch(function(){ return []; })
+    ]);
 
-    if(!built.html){
-      if(noMoreEl){
-        noMoreEl.style.display = 'block';
-        noMoreEl.textContent = 'これ以上投稿はありません';
-      }
+    var built = await buildTimelineCardsFromFetched(tlFetch[0]||[], tlFetch[1]||[], tlFetch[2]||[]);
+
+    /* カーソル更新 */
+    if(built.slicePosts.length > 0){
+      var oldest = built.slicePosts[built.slicePosts.length - 1];
+      _tlCursor = oldest.data.created_at || null;
+    }
+
+    var allEmpty = (tlFetch[0]||[]).length === 0 && (tlFetch[1]||[]).length === 0 && (tlFetch[2]||[]).length === 0;
+    if(!built.html || allEmpty){
+      _tlHasMore = false;
+      if(noMoreEl){ noMoreEl.style.display = 'block'; noMoreEl.textContent = 'これ以上投稿はありません'; }
       btn.style.display = 'none';
     } else {
       cardsEl.insertAdjacentHTML('beforeend', built.html);
       if(noMoreEl) noMoreEl.style.display = 'none';
       built.slicePosts.forEach(function(item){ if(item.data && item.data.id) renderStamps(item.data.id); });
-      btn.style.display = (built.slicePosts.length >= TL_BATCH) ? '' : 'none';
+      _tlHasMore = built.slicePosts.length >= TL_PAGE_SIZE;
+      btn.style.display = _tlHasMore ? '' : 'none';
     }
   } catch(err){
     console.error('[ONEs] loadMoreTL:', err);
@@ -3638,7 +3631,7 @@ async function buildTimelineCardsFromFetched(allD, allV, allP){
   (allV||[]).forEach(function(v){ combinedPosts.push({type:'voice', data:v, ts: rowCreatedMs(v)}); });
   combinedPosts.sort(function(a,b){ return rowCreatedMs(b.data) - rowCreatedMs(a.data); });
 
-  for(var ci = 0; ci < combinedPosts.length && slicePosts.length < TL_BATCH; ci++){
+  for(var ci = 0; ci < combinedPosts.length && slicePosts.length < TL_PAGE_SIZE; ci++){
     var item = combinedPosts[ci];
     var kid = timelinePostKey(item.type, item.data && item.data.id);
     if(!kid) continue;
@@ -3761,17 +3754,16 @@ async function renderTL(){
     await loadAllPhotos();
 
     _tlSeenKeys = {};
-    _tlCachedDiaries = null;
-    _tlCachedVoices = null;
-    _tlCachedPhotos = null;
+    _tlCursor = null;
+    _tlHasMore = true;
 
     if(dbReady()) {
       try {
-        /* 全件一括取得（limit=1000）。統合ソート後に JS 側で TL_BATCH ずつ表示する */
+        /* カーソルなし（初回）= 各テーブルから最新 TL_PAGE_SIZE 件ずつ取得 */
         var tlFetch = await Promise.all([
-          dbFetchDiaries(1000, 0).catch(function(){ return []; }),
-          dbFetchVoices(1000, 0).catch(function(){ return []; }),
-          dbFetchPhotos(1000, 0).catch(function(){ return []; })
+          dbFetchDiaries(TL_PAGE_SIZE, null).catch(function(){ return []; }),
+          dbFetchVoices(TL_PAGE_SIZE, null).catch(function(){ return []; }),
+          dbFetchPhotos(TL_PAGE_SIZE, null).catch(function(){ return []; })
         ]);
         diaries = tlFetch[0] || [];
         voices = tlFetch[1] || [];
@@ -3780,12 +3772,14 @@ async function renderTL(){
     }
     console.log('[renderTL] diaries:', diaries.length, 'voices:', voices.length, 'photos:', photos.length);
 
-    /* キャッシュに保存 — loadMoreTL はこれを再利用する */
-    _tlCachedDiaries = diaries;
-    _tlCachedVoices = voices;
-    _tlCachedPhotos = photos;
-
     var built = await buildTimelineCardsFromFetched(diaries, voices, photos);
+
+    /* カーソル更新 — 最古表示アイテムの created_at */
+    if(built.slicePosts.length > 0){
+      var oldest = built.slicePosts[built.slicePosts.length - 1];
+      _tlCursor = oldest.data.created_at || null;
+    }
+    _tlHasMore = built.slicePosts.length >= TL_PAGE_SIZE;
 
     var btnStyle = 'width:100%;padding:14px;margin:16px 0;background:#f1f8e9;color:#558b2f;border:2px solid #c8e6c9;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;';
     var btnHtml = '<button type="button" id="tl-load-more" onclick="loadMoreTL()" style="'+btnStyle+'">📜 もっと見る</button>';
@@ -3812,7 +3806,7 @@ async function renderTL(){
     var nmEl = document.getElementById('tl-no-more');
     if(nmEl) nmEl.style.display = 'none';
     if(loadBtn){
-      loadBtn.style.display = (built.slicePosts.length >= TL_BATCH && dbReady()) ? '' : 'none';
+      loadBtn.style.display = _tlHasMore ? '' : 'none';
     }
 
     built.slicePosts.forEach(function(item){ if(item.data && item.data.id) renderStamps(item.data.id); });
