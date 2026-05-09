@@ -3463,6 +3463,13 @@ var _tlSeenKeys = {};
 var _tlCachedDiaries = null;
 var _tlCachedVoices = null;
 var _tlCachedPhotos = null;
+/** 写真キャプション全文マップ（truncate→展開用） */
+var _photoCaptions = {};
+function expandCaption(id){
+  var el = document.getElementById(id);
+  if(!el || !_photoCaptions[id]) return;
+  el.innerHTML = linkifyText(_photoCaptions[id]);
+}
 
 function timelinePostKey(type, id){
   if(id === undefined || id === null || id === '') return '';
@@ -3690,8 +3697,12 @@ async function buildTimelineCardsFromFetched(allD, allV, allP){
       var ts = p.created_at ? new Date(p.created_at).getTime() : (p.ts || Date.now());
       var isMe = currentUser && (p.author_id === currentUser.id);
       var captionTxt = p.caption || '';
-      var captionShort = captionTxt.length > 70 ? captionTxt.slice(0,70)+'…' : captionTxt;
-      var caption = captionTxt ? '<div class="ftxt" style="padding:8px 0 4px;">'+escHtml(captionShort)+'</div>' : '';
+      var isCaptionLong = captionTxt.length > 70;
+      var captionShort = isCaptionLong ? captionTxt.slice(0,70) : captionTxt;
+      var captionId = 'cap-' + (p.id || Date.now());
+      if(isCaptionLong) _photoCaptions[captionId] = captionTxt;
+      var captionMoreLink = isCaptionLong ? '<span onclick="event.stopPropagation();expandCaption(\''+captionId+'\')" style="color:var(--og3);cursor:pointer;font-size:12px;">…続きを読む</span>' : '';
+      var caption = captionTxt ? '<div class="ftxt" id="'+captionId+'" style="padding:8px 0 4px;">'+escHtml(captionShort)+captionMoreLink+'</div>' : '';
       var pAuthorEsc = esc(photoAuthor);
       var pAvHtml = getAvHtml(p.author_id, photoAuthor, photoEmoji, 'am', isMe, true);
       var photoNameHtml = isMe
