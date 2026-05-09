@@ -949,7 +949,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
           onfocus="this.style.borderBottomColor='#c9a84c'"
           onblur="this.style.borderBottomColor='#c9a84c44'">
 
-        <input id="login-pass" type="password" placeholder="合言葉（パスワード）" autocomplete="current-password"
+        <input id="login-pass" type="password" placeholder="合言葉（英数・日本語OK）" autocomplete="current-password"
           style="width:100%;background:transparent;border:none;border-bottom:1px solid #e8e8e822;
             padding:12px 0;font-size:14px;font-family:'Helvetica Neue',Arial,sans-serif;
             text-align:center;color:#e8e8e8;outline:none;margin-bottom:28px;transition:border-color .3s;"
@@ -997,14 +997,14 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
           onfocus="this.style.borderBottomColor='#e8e8e8'"
           onblur="this.style.borderBottomColor='#e8e8e822'">
 
-        <input id="reg-pass" type="password" placeholder="合言葉（6文字以上）" autocomplete="new-password"
+        <input id="reg-pass" type="password" placeholder="合言葉（6文字以上・英数日本語OK）" autocomplete="new-password"
           style="width:100%;background:transparent;border:none;border-bottom:1px solid #e8e8e822;
             padding:12px 0;font-size:14px;font-family:'Helvetica Neue',Arial,sans-serif;
             text-align:center;color:#e8e8e8;outline:none;margin-bottom:16px;transition:border-color .3s;"
           onfocus="this.style.borderBottomColor='#e8e8e8'"
           onblur="this.style.borderBottomColor='#e8e8e822'">
 
-        <input id="reg-pass2" type="password" placeholder="合言葉（確認）" autocomplete="new-password"
+        <input id="reg-pass2" type="password" placeholder="合言葉（もう一度入力）" autocomplete="new-password"
           style="width:100%;background:transparent;border:none;border-bottom:1px solid #e8e8e822;
             padding:12px 0;font-size:14px;font-family:'Helvetica Neue',Arial,sans-serif;
             text-align:center;color:#e8e8e8;outline:none;margin-bottom:28px;transition:border-color .3s;"
@@ -1040,14 +1040,14 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
           onfocus="this.style.borderBottomColor='#e8e8e8'"
           onblur="this.style.borderBottomColor='#e8e8e822'">
 
-        <input id="rescue-pass" type="password" placeholder="合言葉（6文字以上）" autocomplete="new-password"
+        <input id="rescue-pass" type="password" placeholder="合言葉（6文字以上・英数日本語OK）" autocomplete="new-password"
           style="width:100%;background:transparent;border:none;border-bottom:1px solid #e8e8e822;
             padding:12px 0;font-size:14px;font-family:'Helvetica Neue',Arial,sans-serif;
             text-align:center;color:#e8e8e8;outline:none;margin-bottom:16px;transition:border-color .3s;"
           onfocus="this.style.borderBottomColor='#e8e8e8'"
           onblur="this.style.borderBottomColor='#e8e8e822'">
 
-        <input id="rescue-pass2" type="password" placeholder="合言葉（確認）" autocomplete="new-password"
+        <input id="rescue-pass2" type="password" placeholder="合言葉（もう一度入力）" autocomplete="new-password"
           style="width:100%;background:transparent;border:none;border-bottom:1px solid #e8e8e822;
             padding:12px 0;font-size:14px;font-family:'Helvetica Neue',Arial,sans-serif;
             text-align:center;color:#e8e8e8;outline:none;margin-bottom:28px;transition:border-color .3s;"
@@ -2388,10 +2388,10 @@ async function showMigrationModal() {
     '<input id="mig-email" type="email" placeholder="メールアドレス" autocomplete="email"' +
     ' style="width:100%;border:1px solid #ddd;border-radius:8px;padding:12px;font-size:14px;margin-bottom:12px;box-sizing:border-box;">' +
 
-    '<input id="mig-pass" type="password" placeholder="合言葉（6文字以上）" autocomplete="new-password"' +
+    '<input id="mig-pass" type="password" placeholder="合言葉（6文字以上・英数日本語OK）" autocomplete="new-password"' +
     ' style="width:100%;border:1px solid #ddd;border-radius:8px;padding:12px;font-size:14px;margin-bottom:12px;box-sizing:border-box;">' +
 
-    '<input id="mig-pass2" type="password" placeholder="合言葉（確認）" autocomplete="new-password"' +
+    '<input id="mig-pass2" type="password" placeholder="合言葉（もう一度入力）" autocomplete="new-password"' +
     ' style="width:100%;border:1px solid #ddd;border-radius:8px;padding:12px;font-size:14px;margin-bottom:20px;box-sizing:border-box;">' +
 
     '<button id="btn-migrate" onclick="executeMigration()" style="width:100%;background:#1e6e3a;color:#fff;border:none;' +
