@@ -1266,12 +1266,11 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
     <div class="pg" id="pg-mypage">
       <div class="mph">
         <div class="mphr">
-          <div class="mpph" onclick="triggerPhotoUpload()" id="profile-photo-btn">
+          <div class="mpph" id="profile-photo-btn">
             <img id="profile-photo-img" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:15px;">
             <span id="profile-photo-emoji">😊</span>
             <div class="mppe">📷 写真を変更</div>
           </div>
-          <input type="file" id="photo-input" accept="image/*" style="display:none;" onchange="handlePhotoUpload(event)">
           <div class="mphi">
             <div class="mphn" id="mpname">BOSS YASU</div>
             <div class="mphs" id="mpstatus">「経験を自動化して収益化する」</div>
@@ -4408,9 +4407,29 @@ async function refreshTimelineAfterAuth(){
 function renderProfileCard(member, isMyself){
   if(!member) return '';
   var photoUrl = member.photo || localStorage.getItem('ones_profile_photo_'+member.id);
-  var avatarHtml = photoUrl
-    ? '<div style="width:88px;height:88px;border-radius:50%;background-image:url('+photoUrl+');background-size:cover;background-position:center;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.15);"></div>'
-    : '<div style="width:88px;height:88px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:42px;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.15);">'+(member.emoji||'🙋')+'</div>';
+  var avatarHtml;
+  if(isMyself){
+    var fileInputHidden = '<input type="file" id="photo-input" accept="image/*" style="display:none" onchange="handlePhotoUpload(event)">';
+    if(photoUrl){
+      avatarHtml =
+        '<div onclick="triggerPhotoUpload()" style="cursor:pointer;" title="写真を変更">'
+        + '<img id="profile-photo-img" src="'+photoUrl+'" alt="" style="display:block;width:88px;height:88px;object-fit:cover;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.15);">'
+        + '<span id="profile-photo-emoji" style="display:none">'+(member.emoji||'🙋')+'</span>'
+        + '</div>'
+        + fileInputHidden;
+    } else {
+      avatarHtml =
+        '<div onclick="triggerPhotoUpload()" style="cursor:pointer;width:88px;height:88px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:42px;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.15);" title="写真を変更">'
+        + '<img id="profile-photo-img" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:50%;">'
+        + '<span id="profile-photo-emoji">'+(member.emoji||'🙋')+'</span>'
+        + '</div>'
+        + fileInputHidden;
+    }
+  } else {
+    avatarHtml = photoUrl
+      ? '<div style="width:88px;height:88px;border-radius:50%;background-image:url('+photoUrl+');background-size:cover;background-position:center;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.15);"></div>'
+      : '<div style="width:88px;height:88px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:42px;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.15);">'+(member.emoji||'🙋')+'</div>';
+  }
 
   var headerHtml = ''
     + '<div style="background:linear-gradient(135deg,#43a047,#66bb6a);padding:24px 20px 32px;text-align:center;color:#fff;border-radius:0 0 24px 24px;margin-bottom:-20px;">'
@@ -7656,7 +7675,8 @@ document.getElementById('soin').addEventListener('input',function(){const q=this
 /* ══════════ プロフィール写真 ══════════ */
 
 function triggerPhotoUpload() {
-  document.getElementById('photo-input').click();
+  var pi = document.getElementById('photo-input');
+  if(pi) pi.click();
 }
 
 function handlePhotoUpload(event) {
@@ -7715,17 +7735,17 @@ function handlePhotoUpload(event) {
             var ia = new Uint8Array(ab);
             for(var i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
             var blob = new Blob([ab], {type: mimeString});
-            var filePath = 'profiles/' + userId + '/' + Date.now() + '.jpg';
-            var up = await sb.storage.from('profile-photos').upload(filePath, blob, {
+            var profileFileName = 'profile_' + userId + '.jpg';
+            var up = await sb.storage.from('Photos').upload(profileFileName, blob, {
               contentType: 'image/jpeg',
               upsert: true
             });
             if(up.error) {
-              console.warn('[ONEs] profile-photos upload:', up.error);
+              console.warn('[ONEs] Photos bucket upload:', up.error);
             } else {
-              var pu = sb.storage.from('profile-photos').getPublicUrl(filePath);
+              var pu = sb.storage.from('Photos').getPublicUrl(profileFileName);
               if(pu && pu.data && pu.data.publicUrl) {
-                finalPhoto = pu.data.publicUrl;
+                finalPhoto = pu.data.publicUrl + '?t=' + Date.now();
               }
             }
           } catch(e) {
@@ -7789,6 +7809,9 @@ function handlePhotoUpload(event) {
   };
   reader.readAsDataURL(file);
 }
+
+window.triggerPhotoUpload = triggerPhotoUpload;
+window.handlePhotoUpload = handlePhotoUpload;
 
 function applyProfilePhoto(dataUrl) {
   if (!dataUrl) return;
