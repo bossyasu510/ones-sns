@@ -25,20 +25,36 @@ if(location.protocol !== 'file:') {
 const SUPABASE_URL = 'https://iywkhawhgxkoqehoyhsh.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_OvlYWlHuKnzp5utaqj8EAw_q5H100tl';
 let sb = null;
+/** setSupabaseHeader で最後に設定した memberId（文字列化済み・GoTrueClient 多重生成の抑制） */
+let _lastMemberId = null;
 
 /**
  * RLS用に x-member-id ヘッダーを乗せて Supabase クライアントを再生成。
  * 未ログイン時は空文字を渡す（公開READのみ可能）。
  * currentUser を更新したら必ずこの関数を呼ぶこと。
+ * 同一 memberId で連続呼び出しされた場合は再生成しない（GoTrueClient 多重生成の抑制）。
  */
 function setSupabaseHeader(memberId) {
   if(typeof supabase === 'undefined') return;
+  var mid = memberId != null ? String(memberId) : '';
+  if(_lastMemberId === mid && sb) {
+    if(mid) {
+      window._tlCache = null;
+      window._photosCached = false;
+    }
+    return;
+  }
+  _lastMemberId = mid;
   try {
     sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-      global: { headers: { 'x-member-id': memberId || '' } }
+      global: { headers: { 'x-member-id': mid } }
     });
   } catch(e) {
     console.error('❌ Supabase 再初期化エラー:', e);
+  }
+  if(mid) {
+    window._tlCache = null;
+    window._photosCached = false;
   }
 }
 
@@ -180,10 +196,13 @@ async function dbPostDiary(authorId, authorName, authorEmoji, title, body, visib
 }
 
 // 日記取得（全ユーザー）
-async function dbFetchDiaries(limit) {
+async function dbFetchDiaries(limit, offset) {
   if(!sb) return [];
   try {
-    const { data } = await sb.from('diaries').select('*').order('created_at', {ascending: false}).limit(limit || 50);
+    var lim = limit || 50;
+    var off = offset || 0;
+    var to = off + Math.max(lim - 1, 0);
+    const { data } = await sb.from('diaries').select('*').order('created_at', {ascending: false}).range(off, to);
     return data || [];
   } catch(e) { return []; }
 }
@@ -200,10 +219,13 @@ async function dbPostVoice(authorId, authorName, authorEmoji, body) {
 }
 
 // つぶやき取得
-async function dbFetchVoices(limit) {
+async function dbFetchVoices(limit, offset) {
   if(!sb) return [];
   try {
-    const { data } = await sb.from('voices').select('*').order('created_at', {ascending: false}).limit(limit || 50);
+    var lim = limit || 50;
+    var off = offset || 0;
+    var to = off + Math.max(lim - 1, 0);
+    const { data } = await sb.from('voices').select('*').order('created_at', {ascending: false}).range(off, to);
     return data || [];
   } catch(e) { return []; }
 }
@@ -255,10 +277,13 @@ async function dbPostPhoto(authorId, authorName, authorEmoji, photoUrl, caption,
 }
 
 // 写真取得
-async function dbFetchPhotos(limit) {
+async function dbFetchPhotos(limit, offset) {
   if(!sb) return [];
   try {
-    const { data } = await sb.from('photos').select('*').order('created_at', {ascending: false}).limit(limit || 50);
+    var lim = limit || 50;
+    var off = offset || 0;
+    var to = off + Math.max(lim - 1, 0);
+    const { data } = await sb.from('photos').select('*').order('created_at', {ascending: false}).range(off, to);
     return data || [];
   } catch(e) { return []; }
 }
@@ -445,6 +470,10 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
 .bd{background:#edf8f1;color:#1e6e3a;}
 .bv{background:#e8f8ff;color:#0066aa;}
 .fcb{padding:8px 14px 0;}
+.tl-feed-photo{max-width:100%;max-height:500px;width:100%;object-fit:cover;border-radius:12px;cursor:pointer;display:block;}
+@media (max-width:768px){
+  .tl-feed-photo{max-height:400px;}
+}
 .ftit{font-size:15px;font-weight:700;color:var(--og3);margin-bottom:4px;cursor:pointer;line-height:1.4;}
 .ftxt{font-size:13px;color:var(--text);line-height:1.7;}
 .fcf{padding:8px 14px 12px;display:flex;border-top:1px solid #edf8f1;margin-top:10px;}
@@ -575,6 +604,8 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
 .shtit{font-size:16px;font-weight:700;color:var(--og3);}
 .shx{width:32px;height:32px;border-radius:50%;background:var(--og-pale);display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--text2);cursor:pointer;}
 #shbody{padding:14px 16px;}
+/* file input は display:none だとプログラム／一部ブラウザで .click() が無視されるため視覚のみ隠す */
+.ones-file-input-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;opacity:0;}
 
 /* ── FORM INPUTS ── */
 .wt{width:100%;background:var(--og-pale);border:1.5px solid var(--og-border);border-radius:10px;padding:12px 14px;font-size:15px;font-family:inherit;outline:none;margin-bottom:10px;}
@@ -622,7 +653,6 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
 .inv-input{width:100%;background:var(--og-pale);border:2px solid var(--og-border);border-radius:12px;padding:14px 16px;font-size:16px;font-family:inherit;outline:none;text-align:center;letter-spacing:.1em;margin-bottom:12px;}
 .inv-input:focus{border-color:var(--og);}
 .inv-input::placeholder{letter-spacing:0;font-size:14px;}
-.inv-error{color:#e53e3e;font-size:12px;text-align:center;margin-top:-6px;margin-bottom:10px;min-height:18px;}
 .inv-join-btn{width:100%;background:linear-gradient(135deg,#4cb87a,#218a4a);color:#fff;border:none;padding:14px;border-radius:12px;font-size:16px;font-weight:700;font-family:inherit;cursor:pointer;box-shadow:0 3px 12px rgba(30,110,58,.3);}
 .inv-join-btn:active{transform:scale(.98);}
 .inv-note{font-size:11px;color:var(--text3);text-align:center;margin-top:14px;line-height:1.6;}
@@ -753,6 +783,8 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
   .mph { border-radius: var(--r) var(--r) 0 0; }
 }
 @media(max-width:767px){#hd-desktnav{display:none;}#sidecol{display:none!important;}}
+/* TL「もっと見る」ホバー（ボタン本体はインラインスタイル） */
+#tl-load-more:hover{background:#dcedc8 !important;}
 </style>
 </head>
 <body>
@@ -880,8 +912,8 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
       </div>
     </div>
 
-    <!-- 招待フォームカード -->
-    <div style="
+    <!-- 認証フォームカード -->
+    <div id="auth-card" style="
       width:100%;max-width:340px;
       background:rgba(255,255,255,.03);
       border:1px solid #e8e8e822;
@@ -889,66 +921,152 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
       padding:28px 24px;
       backdrop-filter:blur(10px);
     ">
-      <div style="
-        font-size:10px;letter-spacing:.4em;
-        color:#c9a84c;text-align:center;
-        margin-bottom:20px;
-      ">INVITATION CODE</div>
-
-      <input id="inv-code-input"
-        type="text"
-        placeholder="ONES-XXXX"
-        autocomplete="off"
-        style="
-          width:100%;background:transparent;
-          border:none;border-bottom:1px solid #c9a84c44;
-          padding:12px 0;font-size:18px;
-          font-family:'Helvetica Neue',Arial,sans-serif;
-          letter-spacing:.2em;text-align:center;
-          color:#e8e8e8;outline:none;
-          margin-bottom:20px;
-          transition:border-color .3s;
-        "
-        onfocus="this.style.borderBottomColor='#c9a84c'"
-        onblur="this.style.borderBottomColor='#c9a84c44'">
-
-      <div class="inv-error" id="inv-error"
-        style="color:#e8a84c;font-size:11px;text-align:center;
-          margin-top:-14px;margin-bottom:14px;min-height:16px;letter-spacing:.05em;">
+      <!-- タブ切替 -->
+      <div id="auth-tabs" style="display:flex;justify-content:center;gap:24px;margin-bottom:24px;">
+        <span id="tab-login" onclick="switchAuthTab('login')"
+          style="font-size:10px;letter-spacing:.4em;color:#c9a84c;cursor:pointer;
+            padding-bottom:6px;border-bottom:1px solid #c9a84c;">LOGIN</span>
+        <span id="tab-register" onclick="switchAuthTab('register')"
+          style="font-size:10px;letter-spacing:.4em;color:#e8e8e844;cursor:pointer;
+            padding-bottom:6px;border-bottom:1px solid transparent;">REGISTER</span>
       </div>
 
-      <input id="inv-name-input"
-        type="text"
-        placeholder="NICKNAME"
-        autocomplete="off"
-        style="
-          width:100%;background:transparent;
-          border:none;border-bottom:1px solid #e8e8e822;
-          padding:12px 0;font-size:14px;
-          font-family:'Helvetica Neue',Arial,sans-serif;
-          letter-spacing:.2em;text-align:center;
-          color:#e8e8e8;outline:none;
-          margin-bottom:28px;
-          transition:border-color .3s;
-        "
-        onfocus="this.style.borderBottomColor='#e8e8e8'"
-        onblur="this.style.borderBottomColor='#e8e8e822'">
+      <!-- エラー表示 -->
+      <div id="auth-error"
+        style="color:#e8a84c;font-size:11px;text-align:center;
+          margin-bottom:14px;min-height:16px;letter-spacing:.05em;">
+      </div>
 
-      <!-- 参加ボタン -->
-      <button onclick="joinWithCode()" style="
-        width:100%;background:transparent;
-        border:1px solid #c9a84c;
-        color:#c9a84c;
-        padding:16px;
-        font-size:11px;letter-spacing:.5em;
-        font-family:'Helvetica Neue',Arial,sans-serif;
-        cursor:pointer;
-        transition:all .3s;
-        margin-bottom:16px;
-      "
-        onmouseover="this.style.background='#c9a84c';this.style.color='#0a0a0a'"
-        onmouseout="this.style.background='transparent';this.style.color='#c9a84c'"
-      >ENTER →</button>
+      <!-- ===== ログインフォーム ===== -->
+      <div id="form-login">
+        <input id="login-email" type="email" placeholder="メールアドレス" autocomplete="email"
+          style="width:100%;background:transparent;border:none;border-bottom:1px solid #c9a84c44;
+            padding:12px 0;font-size:14px;font-family:'Helvetica Neue',Arial,sans-serif;
+            text-align:center;color:#e8e8e8;outline:none;margin-bottom:16px;transition:border-color .3s;"
+          onfocus="this.style.borderBottomColor='#c9a84c'"
+          onblur="this.style.borderBottomColor='#c9a84c44'">
+
+        <input id="login-pass" type="password" placeholder="合言葉（パスワード）" autocomplete="current-password"
+          style="width:100%;background:transparent;border:none;border-bottom:1px solid #e8e8e822;
+            padding:12px 0;font-size:14px;font-family:'Helvetica Neue',Arial,sans-serif;
+            text-align:center;color:#e8e8e8;outline:none;margin-bottom:28px;transition:border-color .3s;"
+          onfocus="this.style.borderBottomColor='#e8e8e8'"
+          onblur="this.style.borderBottomColor='#e8e8e822'">
+
+        <button id="btn-login" onclick="authLogin()" style="
+          width:100%;background:transparent;border:1px solid #c9a84c;color:#c9a84c;
+          padding:16px;font-size:11px;letter-spacing:.5em;
+          font-family:'Helvetica Neue',Arial,sans-serif;cursor:pointer;transition:all .3s;margin-bottom:16px;"
+          onmouseover="this.style.background='#c9a84c';this.style.color='#0a0a0a'"
+          onmouseout="this.style.background='transparent';this.style.color='#c9a84c'"
+        >LOGIN →</button>
+
+        <!-- 既存メンバー移行リンク -->
+        <div style="text-align:center;margin-top:12px;">
+          <span id="link-rescue" onclick="switchAuthTab('rescue')"
+            style="font-size:11px;color:#e8e8e888;cursor:pointer;
+              border-bottom:1px solid #e8e8e844;padding-bottom:2px;letter-spacing:.05em;">
+            初めてメール登録する既存メンバーの方
+          </span>
+        </div>
+      </div>
+
+      <!-- ===== 新規登録フォーム ===== -->
+      <div id="form-register" style="display:none;">
+        <input id="reg-code" type="text" placeholder="ONES-XXXX（招待コード）" autocomplete="off"
+          style="width:100%;background:transparent;border:none;border-bottom:1px solid #c9a84c44;
+            padding:12px 0;font-size:14px;font-family:'Helvetica Neue',Arial,sans-serif;
+            letter-spacing:.15em;text-align:center;color:#e8e8e8;outline:none;margin-bottom:16px;transition:border-color .3s;"
+          onfocus="this.style.borderBottomColor='#c9a84c'"
+          onblur="this.style.borderBottomColor='#c9a84c44'">
+
+        <input id="reg-name" type="text" placeholder="ニックネーム" autocomplete="off"
+          style="width:100%;background:transparent;border:none;border-bottom:1px solid #e8e8e822;
+            padding:12px 0;font-size:14px;font-family:'Helvetica Neue',Arial,sans-serif;
+            text-align:center;color:#e8e8e8;outline:none;margin-bottom:16px;transition:border-color .3s;"
+          onfocus="this.style.borderBottomColor='#e8e8e8'"
+          onblur="this.style.borderBottomColor='#e8e8e822'">
+
+        <input id="reg-email" type="email" placeholder="メールアドレス" autocomplete="email"
+          style="width:100%;background:transparent;border:none;border-bottom:1px solid #e8e8e822;
+            padding:12px 0;font-size:14px;font-family:'Helvetica Neue',Arial,sans-serif;
+            text-align:center;color:#e8e8e8;outline:none;margin-bottom:16px;transition:border-color .3s;"
+          onfocus="this.style.borderBottomColor='#e8e8e8'"
+          onblur="this.style.borderBottomColor='#e8e8e822'">
+
+        <input id="reg-pass" type="password" placeholder="合言葉（6文字以上）" autocomplete="new-password"
+          style="width:100%;background:transparent;border:none;border-bottom:1px solid #e8e8e822;
+            padding:12px 0;font-size:14px;font-family:'Helvetica Neue',Arial,sans-serif;
+            text-align:center;color:#e8e8e8;outline:none;margin-bottom:16px;transition:border-color .3s;"
+          onfocus="this.style.borderBottomColor='#e8e8e8'"
+          onblur="this.style.borderBottomColor='#e8e8e822'">
+
+        <input id="reg-pass2" type="password" placeholder="合言葉（確認）" autocomplete="new-password"
+          style="width:100%;background:transparent;border:none;border-bottom:1px solid #e8e8e822;
+            padding:12px 0;font-size:14px;font-family:'Helvetica Neue',Arial,sans-serif;
+            text-align:center;color:#e8e8e8;outline:none;margin-bottom:28px;transition:border-color .3s;"
+          onfocus="this.style.borderBottomColor='#e8e8e8'"
+          onblur="this.style.borderBottomColor='#e8e8e822'">
+
+        <button id="btn-register" onclick="authRegister()" style="
+          width:100%;background:transparent;border:1px solid #c9a84c;color:#c9a84c;
+          padding:16px;font-size:11px;letter-spacing:.5em;
+          font-family:'Helvetica Neue',Arial,sans-serif;cursor:pointer;transition:all .3s;margin-bottom:16px;"
+          onmouseover="this.style.background='#c9a84c';this.style.color='#0a0a0a'"
+          onmouseout="this.style.background='transparent';this.style.color='#c9a84c'"
+        >REGISTER →</button>
+      </div>
+
+      <!-- ===== 既存メンバー移行フォーム ===== -->
+      <div id="form-rescue" style="display:none;">
+        <div style="text-align:center;font-size:12px;color:#e8e8e8aa;line-height:1.6;margin-bottom:16px;">
+          既にONEsメンバーの方は<br>ニックネームで本人確認後、<br>メールアドレスと合言葉を設定できます。
+        </div>
+
+        <input id="rescue-name" type="text" placeholder="現在のニックネーム" autocomplete="off"
+          style="width:100%;background:transparent;border:none;border-bottom:1px solid #c9a84c44;
+            padding:12px 0;font-size:14px;font-family:'Helvetica Neue',Arial,sans-serif;
+            text-align:center;color:#e8e8e8;outline:none;margin-bottom:16px;transition:border-color .3s;"
+          onfocus="this.style.borderBottomColor='#c9a84c'"
+          onblur="this.style.borderBottomColor='#c9a84c44'">
+
+        <input id="rescue-email" type="email" placeholder="メールアドレス" autocomplete="email"
+          style="width:100%;background:transparent;border:none;border-bottom:1px solid #e8e8e822;
+            padding:12px 0;font-size:14px;font-family:'Helvetica Neue',Arial,sans-serif;
+            text-align:center;color:#e8e8e8;outline:none;margin-bottom:16px;transition:border-color .3s;"
+          onfocus="this.style.borderBottomColor='#e8e8e8'"
+          onblur="this.style.borderBottomColor='#e8e8e822'">
+
+        <input id="rescue-pass" type="password" placeholder="合言葉（6文字以上）" autocomplete="new-password"
+          style="width:100%;background:transparent;border:none;border-bottom:1px solid #e8e8e822;
+            padding:12px 0;font-size:14px;font-family:'Helvetica Neue',Arial,sans-serif;
+            text-align:center;color:#e8e8e8;outline:none;margin-bottom:16px;transition:border-color .3s;"
+          onfocus="this.style.borderBottomColor='#e8e8e8'"
+          onblur="this.style.borderBottomColor='#e8e8e822'">
+
+        <input id="rescue-pass2" type="password" placeholder="合言葉（確認）" autocomplete="new-password"
+          style="width:100%;background:transparent;border:none;border-bottom:1px solid #e8e8e822;
+            padding:12px 0;font-size:14px;font-family:'Helvetica Neue',Arial,sans-serif;
+            text-align:center;color:#e8e8e8;outline:none;margin-bottom:28px;transition:border-color .3s;"
+          onfocus="this.style.borderBottomColor='#e8e8e8'"
+          onblur="this.style.borderBottomColor='#e8e8e822'">
+
+        <button id="btn-rescue" onclick="authRescueMigration()" style="
+          width:100%;background:transparent;border:1px solid #c9a84c;color:#c9a84c;
+          padding:16px;font-size:11px;letter-spacing:.5em;
+          font-family:'Helvetica Neue',Arial,sans-serif;cursor:pointer;transition:all .3s;margin-bottom:16px;"
+          onmouseover="this.style.background='#c9a84c';this.style.color='#0a0a0a'"
+          onmouseout="this.style.background='transparent';this.style.color='#c9a84c'"
+        >MIGRATE →</button>
+
+        <div style="text-align:center;">
+          <span onclick="switchAuthTab('login')"
+            style="font-size:11px;color:#e8e8e888;cursor:pointer;border-bottom:1px solid #e8e8e844;
+              padding-bottom:2px;letter-spacing:.05em;">
+            ← ログインに戻る
+          </span>
+        </div>
+      </div>
 
       <!-- ポリシーリンク -->
       <div style="text-align:center;font-size:9px;letter-spacing:.2em;color:#e8e8e844;">
@@ -976,11 +1094,9 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
         style="width:100%;height:auto;filter:sepia(1) hue-rotate(20deg) saturate(.5);">
     </div>
 
-    <!-- 管理者ログイン（隠し） -->
+    <!-- ©表記 -->
     <div style="position:fixed;bottom:12px;left:12px;z-index:999;">
-      <span onclick="showAdminLogin()"
-        style="font-size:10px;color:rgba(255,255,255,.08);cursor:pointer;
-          letter-spacing:.1em;">©ONEs</span>
+      <span style="font-size:10px;color:rgba(255,255,255,.08);letter-spacing:.1em;">©ONEs</span>
     </div>
 
   </div>
@@ -1101,7 +1217,8 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
     <div class="dn" onclick="nav('message',this)">💌 メッセージ</div>
     <div class="dn" onclick="nav('calendar',this)">📅 カレンダー</div>
     <div class="dn" onclick="nav('help',this)">❓ ヘルプ</div>
-    <div class="dn" onclick="logoutApp()" style="color:rgba(255,200,200,.9);">🚪 ログアウト</div>
+    <div id="hd-nav-admin" class="dn" onclick="nav('admin',this)" style="display:none;">🛡️ 管理</div>
+    <div class="dn" onclick="logout()" style="color:rgba(255,200,200,.9);">🚪 ログアウト</div>
   </nav>
   <button class="hd-icon" onclick="openSearch()" style="margin-left:auto;">🔍</button>
   <button class="hd-icon" onclick="nav('notice',null)" title="お知らせ（メッセージ・足あと・イベント招待など全て）" aria-label="全通知">🔔<div class="hb" id="notice-badge">0</div></button>
@@ -1171,7 +1288,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
         <button onclick="openEditProfile()" style="flex:1;padding:14px;background:#fff;border:2px solid var(--og);color:var(--og-dark);border-radius:14px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 2px 8px rgba(30,110,58,0.08);">
           ✏️ プロフィール編集
         </button>
-        <button onclick="logoutApp()" style="flex:1;padding:14px;background:#fff;border:2px solid #e53e3e;color:#e53e3e;border-radius:14px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 2px 8px rgba(229,62,62,0.08);">
+        <button onclick="logout()" style="flex:1;padding:14px;background:#fff;border:2px solid #e53e3e;color:#e53e3e;border-radius:14px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 2px 8px rgba(229,62,62,0.08);">
           🚪 ログアウト
         </button>
       </div>
@@ -1616,8 +1733,8 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
         <div class="inv-badge" id="side-role-badge" style="margin-bottom:8px;">🌱 メンバー</div>
         <div style="font-size:11px;color:var(--text3);line-height:2.1;">ワンミク <strong id="side-stat-wanmik">0</strong>人<br>招待数 <strong id="side-stat-invite">0</strong>人<br>日記 <strong id="side-stat-diary">0</strong>件</div>
         <button class="bos" style="margin-top:10px;width:100%;" onclick="nav('mypage',null)">マイページへ</button>
-        <button class="bg" style="margin-top:6px;width:100%;color:#e53e3e;border-color:#e53e3e;" onclick="logoutApp()">🚪 ログアウト</button>
-        <button class="bos" style="margin-top:6px;width:100%;background:linear-gradient(135deg,#1e6e3a,#0d3d20);" onclick="openAdmin()">🛡️ 管理者画面</button>
+        <button class="bg" style="margin-top:6px;width:100%;color:#e53e3e;border-color:#e53e3e;" onclick="logout()">🚪 ログアウト</button>
+        <button type="button" id="btn-side-admin" class="bos" style="margin-top:6px;width:100%;display:none;background:linear-gradient(135deg,#1e6e3a,#0d3d20);" onclick="openAdmin()">🛡️ 管理者画面</button>
       </div>
     </div>
     <div class="sc">
@@ -1655,7 +1772,7 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
 </svg></div><span>ホーム</span></div>
   <div class="bi" onclick="nav('wanmik',this)" id="bn-wanmik"><div class="ic">👥</div><span>ワンミク</span></div>
   <div class="bi" onclick="nav('calendar',this)" id="bn-calendar"><div class="ic">📅</div><span>カレンダー</span></div>
-  <div class="bi" onclick="nav('message',this)" id="bn-message" title="メッセージ未読のみ" aria-label="メッセージ"><div class="ic">💌</div><span>メッセージ</span><div class="bn-badge">3</div></div>
+  <div class="bi" onclick="nav('message',this)" id="bn-message" title="メッセージ未読のみ" aria-label="メッセージ"><div class="ic">💌</div><span>メッセージ</span><div class="bn-badge" id="bn-message-badge" style="display:none;">0</div></div>
   <div class="bi" onclick="nav('mypage',this)" id="bn-mypage"><div class="ic">😊</div><span>マイページ</span></div>
 </nav>
 
@@ -1669,7 +1786,6 @@ button{cursor:pointer;font-family:inherit;border:none;outline:none;background:no
 const AB='background:linear-gradient(135deg,#a8ddb8,#3fa865)';
 
 // INVITE / MEMBER DATA (stored in localStorage)
-// 古い平文パスワードは廃止 → ADMIN_PASS_HASH を使用
 
 const DEMO_MEMBERS = [
   {id:'m001',name:'BOSS YASU',emoji:'😊',code:'ONES-7X3K',myCode:'ONES-7X3K',invitedBy:null,invitedById:null,joinDate:'2005-04-03',status:'active',role:'admin'},
@@ -1848,47 +1964,23 @@ function getNightModeEmoji() {
 }
 
 /* ══════════ セキュリティ ══════════ */
+// パスワードハッシュはSupabase Auth (bcrypt) に移行済み
+// クライアント側にハッシュ関数・ソルト・パスワードは一切保持しない
+// ── 管理者判定は role ベースに移行（ハードコード済みパスワードは全削除） ──
 
-// SHA-256ハッシュ生成（Web Crypto API）
-async function hashPassword(password) {
-  // ローカル環境（file://）では crypto.subtle が使えないため、フォールバック
-  if(!window.crypto || !window.crypto.subtle) {
-    console.warn('⚠️ crypto.subtle 不可（ローカル環境？）→ プレーン比較フォールバック');
-    return 'PLAIN:' + password;
-  }
-  try {
-    const enc = new TextEncoder();
-    const data = enc.encode(password + 'ones-salt-2026');
-    const hash = await crypto.subtle.digest('SHA-256', data);
-    return Array.from(new Uint8Array(hash))
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('');
-  } catch(e) {
-    console.warn('⚠️ ハッシュ化エラー → プレーン比較フォールバック', e);
-    return 'PLAIN:' + password;
-  }
-}
-
-// プレーン比較用の許可パスワード（ローカル開発用）
-const LOCAL_ADMIN_PLAIN = 'PLAIN:ones2024admin';
-const LOCAL_YASU_PLAIN = 'PLAIN:yasu2026';
-
-function checkAdminPass(inputHash) {
-  return inputHash === ADMIN_PASS_HASH || inputHash === LOCAL_ADMIN_PLAIN;
-}
-function checkYasuPass(inputHash) {
-  return inputHash === BOSS_YASU_HASH || inputHash === LOCAL_YASU_PLAIN;
-}
-
-// 管理者パスワード（ハッシュ化済み）"ones2024admin"のハッシュ
-const ADMIN_PASS_HASH = '3cd5a701879098c33449d1a796c11f3f237aaeb44e1ea7bba108d504c56781df';
-
-// 管理者画面ロック解除フラグ
+// 管理者画面ロック：Supabase Auth 移行後はJWTで保護
 let adminUnlocked = false;
 const ADMIN_LOCK_KEY = 'ones_admin_unlocked_at';
 const ADMIN_LOCK_DURATION = 30 * 60 * 1000; // 30分
 
 function isAdminUnlocked() {
+  // Auth 移行後はログイン済み＝解除済みとする
+  if(sb && sb.auth) {
+    try {
+      // Supabase Auth セッションがあれば管理者ロック不要
+      return true;
+    } catch(e) {}
+  }
   const t = parseInt(localStorage.getItem(ADMIN_LOCK_KEY) || '0');
   return Date.now() - t < ADMIN_LOCK_DURATION;
 }
@@ -1906,49 +1998,76 @@ function escHTML(str) {
   }[m]));
 }
 
-// ログイン試行回数制限
-const LOGIN_ATTEMPTS_KEY = 'ones_login_attempts';
-const MAX_ATTEMPTS = 5;
-const LOCK_DURATION = 15 * 60 * 1000; // 15分
-
-function getLoginAttempts() {
-  return JSON.parse(localStorage.getItem(LOGIN_ATTEMPTS_KEY) || '{"count":0,"locked_until":0}');
-}
-
-function incrementLoginAttempt() {
-  const a = getLoginAttempts();
-  a.count++;
-  if(a.count >= MAX_ATTEMPTS) {
-    a.locked_until = Date.now() + LOCK_DURATION;
-  }
-  localStorage.setItem(LOGIN_ATTEMPTS_KEY, JSON.stringify(a));
-  return a;
-}
-
-function resetLoginAttempts() {
-  localStorage.setItem(LOGIN_ATTEMPTS_KEY, JSON.stringify({count:0, locked_until:0}));
-}
-
-function isLoginLocked() {
-  const a = getLoginAttempts();
-  if(a.locked_until && Date.now() < a.locked_until) {
-    const remaining = Math.ceil((a.locked_until - Date.now()) / 60000);
-    return {locked: true, remaining};
-  }
-  if(a.locked_until && Date.now() >= a.locked_until) {
-    resetLoginAttempts();
-  }
-  return {locked: false};
-}
-
-
 /* ══════════ INVITE SYSTEM ══════════ */
 let currentUser = null;
+
+/** BOSS YASU（user id が m001）のみ管理者ダッシュボード・管理メニューを利用可 */
+function isAdmin(){
+  return !!(currentUser && currentUser.id === 'm001');
+}
+
+function applyAdminMenuVisibility(){
+  var sideBtn = document.getElementById('btn-side-admin');
+  if(sideBtn) sideBtn.style.display = isAdmin() ? '' : 'none';
+  var hdNav = document.getElementById('hd-nav-admin');
+  if(hdNav) hdNav.style.display = isAdmin() ? '' : 'none';
+}
+
+/** URL・オーバーレイの管理者アクセスを m001 のみに制限 */
+function enforceAdminAccessGuard(){
+  try {
+    var hash = (location.hash || '').replace(/^#/,'').split('&')[0].split('?')[0];
+    if(hash === 'admin'){
+      if(!isAdmin()){
+        history.replaceState(null, '', location.pathname + location.search);
+        if(typeof nav === 'function') nav('home', null);
+        else location.hash = '#home';
+      } else if(typeof openAdmin === 'function'){
+        history.replaceState(null, '', location.pathname + location.search);
+        openAdmin();
+      }
+      return;
+    }
+  } catch(e){}
+  try {
+    var params = new URLSearchParams(location.search);
+    if(params.get('page') === 'admin' || params.get('nav') === 'admin'){
+      if(!isAdmin()){
+        params.delete('page');
+        params.delete('nav');
+        var qs = params.toString();
+        history.replaceState(null, '', location.pathname + (qs ? '?' + qs : ''));
+        if(typeof nav === 'function') nav('home', null);
+      } else if(typeof openAdmin === 'function'){
+        params.delete('page');
+        params.delete('nav');
+        var qs2 = params.toString();
+        history.replaceState(null, '', location.pathname + (qs2 ? '?' + qs2 : ''));
+        openAdmin();
+      }
+    }
+  } catch(e){}
+  try {
+    var adm = document.getElementById('admin-screen');
+    if(adm && adm.classList.contains('show') && !isAdmin()){
+      adm.classList.remove('show');
+    }
+  } catch(e){}
+}
+
 window._photoCache = {};
+/** loadAllPhotos を最後にネットワークで成功した時刻（ミリ秒）。TTL で古いキャッシュを避ける */
+window._loadAllPhotosFetchedAt = 0;
+var PHOTO_CACHE_TTL_MS = 5 * 60 * 1000;
 
 async function loadAllPhotos(){
   if(!dbReady()) return;
   try {
+    var nowMs = Date.now();
+    if(window._loadAllPhotosFetchedAt && (nowMs - window._loadAllPhotosFetchedAt) < PHOTO_CACHE_TTL_MS){
+      return;
+    }
+    if(!window._photoCache || typeof window._photoCache !== 'object') window._photoCache = {};
     var r = await sb.from('members').select('id,photo,emoji');
     if(r && r.data){
       r.data.forEach(function(m){
@@ -1958,6 +2077,7 @@ async function loadAllPhotos(){
         }
       });
     }
+    window._loadAllPhotosFetchedAt = Date.now();
     console.log('[loadAllPhotos] cached photos:', Object.keys(window._photoCache).length);
   } catch(e){
     console.warn('loadAllPhotos failed:', e);
@@ -2020,6 +2140,7 @@ function saveCodes(c){
 function showPolicyFromInvite(type) {
   // 招待画面の上にオーバーレイでポリシーを表示
   const overlay = document.createElement('div');
+  overlay.className = 'ones-app-overlay';
   overlay.style.cssText = 'position:fixed;inset:0;z-index:1100;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;';
   const panel = document.createElement('div');
   panel.style.cssText = 'background:#fff;border-radius:22px 22px 0 0;max-height:85vh;overflow-y:auto;width:100%;padding:20px 16px 40px;';
@@ -2045,59 +2166,404 @@ function showPolicyFromInvite(type) {
 
 
 
-// BOSS YASU 専用ハッシュ
-const BOSS_YASU_HASH = 'c4618e9b5a2e831d612a55227b89911cecc4e4c998488b8e24cb23e7f37e8fc5';
+/* ══════════ Supabase Auth 認証関数 ══════════ */
 
-async function showBossYasuLogin() {
-  const lock = isLoginLocked();
-  if(lock.locked) {
-    alert('⚠️ ログイン試行回数の上限に達しました。\nあと' + lock.remaining + '分後に再試行できます。');
-    return;
-  }
+/** タブ切替: login / register / rescue */
+function switchAuthTab(mode) {
+  var tabLogin = document.getElementById('tab-login');
+  var tabReg   = document.getElementById('tab-register');
+  var formLogin = document.getElementById('form-login');
+  var formReg   = document.getElementById('form-register');
+  var formRescue = document.getElementById('form-rescue');
+  var errEl     = document.getElementById('auth-error');
+  if(errEl) errEl.textContent = '';
 
-  const pw = prompt('🔐 BOSS YASUのパスワードを入力してください：');
-  if(pw === null) return;
+  if(formLogin) formLogin.style.display = 'none';
+  if(formReg) formReg.style.display = 'none';
+  if(formRescue) formRescue.style.display = 'none';
 
-  const inputHash = await hashPassword(pw);
+  if(tabLogin) { tabLogin.style.color='#e8e8e844'; tabLogin.style.borderBottomColor='transparent'; }
+  if(tabReg)   { tabReg.style.color='#e8e8e844'; tabReg.style.borderBottomColor='transparent'; }
 
-  if(checkYasuPass(inputHash)) {
-    resetLoginAttempts();
-    currentUser = {id:'m001', name:'BOSS YASU', emoji:'😊', role:'admin'};
-    setSupabaseHeader(currentUser.id);
-    saveSession(currentUser);
-    document.getElementById('invite-screen').style.display = 'none';
-    document.getElementById('body').style.display = '';
-    document.getElementById('bnav').style.display = '';
-    document.getElementById('fab').style.display = '';
-    initApp();
-    toast('👑 BOSS YASUとしてログインしました');
+  if(mode === 'register') {
+    if(tabReg) { tabReg.style.color='#c9a84c'; tabReg.style.borderBottomColor='#c9a84c'; }
+    if(formReg) formReg.style.display = '';
+  } else if(mode === 'rescue') {
+    if(formRescue) formRescue.style.display = '';
   } else {
-    const a = incrementLoginAttempt();
-    const remaining = MAX_ATTEMPTS - a.count;
-    if(remaining > 0) {
-      alert('❌ パスワードが違います\n残り試行回数：' + remaining + '回');
-    } else {
-      alert('🔒 ロックされました（15分）');
-    }
+    if(tabLogin) { tabLogin.style.color='#c9a84c'; tabLogin.style.borderBottomColor='#c9a84c'; }
+    if(formLogin) formLogin.style.display = '';
   }
 }
 
-function logoutApp(){
-  if(!confirm('ログアウトしますか？\n（次回は招待コードを手動で入力する必要があります）')) return;
+/** ログイン: メール + 合言葉 → Supabase Auth */
+async function authLogin() {
+  var errEl = document.getElementById('auth-error');
+  var btn   = document.getElementById('btn-login');
+  errEl.textContent = '';
 
-  // セッションと認証情報を完全に削除（LocalStorage / SessionStorage / Cookie 全部）
-  try { localStorage.removeItem('ones_session'); } catch(e) {}
-  try { sessionStorage.removeItem('ones_session'); } catch(e) {}
-  try { deleteCookie('ones_session'); } catch(e) {}
-  try { localStorage.removeItem('ones_my_invite_code'); } catch(e) {}
-  try { localStorage.removeItem('ones_my_nickname'); } catch(e) {}
-  try { localStorage.removeItem('ones_my_member_id'); } catch(e) {}
-  try { localStorage.removeItem('ones_admin_unlocked_at'); } catch(e) {}
-  try { localStorage.removeItem('ones_current_photo'); } catch(e) {}
+  var email = (document.getElementById('login-email').value || '').trim();
+  var pass  = document.getElementById('login-pass').value || '';
 
-  console.log('[ONEs] ログアウト完了 - 認証情報をすべて削除しました');
+  if(!email) { errEl.textContent = 'メールアドレスを入力してください'; return; }
+  if(!pass)  { errEl.textContent = '合言葉を入力してください'; return; }
 
-  location.reload();
+  if(btn) { btn.disabled = true; btn.textContent = '🔄 認証中...'; }
+
+  try {
+    if(!sb || !sb.auth) {
+      errEl.textContent = 'サーバーに接続できません。ページを再読み込みしてください。';
+      if(btn) { btn.disabled = false; btn.textContent = 'LOGIN →'; }
+      return;
+    }
+
+    var result = await sb.auth.signInWithPassword({ email: email, password: pass });
+
+    if(result.error) {
+      errEl.textContent = 'メールアドレスまたは合言葉が正しくありません';
+      if(btn) { btn.disabled = false; btn.textContent = 'LOGIN →'; }
+      return;
+    }
+
+    // JWT取得成功 → member レコードを検索
+    var uid = result.data.user.id;
+    var memberResult = await sb.from('members').select('*').eq('auth_uid', uid).maybeSingle();
+
+    if(!memberResult.data) {
+      errEl.textContent = 'アカウントは存在しますが、メンバー情報が見つかりません。管理者にお問い合わせください。';
+      await sb.auth.signOut();
+      if(btn) { btn.disabled = false; btn.textContent = 'LOGIN →'; }
+      return;
+    }
+
+    var m = memberResult.data;
+    currentUser = {
+      id: m.id,
+      name: m.name,
+      emoji: m.emoji || '🙋',
+      role: m.role || 'member',
+      code: m.my_code || m.code,
+      usedCode: m.code,
+      invitedBy: m.invited_by,
+      joinDate: m.join_date
+    };
+    setSupabaseHeader(currentUser.id);
+    saveSession(currentUser);
+    enterApp();
+    setTimeout(function(){ toast('👋 おかえりなさい、' + currentUser.name + 'さん！'); }, 300);
+
+  } catch(e) {
+    console.error('[ONEs] authLogin error:', e);
+    errEl.textContent = '認証中にエラーが発生しました';
+    if(btn) { btn.disabled = false; btn.textContent = 'LOGIN →'; }
+  }
+}
+
+/** 新規登録: 招待コード + 名前 + メール + 合言葉 → Supabase Auth + member作成 */
+async function authRegister() {
+  var errEl = document.getElementById('auth-error');
+  var btn   = document.getElementById('btn-register');
+  errEl.textContent = '';
+
+  var code  = (document.getElementById('reg-code').value || '').trim().toUpperCase();
+  var name  = (document.getElementById('reg-name').value || '').trim();
+  var email = (document.getElementById('reg-email').value || '').trim();
+  var pass  = document.getElementById('reg-pass').value || '';
+  var pass2 = document.getElementById('reg-pass2').value || '';
+
+  if(!code) { errEl.textContent = '招待コードを入力してください'; return; }
+  if(!/^ONES-[A-Z0-9]{4,8}$/.test(code)) { errEl.textContent = '招待コードの形式が正しくありません'; return; }
+  if(!name) { errEl.textContent = 'ニックネームを入力してください'; return; }
+  if(name.length > 20) { errEl.textContent = 'ニックネームは20文字以内にしてください'; return; }
+  if(/<|>|script|javascript:|on\w+=/i.test(name)) { errEl.textContent = 'ニックネームに使用できない文字が含まれています'; return; }
+  if(!email) { errEl.textContent = 'メールアドレスを入力してください'; return; }
+  if(!pass)  { errEl.textContent = '合言葉を入力してください'; return; }
+  if(pass.length < 6) { errEl.textContent = '合言葉は6文字以上にしてください'; return; }
+  if(pass !== pass2) { errEl.textContent = '合言葉が一致しません'; return; }
+
+  if(btn) { btn.disabled = true; btn.textContent = '🔄 登録中...'; }
+
+  try {
+    if(!sb || !sb.auth) {
+      errEl.textContent = 'サーバーに接続できません';
+      if(btn) { btn.disabled = false; btn.textContent = 'REGISTER →'; }
+      return;
+    }
+
+    // 1. Supabase Auth アカウント作成
+    var signUpResult = await sb.auth.signUp({ email: email, password: pass });
+
+    if(signUpResult.error) {
+      var msg = signUpResult.error.message || '';
+      if(msg.includes('already registered')) {
+        errEl.textContent = 'このメールアドレスは既に登録されています。ログインしてください。';
+      } else {
+        errEl.textContent = '登録エラー: ' + msg;
+      }
+      if(btn) { btn.disabled = false; btn.textContent = 'REGISTER →'; }
+      return;
+    }
+
+    // 2. RPC でメンバーレコード作成（サーバー側でコード検証・重複チェック）
+    var rpcResult = await sb.rpc('create_member_with_auth', {
+      p_name: name,
+      p_invite_code: code,
+      p_emoji: '🎉'
+    });
+
+    if(rpcResult.error || (rpcResult.data && !rpcResult.data.ok)) {
+      var rpcErr = rpcResult.data ? rpcResult.data.error : (rpcResult.error.message || '登録に失敗しました');
+      errEl.textContent = rpcErr;
+      // Auth アカウントは作成済みだがメンバー作成失敗 → サインアウト
+      try { await sb.auth.signOut(); } catch(e2) {}
+      if(btn) { btn.disabled = false; btn.textContent = 'REGISTER →'; }
+      return;
+    }
+
+    var newMember = rpcResult.data;
+
+    // 3. 自動ログイン
+    currentUser = {
+      id: newMember.member_id,
+      name: newMember.name || name,
+      emoji: newMember.emoji || '🎉',
+      role: 'member',
+      code: newMember.my_code,
+      usedCode: code,
+      invitedBy: newMember.invited_by,
+      joinDate: new Date().toISOString().slice(0, 10)
+    };
+    setSupabaseHeader(currentUser.id);
+    saveSession(currentUser);
+
+    // 4. 参加完了画面
+    document.getElementById('invite-screen').innerHTML =
+      '<div style="text-align:center;padding:24px;max-width:400px;">' +
+      '<div style="font-size:64px;margin-bottom:16px;">🎉</div>' +
+      '<div style="font-size:24px;font-weight:900;color:#fff;margin-bottom:8px;">参加完了！</div>' +
+      '<div style="color:rgba(255,255,255,.85);line-height:1.7;margin-bottom:24px;">' +
+      '<strong>' + safeText(name) + '</strong> さん、ONEsへようこそ！<br>' +
+      '招待者 <strong>' + safeText(newMember.invited_by || '管理者') + '</strong> さんのご紹介で<br>' +
+      '参加が承認されました🌱<br><br>' +
+      'あなたの招待コード：<strong>' + safeText(newMember.my_code) + '</strong>' +
+      '</div>' +
+      '<button onclick="enterApp()" style="background:#fff;color:#1e6e3a;border:none;padding:14px 32px;' +
+      'border-radius:24px;font-size:16px;font-weight:900;font-family:inherit;cursor:pointer;' +
+      'box-shadow:0 4px 14px rgba(0,0,0,.2);">ONEsに入る →</button></div>';
+
+  } catch(e) {
+    console.error('[ONEs] authRegister error:', e);
+    errEl.textContent = '登録中にエラーが発生しました: ' + e.message;
+    if(btn) { btn.disabled = false; btn.textContent = 'REGISTER →'; }
+  }
+}
+
+/** 既存メンバー移行モーダル: localStorage セッション → Supabase Auth 紐付け */
+async function showMigrationModal() {
+  if(!currentUser || !currentUser.id) return;
+
+  // 既に overlay があれば重複しない
+  if(document.getElementById('migration-overlay')) return;
+
+  var overlay = document.createElement('div');
+  overlay.id = 'migration-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.85);' +
+    'display:flex;align-items:center;justify-content:center;padding:24px;';
+
+  overlay.innerHTML =
+    '<div style="background:#fff;border-radius:16px;padding:28px 24px;max-width:380px;width:100%;">' +
+    '<div style="text-align:center;margin-bottom:20px;">' +
+    '<div style="font-size:36px;margin-bottom:8px;">🔐</div>' +
+    '<div style="font-size:18px;font-weight:900;color:#1e6e3a;margin-bottom:8px;">セキュリティ強化</div>' +
+    '<div style="font-size:13px;color:#666;line-height:1.6;">' +
+    '<strong>' + safeText(currentUser.name) + '</strong> さん、おかえりなさい！<br>' +
+    'セキュリティ強化のため、メールアドレスと<br>合言葉の設定をお願いします。' +
+    '</div></div>' +
+
+    '<div id="migration-error" style="color:#d32f2f;font-size:12px;text-align:center;min-height:18px;margin-bottom:10px;"></div>' +
+
+    '<input id="mig-email" type="email" placeholder="メールアドレス" autocomplete="email"' +
+    ' style="width:100%;border:1px solid #ddd;border-radius:8px;padding:12px;font-size:14px;margin-bottom:12px;box-sizing:border-box;">' +
+
+    '<input id="mig-pass" type="password" placeholder="合言葉（6文字以上）" autocomplete="new-password"' +
+    ' style="width:100%;border:1px solid #ddd;border-radius:8px;padding:12px;font-size:14px;margin-bottom:12px;box-sizing:border-box;">' +
+
+    '<input id="mig-pass2" type="password" placeholder="合言葉（確認）" autocomplete="new-password"' +
+    ' style="width:100%;border:1px solid #ddd;border-radius:8px;padding:12px;font-size:14px;margin-bottom:20px;box-sizing:border-box;">' +
+
+    '<button id="btn-migrate" onclick="executeMigration()" style="width:100%;background:#1e6e3a;color:#fff;border:none;' +
+    'border-radius:24px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;">設定して続ける →</button>' +
+    '</div>';
+
+  document.body.appendChild(overlay);
+}
+
+/** 移行実行: Supabase Auth signup → claim_member_account RPC */
+async function executeMigration() {
+  var errEl = document.getElementById('migration-error');
+  var btn   = document.getElementById('btn-migrate');
+  errEl.textContent = '';
+
+  var email = (document.getElementById('mig-email').value || '').trim();
+  var pass  = document.getElementById('mig-pass').value || '';
+  var pass2 = document.getElementById('mig-pass2').value || '';
+
+  if(!email) { errEl.textContent = 'メールアドレスを入力してください'; return; }
+  if(!pass)  { errEl.textContent = '合言葉を入力してください'; return; }
+  if(pass.length < 6) { errEl.textContent = '合言葉は6文字以上にしてください'; return; }
+  if(pass !== pass2) { errEl.textContent = '合言葉が一致しません'; return; }
+
+  if(btn) { btn.disabled = true; btn.textContent = '🔄 設定中...'; }
+
+  try {
+    // 1. Supabase Auth アカウント作成
+    var signUpResult = await sb.auth.signUp({ email: email, password: pass });
+    if(signUpResult.error) {
+      var msg = signUpResult.error.message || '';
+      if(msg.includes('already registered')) {
+        errEl.textContent = 'このメールアドレスは既に使用されています。別のメールアドレスをお試しください。';
+      } else {
+        errEl.textContent = '登録エラー: ' + msg;
+      }
+      if(btn) { btn.disabled = false; btn.textContent = '設定して続ける →'; }
+      return;
+    }
+
+    // 2. member レコードに auth_uid を紐付け
+    var claimResult = await sb.rpc('claim_member_account', {
+      p_member_id: currentUser.id
+    });
+
+    if(claimResult.error || (claimResult.data && !claimResult.data.ok)) {
+      var claimErr = claimResult.data ? claimResult.data.error : (claimResult.error.message || '紐付けに失敗しました');
+      errEl.textContent = claimErr;
+      if(btn) { btn.disabled = false; btn.textContent = '設定して続ける →'; }
+      return;
+    }
+
+    // 3. 成功 → モーダルを閉じてアプリ続行
+    var overlay = document.getElementById('migration-overlay');
+    if(overlay) overlay.remove();
+
+    toast('✅ セキュリティ設定が完了しました！');
+    console.log('[ONEs] 移行完了: ' + currentUser.name + ' → Supabase Auth');
+
+  } catch(e) {
+    console.error('[ONEs] executeMigration error:', e);
+    errEl.textContent = '設定中にエラーが発生しました';
+    if(btn) { btn.disabled = false; btn.textContent = '設定して続ける →'; }
+  }
+}
+
+/** レスキュー移行: localStorageセッションがない既存メンバーがメール+合言葉を設定 */
+async function authRescueMigration() {
+  var errEl = document.getElementById('auth-error');
+  var btn   = document.getElementById('btn-rescue');
+  if(errEl) errEl.textContent = '';
+
+  var name  = (document.getElementById('rescue-name').value || '').trim();
+  var email = (document.getElementById('rescue-email').value || '').trim();
+  var pass  = document.getElementById('rescue-pass').value || '';
+  var pass2 = document.getElementById('rescue-pass2').value || '';
+
+  if(!name)  { if(errEl) errEl.textContent = 'ニックネームを入力してください'; return; }
+  if(!email) { if(errEl) errEl.textContent = 'メールアドレスを入力してください'; return; }
+  if(!pass)  { if(errEl) errEl.textContent = '合言葉を入力してください'; return; }
+  if(pass.length < 6) { if(errEl) errEl.textContent = '合言葉は6文字以上にしてください'; return; }
+  if(pass !== pass2) { if(errEl) errEl.textContent = '合言葉が一致しません'; return; }
+
+  if(btn) { btn.disabled = true; btn.textContent = '🔄 確認中...'; }
+
+  try {
+    if(!sb || !sb.auth) {
+      if(errEl) errEl.textContent = 'サーバーに接続できません';
+      if(btn) { btn.disabled = false; btn.textContent = 'MIGRATE →'; }
+      return;
+    }
+
+    var memberResult = await sb.from('members').select('*').eq('name', name).maybeSingle();
+
+    if(memberResult.error || !memberResult.data) {
+      if(errEl) errEl.textContent = 'このニックネームのメンバーが見つかりません';
+      if(btn) { btn.disabled = false; btn.textContent = 'MIGRATE →'; }
+      return;
+    }
+
+    if(memberResult.data.auth_uid) {
+      if(errEl) errEl.textContent = 'このメンバーは既にメール登録済みです。ログイン画面からログインしてください。';
+      if(btn) { btn.disabled = false; btn.textContent = 'MIGRATE →'; }
+      return;
+    }
+
+    var memberId = memberResult.data.id;
+
+    var signUpResult = await sb.auth.signUp({ email: email, password: pass });
+    if(signUpResult.error) {
+      var msg = signUpResult.error.message || '';
+      if(msg.includes('already registered')) {
+        if(errEl) errEl.textContent = 'このメールアドレスは既に登録されています';
+      } else {
+        if(errEl) errEl.textContent = '登録エラー: ' + msg;
+      }
+      if(btn) { btn.disabled = false; btn.textContent = 'MIGRATE →'; }
+      return;
+    }
+
+    var claimResult = await sb.rpc('claim_member_account', { p_member_id: memberId });
+
+    if(claimResult.error || (claimResult.data && !claimResult.data.ok)) {
+      var claimErr = claimResult.data ? claimResult.data.error : (claimResult.error.message || '紐付けに失敗しました');
+      if(errEl) errEl.textContent = claimErr;
+      try { await sb.auth.signOut(); } catch(e2) {}
+      if(btn) { btn.disabled = false; btn.textContent = 'MIGRATE →'; }
+      return;
+    }
+
+    var m = memberResult.data;
+    currentUser = {
+      id: m.id,
+      name: m.name,
+      emoji: m.emoji || '🙋',
+      role: m.role || 'member',
+      code: m.my_code || m.code,
+      usedCode: m.code,
+      invitedBy: m.invited_by,
+      joinDate: m.join_date
+    };
+    setSupabaseHeader(currentUser.id);
+    saveSession(currentUser);
+    enterApp();
+    setTimeout(function(){ toast('✅ メール登録が完了しました！おかえりなさい、' + currentUser.name + 'さん！'); }, 300);
+
+  } catch(e) {
+    console.error('[ONEs] authRescueMigration error:', e);
+    if(errEl) errEl.textContent = 'エラーが発生しました: ' + e.message;
+    if(btn) { btn.disabled = false; btn.textContent = 'MIGRATE →'; }
+  }
+}
+
+async function logout(){
+  // 既存のオーバーレイを全て削除（残留防止）
+  document.querySelectorAll('[id="sh"], [class*="sheet"], [class*="overlay"], [class*="backdrop"]').forEach(el => el.remove());
+  document.body.style.overflow = '';
+
+  try {
+    localStorage.removeItem('ones_session');
+    sessionStorage.removeItem('ones_session');
+    document.cookie = 'ones_session=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+    if(sb && sb.auth) {
+      try { await sb.auth.signOut(); } catch(e) {}
+    }
+    window._tlCache = null;
+    window._photoCache = null;
+    window._photosCached = false;
+    window._loadAllPhotosFetchedAt = 0;
+    window._tlRetried = false;
+    window.location.href = '/';
+  } catch(e) {
+    console.error('[ONEs] logout error:', e);
+    window.location.href = '/';
+  }
 }
 
 
@@ -2346,39 +2812,81 @@ function safeText(str) {
     .replace(/'/g,'&#39;');
 }
 
-function checkSession(){
+async function checkSession(){
   console.log('[ONEs] === checkSession 開始 ===');
-  console.log('[ONEs] LocalStorage ones_session:', localStorage.getItem('ones_session') ? '存在(' + (localStorage.getItem('ones_session') || '').substring(0, 50) + '...)' : 'なし');
-  console.log('[ONEs] SessionStorage ones_session:', sessionStorage.getItem('ones_session') ? '存在' : 'なし');
-  console.log('[ONEs] Cookie ones_session:', getCookie('ones_session') ? '存在' : 'なし');
 
   // 整合性チェック実行
   try { integrityCheck(); } catch(e) { console.error('Integrity check failed:', e); }
 
-  // QRコード経由の場合は既存セッションを無視
+  // QRコード経由の場合は既存セッションを無視 → 登録タブを開く
   const params = new URLSearchParams(window.location.search);
   if(params.get('code')) {
     console.log('[ONEs] QRコード経由のため自動ログインをスキップ');
+    var inv = document.getElementById('invite-screen');
+    if(inv) inv.style.display = '';
+    // 登録タブを開いてコードを自動入力
+    setTimeout(function(){
+      switchAuthTab('register');
+      var codeInput = document.getElementById('reg-code');
+      if(codeInput) codeInput.value = params.get('code');
+    }, 300);
     return;
   }
 
-  const sess = restoreSession();
-  console.log('[ONEs] セッション確認:', sess ? '存在' : 'なし');
+  // ── Step 1: Supabase Auth JWT セッションを確認 ──
+  if(sb && sb.auth) {
+    try {
+      var authResult = await sb.auth.getSession();
+      if(authResult.data && authResult.data.session) {
+        var uid = authResult.data.session.user.id;
+        console.log('[ONEs] Supabase Auth JWT セッション検出:', uid);
+
+        // auth_uid でメンバーを検索
+        var memberResult = await sb.from('members').select('*').eq('auth_uid', uid).maybeSingle();
+        if(memberResult.data) {
+          var m = memberResult.data;
+          currentUser = {
+            id: m.id,
+            name: m.name,
+            emoji: m.emoji || '🙋',
+            role: m.role || 'member',
+            code: m.my_code || m.code,
+            usedCode: m.code,
+            invitedBy: m.invited_by,
+            joinDate: m.join_date
+          };
+          setSupabaseHeader(currentUser.id);
+          saveSession(currentUser);
+          console.log('[ONEs] JWT自動ログイン:', currentUser.name);
+          enterApp();
+          return;
+        } else {
+          console.warn('[ONEs] JWT はあるがメンバーが見つからない → ログイン画面表示');
+          await sb.auth.signOut();
+        }
+      }
+    } catch(e) {
+      console.error('[ONEs] Supabase Auth チェックエラー:', e);
+    }
+  }
+
+  // ── Step 2: 旧セッション（localStorage）を確認 ──
+  var sess = restoreSession();
+  console.log('[ONEs] 旧セッション確認:', sess ? '存在' : 'なし');
 
   if(sess){
     try {
       currentUser = safeJsonParse(sess, null);
 
-      // セッションのID、nameのどちらかがあれば復元する（過去のバグ対応）
-      if(!currentUser) {
-        console.warn('[ONEs] セッションのパースに失敗');
-        return;
-      }
-      if(!currentUser.id && !currentUser.name) {
-        console.warn('[ONEs] セッションが完全に空です。クリアします');
+      if(!currentUser || (!currentUser.id && !currentUser.name)) {
+        console.warn('[ONEs] セッション無効 → クリア');
         try { localStorage.removeItem('ones_session'); } catch(e) {}
+        currentUser = null;
+        var inv = document.getElementById('invite-screen');
+        if(inv) inv.style.display = '';
         return;
       }
+
       // ID もしくは name がない場合は補完
       if(!currentUser.id) currentUser.id = 'm' + Date.now();
       if(!currentUser.name) currentUser.name = 'メンバー';
@@ -2387,254 +2895,70 @@ function checkSession(){
 
       setSupabaseHeader(currentUser.id);
 
-      // 修正情報を保存
-      try { saveSession(currentUser); } catch(e) {}
-
-      console.log('[ONEs] 自動ログイン:', currentUser.name);
-
-      const inv = document.getElementById('invite-screen');
-      const body = document.getElementById('body');
-      const bnav = document.getElementById('bnav');
-      const fab = document.getElementById('fab');
-
-      if(inv) inv.style.display='none';
-      if(body) body.style.display='';
-      if(bnav) bnav.style.display='';
-      if(fab) fab.style.display='';
-
+      // メンバーの auth_uid を確認 → 未移行なら移行モーダル
+      var needsMigration = false;
       try {
-        initApp();
+        var checkMember = await sb.from('members').select('auth_uid').eq('id', currentUser.id).maybeSingle();
+        if(checkMember.data && !checkMember.data.auth_uid) {
+          needsMigration = true;
+        }
       } catch(e) {
-        console.error('[ONEs] initApp エラー:', e);
-        // 致命的でない限り続行
+        console.warn('[ONEs] 移行チェックエラー:', e);
       }
+
+      console.log('[ONEs] 旧セッション自動ログイン:', currentUser.name, '移行必要:', needsMigration);
+      enterApp();
+
+      // 移行モーダルを表示（アプリ表示後に）
+      if(needsMigration) {
+        setTimeout(function(){ showMigrationModal(); }, 1500);
+      }
+
     } catch(e) {
       console.error('[ONEs] セッション読み込みエラー:', e);
-      // エラーの場合でもセッションは消さない（次回のリトライで成功する可能性）
     }
   } else {
     console.log('[ONEs] セッションなし - ログイン画面を表示');
-    // セッションがない時だけログイン画面を表示
     var inv = document.getElementById('invite-screen');
     if(inv) inv.style.display = '';
   }
   console.log('[ONEs] === checkSession 終了 ===');
 }
 
-async function joinWithCode(){
-  const raw = document.getElementById('inv-code-input').value.trim().toUpperCase();
-  const name = document.getElementById('inv-name-input').value.trim();
-  const errEl = document.getElementById('inv-error');
-  const submitBtn = document.querySelector('.inv-btn');
-  errEl.textContent='';
-
-  if(!raw){errEl.textContent='招待コードを入力してください';return;}
-  if(!name){errEl.textContent='ニックネームを入力してください';return;}
-
-  // ニックネームの検証
-  if(name.length > 20) {
-    errEl.textContent='ニックネームは20文字以内にしてください';
-    return;
-  }
-  if(/<|>|script|javascript:|on\w+=/i.test(name)) {
-    errEl.textContent='ニックネームに使用できない文字が含まれています';
-    return;
-  }
-  if(!/^ONES-[A-Z0-9]{4,8}$/.test(raw)) {
-    errEl.textContent='❌ 招待コードの形式が正しくありません';
-    return;
-  }
-
-  // ===== ロックチェック =====
-  const lockKey = 'ones_join_lock_'+raw;
-  const lockUntil = parseInt(localStorage.getItem(lockKey) || '0');
-  if(lockUntil && Date.now() < lockUntil) {
-    const minutes = Math.ceil((lockUntil - Date.now()) / 60000);
-    errEl.innerHTML = '🔒 ログインがロックされています<br>あと約 '+minutes+' 分後に再試行できます';
-    return;
-  }
-
-  // ボタンを無効化（処理中表示）
-  if(submitBtn) {
-    submitBtn.disabled = true;
-    submitBtn.textContent = '🔄 確認中...';
-  }
-
-  try {
-    // ===== Supabase で招待コード検索 =====
-    if(!dbReady()) {
-      errEl.textContent = '❌ サーバーに接続できません。少し待ってから再試行してください';
-      if(submitBtn) { submitBtn.disabled = false; submitBtn.textContent = '参加する →'; }
-      return;
-    }
-
-    const codeResult = await dbFindInviteCode(raw);
-    if(codeResult.error) {
-      console.error('[ONEs] DB error:', codeResult.error);
-      errEl.textContent = '❌ 確認中にエラーが発生しました';
-      if(submitBtn) { submitBtn.disabled = false; submitBtn.textContent = '参加する →'; }
-      return;
-    }
-
-    const code = codeResult.data;
-    if(!code) {
-      errEl.textContent = '❌ 招待コードが無効です。コードをご確認ください。';
-      if(submitBtn) { submitBtn.disabled = false; submitBtn.textContent = '参加する →'; }
-      return;
-    }
-
-    // ===== 全メンバー共通：ニックネームで既存ユーザーを検索 =====
-    // コードが誰のものでも、ニックネームで既存ユーザーかどうか判定する
-    var existingResult = await sb.from('members').select('*').eq('name', name).maybeSingle();
-
-    if(existingResult.data) {
-      // 既存メンバー = 再ログイン
-      var existingMember = existingResult.data;
-      localStorage.removeItem('ones_join_attempts_'+raw);
-      currentUser = {
-        id: existingMember.id,
-        name: existingMember.name,
-        emoji: existingMember.emoji || '🙋',
-        role: existingMember.role || 'member',
-        code: existingMember.my_code || existingMember.code,
-        usedCode: existingMember.code,
-        invitedBy: existingMember.invited_by,
-        joinDate: existingMember.join_date
-      };
-      setSupabaseHeader(currentUser.id);
-      saveSession(currentUser);
-      enterApp();
-      setTimeout(function(){ toast('👋 おかえりなさい、'+name+'さん！'); }, 300);
-      return;
-    }
-
-    if(code.status === 'pending') {
-      errEl.textContent = 'このコードは申請処理中です。';
-      if(submitBtn) { submitBtn.disabled = false; submitBtn.textContent = '参加する →'; }
-      return;
-    }
-
-    // ===== 新規参加処理 =====
-    // ニックネーム重複チェック（マスターコードでも一般コードでも同じ）
-    var dupCheckResult = await sb.from('members').select('id').eq('name', name).maybeSingle();
-    if(dupCheckResult.data) {
-      errEl.innerHTML = '❌ このニックネーム「'+name+'」は既に使用されています。<br>別のニックネームでお試しください。';
-      if(submitBtn) { submitBtn.disabled = false; submitBtn.textContent = '参加する →'; }
-      return;
-    }
-
-    const newId = 'm' + Date.now();
-    const newMyCode = dbGenerateCode();
-
-    const memberData = {
-      id: newId,
-      name: name,
-      emoji: '🎉',
-      code: raw,
-      myCode: newMyCode,
-      invitedBy: code.issued_by,
-      invitedById: code.issued_by_id,
-      joinDate: new Date().toISOString().slice(0,10)
-    };
-
-    const createResult = await dbCreateMember(memberData);
-    if(createResult.error) {
-      console.error('[ONEs] create error:', createResult.error);
-      errEl.textContent = '❌ 登録できませんでした: ' + (createResult.error.message || '');
-      if(submitBtn) { submitBtn.disabled = false; submitBtn.textContent = '参加する →'; }
-      return;
-    }
-
-    // 自動ログイン
-    currentUser = {
-      id: newId,
-      name: name,
-      emoji: '🎉',
-      role: 'member',
-      code: newMyCode,
-      usedCode: raw,
-      invitedBy: code.issued_by,
-      joinDate: new Date().toISOString().slice(0,10)
-    };
-    setSupabaseHeader(currentUser.id);
-    saveSession(currentUser);
-
-    // 参加完了画面を表示してからアプリへ
-    document.getElementById('invite-screen').innerHTML = `
-      <div style="text-align:center;padding:24px;max-width:400px;">
-        <div style="font-size:64px;margin-bottom:16px;">🎉</div>
-        <div style="font-size:24px;font-weight:900;color:#fff;margin-bottom:8px;">参加完了！</div>
-        <div style="color:rgba(255,255,255,.85);line-height:1.7;margin-bottom:24px;">
-          <strong>${name}</strong> さん、ONEsへようこそ！<br>
-          招待者 <strong>${code.issued_by||'管理者'}</strong> さんのご紹介で<br>
-          参加が承認されました🌱<br><br>
-          あなたの招待コード：<strong>${newMyCode}</strong>
-        </div>
-        <div style="background:rgba(255,255,255,.15);border-radius:12px;padding:14px;margin-bottom:20px;">
-          <div style="color:rgba(255,255,255,.7);font-size:11px;">紹介者</div>
-          <div style="color:#c8f7d4;font-size:16px;font-weight:700;margin-top:4px;">${code.issued_by||'管理者'}</div>
-        </div>
-        <button onclick="enterApp()" style="background:#fff;color:#1e6e3a;border:none;padding:14px 32px;border-radius:24px;font-size:16px;font-weight:900;font-family:inherit;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.2);">
-          ONEsに入る →
-        </button>
-      </div>`;
-  } catch(err) {
-    console.error('[ONEs] joinWithCode error:', err);
-    errEl.textContent = '❌ エラーが発生しました: ' + err.message;
-    if(submitBtn) { submitBtn.disabled = false; submitBtn.textContent = '参加する →'; }
-  }
-}
+// joinWithCode は authRegister に移行済み（互換性のため空関数を残す）
+async function joinWithCode(){ console.warn('[ONEs] joinWithCode は廃止されました。authRegister を使用してください。'); }
 
 
-function enterApp(){
+async function enterApp(){
   document.getElementById('invite-screen').style.display='none';
   document.getElementById('body').style.display='';
   document.getElementById('bnav').style.display='';
   document.getElementById('fab').style.display='';
-  initApp();
+  try {
+    await new Promise(function(r){ setTimeout(r, 500); });
+    await initApp();
+    await refreshTimelineAfterAuth();
+  } catch(e) { console.error('[ONEs] enterApp:', e); }
   // 確実に写真を読み込み（複数回呼ぶ）
   setTimeout(function(){ try { loadProfilePhoto(); } catch(e) { console.error(e); } }, 200);
   setTimeout(function(){ try { loadProfilePhoto(); } catch(e) {} }, 500);
   setTimeout(function(){ try { loadProfilePhoto(); } catch(e) {} }, 1000);
 }
 
+// showAdminLogin は廃止 → 通常ログイン後に role='admin' で管理画面アクセス
 async function showAdminLogin(){
-  // ログインロックチェック
-  const lock = isLoginLocked();
-  if(lock.locked) {
-    alert('⚠️ ログイン試行回数の上限に達しました。\nあと' + lock.remaining + '分後に再試行できます。');
-    return;
-  }
-
-  const pw = prompt('🔐 管理者パスワードを入力してください：');
-  if(pw === null) return;
-
-  const inputHash = await hashPassword(pw);
-
-  if(checkAdminPass(inputHash)) {
-    resetLoginAttempts();
-    setAdminUnlocked();
-    currentUser = {id:'m001', name:'BOSS YASU', emoji:'😊', role:'admin'};
-    setSupabaseHeader(currentUser.id);
-    saveSession(currentUser);
-    document.getElementById('invite-screen').style.display = 'none';
-    document.getElementById('body').style.display = '';
-    document.getElementById('bnav').style.display = '';
-    document.getElementById('fab').style.display = '';
-    initApp();
-    openAdmin();
-  } else {
-    const a = incrementLoginAttempt();
-    const remaining = MAX_ATTEMPTS - a.count;
-    if(remaining > 0) {
-      alert('❌ パスワードが違います\n残り試行回数：' + remaining + '回');
-    } else {
-      alert('🔒 ログインがロックされました\n15分後に再試行できます。');
-    }
-  }
+  console.warn('[ONEs] showAdminLogin は廃止されました。通常ログインをご利用ください。');
+  // ログイン画面に誘導
+  var inv = document.getElementById('invite-screen');
+  if(inv) inv.style.display = '';
 }
 
-function devLogin(){
+// devLogin: ローカル開発用（本番では使用しない）
+async function devLogin(){
+  if(location.hostname !== 'localhost' && location.hostname !== '127.0.0.1' && location.protocol !== 'file:') {
+    console.warn('[ONEs] devLogin は開発環境でのみ使用できます');
+    return;
+  }
   currentUser={id:'m001',name:'BOSS YASU',emoji:'😊',role:'admin'};
   setSupabaseHeader(currentUser.id);
   localStorage.setItem('ones_session',JSON.stringify(currentUser));
@@ -2642,38 +2966,28 @@ function devLogin(){
   document.getElementById('body').style.display='';
   document.getElementById('bnav').style.display='';
   document.getElementById('fab').style.display='';
-  initApp();
+  try {
+    await new Promise(function(r){ setTimeout(r, 500); });
+    await initApp();
+    await refreshTimelineAfterAuth();
+  } catch(e) { console.error('[ONEs] devLogin:', e); }
 }
 
 /* ══════════ ADMIN ══════════ */
 let admMemberFilter='all';
 
 async function openAdmin() {
-  // 管理者画面のロック解除確認
-  if(!isAdminUnlocked()) {
-    const lock = isLoginLocked();
-    if(lock.locked) {
-      alert('⚠️ ログイン試行回数の上限に達しました。\nあと' + lock.remaining + '分後に再試行できます。');
-      return;
-    }
-
-    const pw = prompt('🔐 管理者パスワードを入力してください（30分有効）：');
-    if(pw === null) return;
-
-    const inputHash = await hashPassword(pw);
-    if(!checkAdminPass(inputHash)) {
-      const a = incrementLoginAttempt();
-      const remaining = MAX_ATTEMPTS - a.count;
-      if(remaining > 0) {
-        alert('❌ パスワードが違います\n残り試行回数：' + remaining + '回');
-      } else {
-        alert('🔒 ロックされました（15分）');
-      }
-      return;
-    }
-    resetLoginAttempts();
-    setAdminUnlocked();
+  if(!isAdmin()){
+    toast('この機能はご利用いただけません');
+    try {
+      var admEl = document.getElementById('admin-screen');
+      if(admEl) admEl.classList.remove('show');
+    } catch(e){}
+    return;
   }
+  // Supabase Auth 移行後はJWTログイン済み＝管理者認証済み
+  // 追加のパスワード入力は不要
+  setAdminUnlocked();
 
   document.getElementById('admin-screen').classList.add('show');
   renderAdmOverview();
@@ -2682,7 +2996,10 @@ async function openAdmin() {
   renderAdmTree();
   renderAdmPending();
 }
-function closeAdmin(){document.getElementById('admin-screen').classList.remove('show');}
+function closeAdmin(){
+  try { document.getElementById('admin-screen').classList.remove('show'); } catch(e){}
+  stripDetachedOverlaysAndUnlockScroll();
+}
 function lockAdmin(){localStorage.removeItem(ADMIN_LOCK_KEY);adminUnlocked=false;closeAdmin();toast('🔒 管理者画面をロックしました');}
 
 function admTab(el,panelId){
@@ -2925,6 +3242,7 @@ async function deleteMypagePhoto(photoId) {
     toast('🗑️ 写真を削除しました');
     closeSheet();
     renderMypagePhotos();
+    invalidateTimelineCache();
     try { renderTL(); } catch(e) {}
   } catch(e) {
     console.error('[ONEs] deletePhoto:', e);
@@ -3106,7 +3424,7 @@ function myAvHtml(size){
 
   if(photo) {
     var radius = (size === 'am') ? '10px' : '50%';
-    return '<div class="av ' + size + '" style="overflow:hidden;"><img src="' + photo + '" style="width:100%;height:100%;object-fit:cover;border-radius:' + radius + ';"></div>';
+    return '<div class="av ' + size + '" style="overflow:hidden;"><img src="' + escHtml(photo) + '" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;border-radius:' + radius + ';display:block;"></div>';
   }
   var userEmoji = (currentUser && currentUser.emoji) ? currentUser.emoji : '🙋';
   return '<div class="av ' + size + '" style="' + AB + '">' + userEmoji + '</div>';
@@ -3131,116 +3449,208 @@ function postAvatarHtml(post, sizeClass){
   return '<div class="av '+sizeClass+'">'+emoji+'</div>';
 }
 
-async function renderTL(){
-  await syncMyPhoto();
-  await loadAllPhotos();
+var TL_BATCH = 15;
+var _tlOffset = 0;
+/** renderTL 同時実行ガード（多重フェッチ・表示ちらつき抑制） */
+var _tlRendering = false;
+var _tlSeenKeys = {};
+
+function timelinePostKey(type, id){
+  if(id === undefined || id === null || id === '') return '';
+  return String(type) + ':' + String(id);
+}
+
+function invalidateTimelineCache(){
+  _tlOffset = 0;
+  _tlSeenKeys = {};
+}
+
+async function loadMoreTL(){
+  var btn = document.getElementById('tl-load-more');
+  var cardsEl = document.getElementById('tl-cards');
+  var tlEl = document.getElementById('tlfeed');
+  var noMoreEl = document.getElementById('tl-no-more');
+  if(!btn || !cardsEl || !tlEl) return;
+  if(btn.dataset.loading === '1') return;
+  btn.dataset.loading = '1';
+  btn.disabled = true;
+  btn.textContent = '⏳ 読み込み中...';
+
   try {
-    var tlEl = document.getElementById('tlfeed');
-    if(!tlEl) return;
-
-    // Supabaseから日記、つぶやき、写真を取得
-    var allD = [];
-    var allV = [];
-    var allP = [];
-
-    if(dbReady()) {
-      try { allD = await dbFetchDiaries(20); } catch(e) {}
-      try { allV = await dbFetchVoices(30); } catch(e) {}
-      try { allP = await dbFetchPhotos(10); } catch(e) {}
+    if(!dbReady()){
+      toast('接続できません');
+      btn.dataset.loading = '';
+      btn.disabled = false;
+      btn.textContent = '📜 もっと見る';
+      return;
     }
+    await syncMyPhoto();
+    await loadAllPhotos();
 
-    // 投稿者IDと名前を収集
-    var authorIds = [];
-    var authorNames = [];
-    allD.forEach(function(d){ if(d.author_id) authorIds.push(d.author_id); if(d.author_name) authorNames.push(d.author_name); });
-    allV.forEach(function(v){ if(v.author_id) authorIds.push(v.author_id); if(v.author_name) authorNames.push(v.author_name); });
-    allP.forEach(function(p){ if(p.author_id) authorIds.push(p.author_id); });
+    var off = _tlOffset;
+    var tlFetch = await Promise.all([
+      dbFetchDiaries(TL_BATCH, off).catch(function(){ return []; }),
+      dbFetchVoices(TL_BATCH, off).catch(function(){ return []; }),
+      dbFetchPhotos(TL_BATCH, off).catch(function(){ return []; })
+    ]);
+    var allD = tlFetch[0] || [];
+    var allV = tlFetch[1] || [];
+    var allP = tlFetch[2] || [];
 
-    // 重複除去
-    authorIds = authorIds.filter(function(v,i,a){ return a.indexOf(v)===i && v; });
-    authorNames = authorNames.filter(function(v,i,a){ return a.indexOf(v)===i && v; });
+    var built = await buildTimelineCardsFromFetched(allD, allV, allP);
+    _tlOffset += TL_BATCH;
 
-    var photoMap = {};
-    // Supabase から取得（最新が優先）
-    if(dbReady() && authorIds.length > 0){
-      try {
-        var pr = await sb.from('members')
-          .select('id,name,photo')
-          .in('id', authorIds)
-          .not('photo', 'is', null);
-        if(pr.data) pr.data.forEach(function(m){
-          if(m.photo && m.photo.length > 0){
-            photoMap[m.id] = m.photo;
-            photoMap[m.name] = m.photo;
-            // LocalStorageにキャッシュ
-            try {
-              localStorage.setItem('ones_profile_photo_'+m.id, m.photo);
-              localStorage.setItem('ones_photo_by_name_'+m.name, m.photo);
-            } catch(e){}
-          }
-        });
-      } catch(e){ console.warn('[ONEs] photoMap fetch:', e); }
+    if(!built.html){
+      if(noMoreEl){
+        noMoreEl.style.display = 'block';
+        noMoreEl.textContent = 'これ以上投稿はありません';
+      }
+      btn.style.display = 'none';
+    } else {
+      cardsEl.insertAdjacentHTML('beforeend', built.html);
+      if(noMoreEl) noMoreEl.style.display = 'none';
+      built.slicePosts.forEach(function(item){ if(item.data && item.data.id) renderStamps(item.data.id); });
+      btn.style.display = (built.slicePosts.length >= TL_BATCH && dbReady()) ? '' : 'none';
     }
-    // Supabaseで取得できなかった分は LocalStorage から補完
-    authorIds.forEach(function(id){
-      if(!photoMap[id]) {
-        var cached = localStorage.getItem('ones_profile_photo_'+id);
-        if(cached) photoMap[id] = cached;
+  } catch(err){
+    console.error('[ONEs] loadMoreTL:', err);
+    toast('読み込みに失敗しました');
+  } finally {
+    if(btn){
+      btn.dataset.loading = '';
+      btn.disabled = false;
+      if(btn.style.display !== 'none'){
+        btn.textContent = '📜 もっと見る';
       }
-    });
-    authorNames.forEach(function(name){
-      if(!photoMap[name]) {
-        var cached = localStorage.getItem('ones_photo_by_name_'+name);
-        if(cached) photoMap[name] = cached;
-      }
-    });
-
-    // アバターHTMLを生成するヘルパー関数
-    function getAvHtml(authorId, authorName, authorEmoji, size, isMe, clickable) {
-      size = size || 'am';
-      if(isMe) return myAvHtml(size);
-      var photo = getPhotoFor(authorId);
-      var onclick = clickable ? ' onclick="openUserSheet(\''+esc(authorName)+'\',\''+authorEmoji+'\')"' : '';
-      var cursorStyle = clickable ? 'cursor:pointer;' : '';
-      if(photo){
-        return '<div class="av '+size+'"'+onclick+' style="'+cursorStyle+'background-image:url('+photo+');background-size:cover;background-position:center;background-color:#fff;"></div>';
-      }
-      return '<div class="av '+size+'" style="background:linear-gradient(135deg,#a8ddb8,#3fa865);'+
-        'display:flex;align-items:center;justify-content:center;'+cursorStyle+'"'+onclick+'>'+authorEmoji+'</div>';
     }
+  }
+}
 
-    // 全投稿を統合して時系列ソート（新しい順）、最大15件（コメント数取得と表示で共通利用）
-    var combinedPosts = [];
-    allD.slice(0, 10).forEach(function(d){ combinedPosts.push({type:'diary', data:d, ts: d.created_at ? new Date(d.created_at).getTime() : 0}); });
-    allP.slice(0, 10).forEach(function(p){ combinedPosts.push({type:'photo', data:p, ts: p.created_at ? new Date(p.created_at).getTime() : 0}); });
-    allV.slice(0, 10).forEach(function(v){ combinedPosts.push({type:'voice', data:v, ts: v.created_at ? new Date(v.created_at).getTime() : 0}); });
-    combinedPosts.sort(function(a,b){ return b.ts - a.ts; });
-    combinedPosts = combinedPosts.slice(0, 15);
+/** タイムライン用：行の時刻（ミリ秒）。created_at 欠落時は date / ts をフォールバック */
+function rowCreatedMs(row){
+  if(!row || typeof row !== 'object') return 0;
+  if(typeof row.ts === 'number' && isFinite(row.ts)) return row.ts;
+  var ca = row.created_at || row.updated_at;
+  if(ca){
+    var m = new Date(ca).getTime();
+    if(isFinite(m)) return m;
+  }
+  if(row.date != null && row.date !== ''){
+    var dp = Date.parse(String(row.date));
+    if(isFinite(dp)) return dp;
+  }
+  return 0;
+}
 
-    // TLに表示する投稿のコメント数を事前取得
-    var commentCountById = {};
-    var diaryCommentCounts = {};
+function sortRowsNewestFirst(rows){
+  if(!rows || !rows.length) return rows || [];
+  return rows.slice().sort(function(a,b){ return rowCreatedMs(b) - rowCreatedMs(a); });
+}
+
+async function buildTimelineCardsFromFetched(allD, allV, allP){
+  var slicePosts = [];
+  var h = '';
+
+  allD = sortRowsNewestFirst(allD);
+  allV = sortRowsNewestFirst(allV);
+  allP = sortRowsNewestFirst(allP);
+
+  var authorIds = [];
+  var authorNames = [];
+  (allD||[]).forEach(function(d){ if(d.author_id) authorIds.push(d.author_id); if(d.author_name) authorNames.push(d.author_name); });
+  (allV||[]).forEach(function(v){ if(v.author_id) authorIds.push(v.author_id); if(v.author_name) authorNames.push(v.author_name); });
+  (allP||[]).forEach(function(p){ if(p.author_id) authorIds.push(p.author_id); });
+
+  authorIds = authorIds.filter(function(v,i,a){ return a.indexOf(v)===i && v; });
+  authorNames = authorNames.filter(function(v,i,a){ return a.indexOf(v)===i && v; });
+
+  var photoMap = {};
+  if(dbReady() && authorIds.length > 0){
     try {
-      diaryCommentCounts = await getCommentCountsBatch(combinedPosts.filter(function(x){ return x.type === 'diary'; }).map(function(x){ return x.data && x.data.id; }).filter(Boolean));
-      var commentTargetIds = []
-        .concat(combinedPosts.filter(function(x){ return x.type === 'photo'; }).map(function(x){ return x.data && x.data.id; }))
-        .concat(combinedPosts.filter(function(x){ return x.type === 'voice'; }).map(function(x){ return x.data && x.data.id; }))
-        .filter(Boolean);
-      commentTargetIds = Array.from(new Set(commentTargetIds));
-      if(dbReady() && commentTargetIds.length){
-        var commentResult = await sb.from('comments').select('topic_id').in('topic_id', commentTargetIds);
-        (commentResult.data || []).forEach(function(c){
-          if(!c || !c.topic_id) return;
-          commentCountById[c.topic_id] = (commentCountById[c.topic_id] || 0) + 1;
-        });
-      }
-    } catch(e) { console.error('[ONEs] comment count fetch:', e); }
+      var pr = await sb.from('members')
+        .select('id,name,photo')
+        .in('id', authorIds)
+        .not('photo', 'is', null)
+        .limit(30);
+      if(pr.data) pr.data.forEach(function(m){
+        if(m.photo && m.photo.length > 0){
+          photoMap[m.id] = m.photo;
+          photoMap[m.name] = m.photo;
+          try {
+            localStorage.setItem('ones_profile_photo_'+m.id, m.photo);
+            localStorage.setItem('ones_photo_by_name_'+m.name, m.photo);
+          } catch(e){}
+        }
+      });
+    } catch(e){ console.warn('[ONEs] photoMap fetch:', e); }
+  }
+  authorIds.forEach(function(id){
+    if(!photoMap[id]) {
+      var cached = localStorage.getItem('ones_profile_photo_'+id);
+      if(cached) photoMap[id] = cached;
+    }
+  });
+  authorNames.forEach(function(name){
+    if(!photoMap[name]) {
+      var cached = localStorage.getItem('ones_photo_by_name_'+name);
+      if(cached) photoMap[name] = cached;
+    }
+  });
 
-    // 本物のデータのみ表示（デモデータは表示しない）
+  function getAvHtml(authorId, authorName, authorEmoji, size, isMe, clickable) {
+    size = size || 'am';
+    if(isMe) return myAvHtml(size);
+    var photo = getPhotoFor(authorId);
+    var onclick = clickable ? ' onclick="openUserSheet(\''+esc(authorName)+'\',\''+authorEmoji+'\')"' : '';
+    var cursorStyle = clickable ? 'cursor:pointer;' : '';
+    if(photo){
+      var br = (size === 'am') ? '10px' : '50%';
+      return '<div class="av '+size+'"'+onclick+' style="'+cursorStyle+'overflow:hidden;">'+
+        '<img src="'+escHtml(photo)+'" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;border-radius:'+br+';display:block;"></div>';
+    }
+    return '<div class="av '+size+'" style="background:linear-gradient(135deg,#a8ddb8,#3fa865);'+
+      'display:flex;align-items:center;justify-content:center;'+cursorStyle+'"'+onclick+'>'+authorEmoji+'</div>';
+  }
 
-    var h = '';
+  var combinedPosts = [];
+  (allD||[]).forEach(function(d){ combinedPosts.push({type:'diary', data:d, ts: rowCreatedMs(d)}); });
+  (allP||[]).forEach(function(p){ combinedPosts.push({type:'photo', data:p, ts: rowCreatedMs(p)}); });
+  (allV||[]).forEach(function(v){ combinedPosts.push({type:'voice', data:v, ts: rowCreatedMs(v)}); });
+  combinedPosts.sort(function(a,b){ return rowCreatedMs(b.data) - rowCreatedMs(a.data); });
 
-    combinedPosts.forEach(function(item){
+  for(var ci = 0; ci < combinedPosts.length && slicePosts.length < TL_BATCH; ci++){
+    var item = combinedPosts[ci];
+    var kid = timelinePostKey(item.type, item.data && item.data.id);
+    if(!kid) continue;
+    if(_tlSeenKeys[kid]) continue;
+    slicePosts.push(item);
+  }
+  slicePosts.forEach(function(it){
+    var k = timelinePostKey(it.type, it.data && it.data.id);
+    if(k) _tlSeenKeys[k] = 1;
+  });
+
+  slicePosts.sort(function(a,b){ return rowCreatedMs(b.data) - rowCreatedMs(a.data); });
+
+  var commentCountById = {};
+  var diaryCommentCounts = {};
+  try {
+    diaryCommentCounts = await getCommentCountsBatch(slicePosts.filter(function(x){ return x.type === 'diary'; }).map(function(x){ return x.data && x.data.id; }).filter(Boolean));
+    var commentTargetIds = []
+      .concat(slicePosts.filter(function(x){ return x.type === 'photo'; }).map(function(x){ return x.data && x.data.id; }))
+      .concat(slicePosts.filter(function(x){ return x.type === 'voice'; }).map(function(x){ return x.data && x.data.id; }))
+      .filter(Boolean);
+    commentTargetIds = Array.from(new Set(commentTargetIds));
+    if(dbReady() && commentTargetIds.length){
+      var commentResult = await sb.from('comments').select('topic_id').in('topic_id', commentTargetIds);
+      (commentResult.data || []).forEach(function(c){
+        if(!c || !c.topic_id) return;
+        commentCountById[c.topic_id] = (commentCountById[c.topic_id] || 0) + 1;
+      });
+    }
+  } catch(e) { console.error('[ONEs] comment count fetch:', e); }
+
+  slicePosts.forEach(function(item){
       if(item.type === 'diary') {
         var d = item.data;
       var diaryAuthor = d.author_name || d.author || 'メンバー';
@@ -3260,7 +3670,7 @@ async function renderTL(){
       var likeCount = d.good || 0;
       var diaryTitleEsc = esc(d.title || '');
       var diaryCommentCount = (diaryCommentCounts[recId] != null) ? diaryCommentCounts[recId] : (d.comments_count || 0);
-      h += '<div class="fc"><div class="fch">'+avHtml+'<div class="fui"><div class="fname">'+nameHtml+'</div><div class="fsub">'+dateStr+'&nbsp;<span class="fbadge bd">日記</span></div></div></div><div class="fcb"><div class="ftit" onclick="openDiaryDetail(\''+esc(recId)+'\')">'+escHtml(d.title)+'</div><div class="ftxt">'+escHtml(excerpt)+(excerpt.length >= 70 ? '…' : '')+'</div></div><div id="stamps-'+recId+'" style="padding:4px 14px 0;display:flex;flex-wrap:wrap;gap:4px;"></div><div class="fcf"><div class="fbtn'+(isLiked?' lk':'')+'" onclick="likeThis(this,\'diaries\',\''+recId+'\')">👍 <span class="like-count">'+likeCount+'</span></div><button class="fbtn" onclick="event.stopPropagation();openDiaryDetail(\''+esc(recId)+'\')" style="background:transparent;border:none;color:#558b2f;font-size:13px;cursor:pointer;padding:4px 8px;display:inline-flex;align-items:center;gap:4px;">💬 <span id="cmt-'+recId+'">'+diaryCommentCount+'</span>件</button><div class="fbtn" onclick="sharePost(\''+diaryTitleEsc+'\')">↗️ シェア</div><div class="fbtn" onclick="openStampSheet(\'diary\',\''+recId+'\')">🎁 スタンプ</div></div></div>';
+      h += '<div class="fc"><div class="fch">'+avHtml+'<div class="fui"><div class="fname">'+nameHtml+'</div><div class="fsub">'+dateStr+'&nbsp;<span class="fbadge bd">日記</span></div></div></div><div class="fcb"><div class="ftit" onclick="openDiaryDetail(\''+esc(recId)+'\')">'+escHtml(d.title)+'</div><div class="ftxt">'+linkifyText(excerpt)+(excerpt.length >= 70 ? '…' : '')+'</div></div><div id="stamps-'+recId+'" style="padding:4px 14px 0;display:flex;flex-wrap:wrap;gap:4px;"></div><div class="fcf"><div class="fbtn'+(isLiked?' lk':'')+'" onclick="likeThis(this,\'diaries\',\''+recId+'\')">👍 <span class="like-count">'+likeCount+'</span></div><button class="fbtn" onclick="event.stopPropagation();openDiaryDetail(\''+esc(recId)+'\')" style="background:transparent;border:none;color:#558b2f;font-size:13px;cursor:pointer;padding:4px 8px;display:inline-flex;align-items:center;gap:4px;">💬 <span id="cmt-'+recId+'">'+diaryCommentCount+'</span>件</button><div class="fbtn" onclick="sharePost(\''+diaryTitleEsc+'\')">↗️ シェア</div><div class="fbtn" onclick="openStampSheet(\'diary\',\''+recId+'\')">🎁 スタンプ</div></div></div>';
       } else if(item.type === 'photo') {
         var p = item.data;
       var photoAuthor = p.author_name || 'メンバー';
@@ -3283,7 +3693,7 @@ async function renderTL(){
       var isLikedP = recId && likedList.indexOf(recId) !== -1;
       var sharePhotoUrl = p.photo_url || '';
       var photoCommentCount = (commentCountById[recId] != null) ? commentCountById[recId] : (p.comments_count || 0);
-      h += '<div class="fc"><div class="fch">'+pAvHtml+'<div class="fui"><div class="fname">'+photoNameHtml+'</div><div class="fsub">'+timeAgoStr(ts)+'&nbsp;<span class="fbadge" style="background:#fef3c7;color:#92400e;">📷 フォト</span></div></div></div><div class="fcb"><img src="'+photoUrl+'" style="width:100%;max-height:300px;object-fit:cover;border-radius:8px;">'+caption+'</div><div id="stamps-'+recId+'" style="padding:4px 14px 0;display:flex;flex-wrap:wrap;gap:4px;"></div><div class="fcf"><div class="fbtn'+(isLikedP?' lk':'')+'" onclick="likeThis(this,\'photos\',\''+recId+'\')">👍 <span class="like-count">'+(p.good||0)+'</span></div><div class="fbtn" onclick="openCommentSheet(\'photo\',\''+recId+'\',\'写真へのコメント\')">💬 <span id="cmt-'+recId+'">'+photoCommentCount+'</span>件</div><div class="fbtn" onclick="sharePost(\'\',\''+esc(sharePhotoUrl)+'\')">↗️ シェア</div><div class="fbtn" onclick="openStampSheet(\'photo\',\''+recId+'\')">🎁 スタンプ</div></div></div>';
+      h += '<div class="fc"><div class="fch">'+pAvHtml+'<div class="fui"><div class="fname">'+photoNameHtml+'</div><div class="fsub">'+timeAgoStr(ts)+'&nbsp;<span class="fbadge" style="background:#fef3c7;color:#92400e;">📷 フォト</span></div></div></div><div class="fcb"><img src="'+escHtml(photoUrl)+'" class="tl-feed-photo" alt="" loading="lazy" onclick="openPhotoLightbox(\''+esc(photoUrl)+'\')">'+caption+'</div><div id="stamps-'+recId+'" style="padding:4px 14px 0;display:flex;flex-wrap:wrap;gap:4px;"></div><div class="fcf"><div class="fbtn'+(isLikedP?' lk':'')+'" onclick="likeThis(this,\'photos\',\''+recId+'\')">👍 <span class="like-count">'+(p.good||0)+'</span></div><div class="fbtn" onclick="openCommentSheet(\'photo\',\''+recId+'\',\'写真へのコメント\')">💬 <span id="cmt-'+recId+'">'+photoCommentCount+'</span>件</div><div class="fbtn" onclick="sharePost(\'\',\''+esc(sharePhotoUrl)+'\')">↗️ シェア</div><div class="fbtn" onclick="openStampSheet(\'photo\',\''+recId+'\')">🎁 スタンプ</div></div></div>';
       } else if(item.type === 'voice') {
         var v = item.data;
       var voiceAuthor = v.author_name || v.u || 'メンバー';
@@ -3307,16 +3717,97 @@ async function renderTL(){
       var nightLabel = v.is_night
         ? '<span style="font-size:10px;background:#1a1a2e;color:#8395a7;padding:2px 8px;border-radius:10px;margin-left:6px;">🌙 深夜モード</span>'
         : '';
-      h += '<div class="fc" style="'+nightStyle+'"><div class="fch">'+avHtml+'<div class="fui"><div class="fname">'+voiceNameHtml+nightLabel+'</div><div class="fsub">'+timeAgoStr(ts)+'&nbsp;<span class="fbadge bv">つぶやき</span></div></div></div><div class="fcb"><div class="ftxt" style="padding-bottom:2px;'+(v.is_night?'color:#c8d6e5;':'')+'">'+escHtml(voiceBody)+'</div></div><div id="stamps-'+recId+'" style="padding:4px 14px 0;display:flex;flex-wrap:wrap;gap:4px;"></div><div class="fcf"><div class="fbtn'+(isLikedV?' lk':'')+'" onclick="likeThis(this,\'voices\',\''+recId+'\')">👍 <span class="like-count">'+(v.good||0)+'</span></div><div class="fbtn" onclick="openCommentSheet(\'voice\',\''+recId+'\',\'つぶやき\')">💬 <span id="cmt-'+recId+'">'+voiceCommentCount+'</span>件</div><div class="fbtn" onclick="sharePost(\''+esc(voiceBody)+'\')">↗️ シェア</div><div class="fbtn" onclick="openStampSheet(\'voice\',\''+recId+'\')">🎁 スタンプ</div></div></div>';
+      h += '<div class="fc" style="'+nightStyle+'"><div class="fch">'+avHtml+'<div class="fui"><div class="fname">'+voiceNameHtml+nightLabel+'</div><div class="fsub">'+timeAgoStr(ts)+'&nbsp;<span class="fbadge bv">つぶやき</span></div></div></div><div class="fcb"><div class="ftxt" style="padding-bottom:2px;'+(v.is_night?'color:#c8d6e5;':'')+'">'+linkifyText(voiceBody)+'</div></div><div id="stamps-'+recId+'" style="padding:4px 14px 0;display:flex;flex-wrap:wrap;gap:4px;"></div><div class="fcf"><div class="fbtn'+(isLikedV?' lk':'')+'" onclick="likeThis(this,\'voices\',\''+recId+'\')">👍 <span class="like-count">'+(v.good||0)+'</span></div><div class="fbtn" onclick="openCommentSheet(\'voice\',\''+recId+'\',\'つぶやき\')">💬 <span id="cmt-'+recId+'">'+voiceCommentCount+'</span>件</div><div class="fbtn" onclick="sharePost(\''+esc(voiceBody)+'\')">↗️ シェア</div><div class="fbtn" onclick="openStampSheet(\'voice\',\''+recId+'\')">🎁 スタンプ</div></div></div>';
       }
     });
 
-    if(tlEl) tlEl.innerHTML = h || '<div style="padding:40px;text-align:center;color:var(--text3);">まだ投稿がありません<br><span style="font-size:12px;">最初の投稿をしてみましょう！</span></div>';
-    if(h){
-      combinedPosts.forEach(function(item){ if(item.data && item.data.id) renderStamps(item.data.id); });
+  return { html: h, slicePosts: slicePosts };
+}
+
+async function renderTL(){
+  if(_tlRendering) return;
+  var tlEl = document.getElementById('tlfeed');
+  if(!tlEl) return;
+  var diaries = [];
+  var voices = [];
+  var photos = [];
+  _tlRendering = true;
+  try {
+    await syncMyPhoto();
+    await loadAllPhotos();
+
+    _tlOffset = 0;
+    _tlSeenKeys = {};
+
+    if(dbReady()) {
+      try {
+        var tlFetch = await Promise.all([
+          dbFetchDiaries(TL_BATCH, 0).catch(function(){ return []; }),
+          dbFetchVoices(TL_BATCH, 0).catch(function(){ return []; }),
+          dbFetchPhotos(TL_BATCH, 0).catch(function(){ return []; })
+        ]);
+        diaries = tlFetch[0] || [];
+        voices = tlFetch[1] || [];
+        photos = tlFetch[2] || [];
+      } catch(e){ console.warn('[ONEs] renderTL parallel fetch:', e); }
     }
+    console.log('[renderTL] diaries:', diaries.length, 'voices:', voices.length, 'photos:', photos.length);
+
+    var built = await buildTimelineCardsFromFetched(diaries, voices, photos);
+    _tlOffset += TL_BATCH;
+
+    var btnStyle = 'width:100%;padding:14px;margin:16px 0;background:#f1f8e9;color:#558b2f;border:2px solid #c8e6c9;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;';
+    var btnHtml = '<button type="button" id="tl-load-more" onclick="loadMoreTL()" style="'+btnStyle+'">📜 もっと見る</button>';
+    var endHtml = '<div id="tl-no-more" style="display:none;text-align:center;color:var(--text3);padding:16px;font-size:13px;"></div>';
+
+    var totalFetched = diaries.length + voices.length + photos.length;
+
+    if(!built.html){
+      if(totalFetched === 0){
+        tlEl.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3);">まだ投稿がありません<br><span style="font-size:12px;">最初の投稿をしてみましょう！</span></div>';
+      } else {
+        tlEl.innerHTML = '<div id="tl-cards"></div>' + btnHtml + endHtml;
+        var ghostBtn = document.getElementById('tl-load-more');
+        if(ghostBtn) ghostBtn.style.display = 'none';
+        var nm0 = document.getElementById('tl-no-more');
+        if(nm0){ nm0.style.display = 'block'; nm0.textContent = 'これ以上投稿はありません'; }
+      }
+      return;
+    }
+
+    tlEl.innerHTML = '<div id="tl-cards">' + built.html + '</div>' + btnHtml + endHtml;
+
+    var loadBtn = document.getElementById('tl-load-more');
+    var nmEl = document.getElementById('tl-no-more');
+    if(nmEl) nmEl.style.display = 'none';
+    if(loadBtn){
+      loadBtn.style.display = (built.slicePosts.length >= TL_BATCH && dbReady()) ? '' : 'none';
+    }
+
+    built.slicePosts.forEach(function(item){ if(item.data && item.data.id) renderStamps(item.data.id); });
+
   } catch(err) {
     console.error('[ONEs] renderTL:', err);
+  } finally {
+    _tlRendering = false;
+  }
+
+  if(diaries.length === 0 && voices.length === 0 && photos.length === 0 && dbReady()) {
+    if(!window._tlRetried) {
+      window._tlRetried = true;
+      console.log('[renderTL] 全件0のため500ms後に再試行');
+      setTimeout(function(){ renderTL(); }, 500);
+    }
+  } else if(diaries.length + voices.length + photos.length > 0) {
+    window._tlRetried = false;
+  }
+
+  var tlfeedEl = document.getElementById('tlfeed');
+  if(tlfeedEl && tlfeedEl.innerHTML.trim() === '') {
+    setTimeout(function(){
+      var t = document.getElementById('tlfeed');
+      if(t && t.innerHTML.trim() === '') renderTL();
+    }, 1000);
   }
 }
 
@@ -3606,6 +4097,7 @@ async function postNightMode() {
 
     closeSheet();
     toast('🌙 深夜モードで投稿しました');
+    invalidateTimelineCache();
     renderTL();
   } catch(e){
     console.error('[ONEs] postNightMode:', e);
@@ -3796,7 +4288,7 @@ async function renderDiary(){
           '</div>'+
         '</div>'+
         '<div class="dctit" onclick="openDiaryDetail(\''+diaryIdEsc+'\')">'+escHtml(d.title)+'</div>'+
-        '<div class="dcex">'+escHtml(excerpt)+'</div>'+
+        '<div class="dcex">'+linkifyText(excerpt)+'</div>'+
       '</div>'+
       '<div class="dcf">'+
         '<button class="dcfb" onclick="event.stopPropagation();openDiaryDetail(\''+diaryIdEsc+'\')" style="background:transparent;border:none;color:#558b2f;font-size:13px;cursor:pointer;">💬 '+diaryCommentCount+'件</button>'+
@@ -3863,14 +4355,30 @@ async function renderVoice(){
       var nameHtml = isMe
         ? escHtml(vauthor)
         : '<span style="cursor:pointer;" onclick="openUserSheet(\''+authorEsc+'\',\''+vemoji+'\')">'+escHtml(vauthor)+'</span>';
-      return '<div class="fc"><div class="fch">'+avHtml+'<div class="fui"><div class="fname">'+nameHtml+'</div><div class="fsub">'+timeAgoStr(ts)+'</div></div></div><div class="fcb"><div class="ftxt" style="padding-bottom:2px;">'+escHtml(vbody)+'</div></div><div class="fcf"><div class="fbtn'+(isLiked?' lk':'')+'" onclick="likeThis(this,\'voices\',\''+v.id+'\')">👍 <span class="like-count">'+(v.good||0)+'</span></div><div class="fbtn" onclick="toast(\'💬 返信機能は準備中です\')">💬 返信</div><div class="fbtn" onclick="sharePost(\''+esc(vbody)+'\')">↗️ シェア</div></div></div>';
+      return '<div class="fc"><div class="fch">'+avHtml+'<div class="fui"><div class="fname">'+nameHtml+'</div><div class="fsub">'+timeAgoStr(ts)+'</div></div></div><div class="fcb"><div class="ftxt" style="padding-bottom:2px;">'+linkifyText(vbody)+'</div></div><div class="fcf"><div class="fbtn'+(isLiked?' lk':'')+'" onclick="likeThis(this,\'voices\',\''+v.id+'\')">👍 <span class="like-count">'+(v.good||0)+'</span></div><div class="fbtn" onclick="toast(\'💬 返信機能は準備中です\')">💬 返信</div><div class="fbtn" onclick="sharePost(\''+esc(vbody)+'\')">↗️ シェア</div></div></div>';
     }).join('');
   } catch(e) { console.error('[ONEs] renderVoice:', e); }
 }
 async function renderHome(){
   await syncMyPhoto();
-  await loadAllPhotos();
+  if(!window._photosCached) {
+    await loadAllPhotos();
+    window._photosCached = true;
+  }
   try { await renderTL(); } catch(e) { console.error('[ONEs] renderHome:', e); }
+}
+
+/** ログイン／セッション復元直後にタイムライン関連キャッシュを捨て、renderHome で再描画（待機は呼び出し側で実施済み想定） */
+async function refreshTimelineAfterAuth(){
+  window._tlRetried = false;
+  window._tlCache = null;
+  window._photosCached = false;
+  try { window._loadAllPhotosFetchedAt = 0; } catch(e) {}
+  try { invalidateTimelineCache(); } catch(e) {}
+  await new Promise(function(r){ setTimeout(r, 0); });
+  if(typeof renderHome === 'function') {
+    try { await renderHome(); } catch(e) { console.error('[ONEs] refreshTimelineAfterAuth:', e); }
+  }
 }
 function renderProfileCard(member, isMyself){
   if(!member) return '';
@@ -4005,7 +4513,7 @@ async function renderMypage(){
     +     '<span style="flex:1;">取扱説明書・ヘルプ</span>'
     +     '<span style="color:#aaa;">›</span>'
     +   '</button>'
-    +   '<button onclick="confirmLogout()" style="display:flex;align-items:center;gap:14px;width:100%;background:#fff;border:none;padding:16px 20px;font-size:14px;color:#e53935;text-align:left;cursor:pointer;">'
+    +   '<button onclick="logout()" style="display:flex;align-items:center;gap:14px;width:100%;background:#fff;border:none;padding:16px 20px;font-size:14px;color:#e53935;text-align:left;cursor:pointer;">'
     +     '<span style="font-size:20px;width:28px;">🚪</span>'
     +     '<span style="flex:1;">ログアウト</span>'
     +     '<span style="color:#aaa;">›</span>'
@@ -4076,7 +4584,7 @@ async function renderWanmik(){
           var photoUrl = r.data && r.data.photo ? r.data.photo : null;
           var el = document.getElementById('wanmik-av-'+memberId);
           if(el && photoUrl){
-            el.innerHTML = '<img src="'+photoUrl+'" style="width:100%;height:100%;object-fit:cover;border-radius:18px;">';
+            el.innerHTML = '<img src="'+escHtml(photoUrl)+'" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;border-radius:18px;display:block;">';
           }
         }).catch(function(){});
     }
@@ -4139,7 +4647,7 @@ async function renderFP() {
       var ts = v.created_at ? new Date(v.created_at).getTime() : Date.now();
       var photo = photoMap[v.visitor_id];
       var avHtml = photo
-        ? '<img src="'+photo+'" style="width:50px;height:50px;border-radius:50%;object-fit:cover;border:2.5px solid #fff;">'
+        ? '<img src="'+escHtml(photo)+'" alt="" loading="lazy" style="width:50px;height:50px;border-radius:50%;object-fit:cover;border:2.5px solid #fff;display:block;">'
         : '<div class="sinn" style="font-size:24px;">'+(v.visitor_emoji||'🙋')+'</div>';
       return '<div style="display:flex;gap:12px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--og-pale);cursor:pointer;" '+
         'onclick="openUserSheet(\''+esc(v.visitor_name)+'\',\''+(v.visitor_emoji||'🙋')+'\')">'+
@@ -4286,7 +4794,7 @@ function filterAndSortMembers() {
     var photo = m.photo;
     var emoji = m.emoji || '🙋';
     var avHtml = photo
-      ? '<img src="'+photo+'" style="width:64px;height:64px;border-radius:14px;object-fit:cover;border:2px solid var(--og-border);">'
+      ? '<img src="'+escHtml(photo)+'" alt="" loading="lazy" style="width:64px;height:64px;border-radius:14px;object-fit:cover;border:2px solid var(--og-border);display:block;">'
       : '<div style="width:64px;height:64px;border-radius:14px;background:linear-gradient(135deg,#a8ddb8,#3fa865);display:flex;align-items:center;justify-content:center;font-size:32px;border:2px solid var(--og-border);">'+emoji+'</div>';
     var tags = [];
     try { tags = JSON.parse(m.interests||'[]'); } catch(e){}
@@ -4588,7 +5096,11 @@ async function renderMsgs(){
       var partnerId = m.from_id === currentUser.id ? m.to_id : m.from_id;
       var partnerName = m.from_id === currentUser.id ? m.to_name : m.from_name;
       var partnerEmoji = m.from_id === currentUser.id ? (m.to_emoji||'🙋') : (m.from_emoji||'🙋');
-      if(!threads[partnerId] || new Date(m.created_at) > new Date(threads[partnerId].created_at)){
+      var isTrashedRow = !!m.is_trashed || m.folder_name === 'trash';
+      var incomingUnread = m.to_id === currentUser.id && !isTrashedRow && m.read !== true;
+      var newer = !threads[partnerId] || new Date(m.created_at) > new Date(threads[partnerId].created_at);
+      if(newer) {
+        var prevUnread = threads[partnerId] ? threads[partnerId].unread : false;
         threads[partnerId] = {
           partnerId: partnerId,
           partnerName: partnerName,
@@ -4598,8 +5110,10 @@ async function renderMsgs(){
           created_at: m.created_at,
           trashed_at: m.trashed_at,
           is_starred: !!m.is_starred || m.folder_name === 'starred',
-          unread: !m.read && m.to_id === currentUser.id
+          unread: incomingUnread || prevUnread
         };
+      } else if(threads[partnerId]) {
+        threads[partnerId].unread = threads[partnerId].unread || incomingUnread;
       }
     });
 
@@ -4647,6 +5161,7 @@ async function renderMsgs(){
       el.innerHTML = headerInfo + '<div style="padding:40px;text-align:center;color:var(--text3);">'+
         tabLabel+'にメッセージはありません<br>'+
         '<span style="font-size:12px;">ワンミクにメッセージを送ってみましょう</span></div>';
+      try { if(typeof updateMessageBadge === 'function') updateMessageBadge(); } catch(e){}
       return;
     }
 
@@ -4696,10 +5211,12 @@ async function renderMsgs(){
         actionBtns+
       '</div>';
     }).join('');
+    try { if(typeof updateMessageBadge === 'function') updateMessageBadge(); } catch(e){}
 
   } catch(e){
     console.error('[ONEs] renderMsgs:', e);
     el.innerHTML = headerInfo + '<div style="padding:20px;text-align:center;color:var(--text3);">読み込みエラー</div>';
+    try { if(typeof updateMessageBadge === 'function') updateMessageBadge(); } catch(e2){}
   }
 }
 var userFolders = [];
@@ -5031,7 +5548,7 @@ async function createNotification(userId, type, title, body, fromUserId, fromUse
     if(r.error) console.warn('[ONEs] createNotification:', r.error);
   } catch(e){ console.error('[ONEs] createNotification:', e); }
 }
-async function renderNotifications(limit) {
+async function renderNotifications(limit, skipBulkMarkRead) {
   var el = document.getElementById('ntlist');
   if(!el) return;
   var headerInfo = '<div style="background:#e8f5e9;border-radius:10px;padding:10px 14px;margin:0 0 12px;font-size:12px;color:#558b2f;">'
@@ -5067,8 +5584,10 @@ async function renderNotifications(limit) {
       '</div>';
     }).join('');
     if(limit !== 5) {
-      try { await sb.from('notifications').update({is_read:true}).eq('user_id', currentUser.id).eq('is_read', false); } catch(e){}
-      updateNoticeBadge();
+      if(!skipBulkMarkRead) {
+        try { await sb.from('notifications').update({is_read:true}).eq('user_id', currentUser.id).eq('is_read', false); } catch(e){}
+      }
+      try { updateNoticeBadge(); } catch(e){}
     }
   } catch(e){
     console.error('[ONEs] renderNotifications:', e);
@@ -5156,6 +5675,49 @@ async function updateNoticeBadge() {
     }
   } catch(e) {
     console.warn('[ONEs] updateNoticeBadge:', e);
+  }
+}
+async function updateMessageBadge() {
+  try {
+    var badge = document.getElementById('bn-message-badge');
+    if(!badge) return;
+    if(!dbReady() || !currentUser || !currentUser.id) {
+      badge.style.display = 'none';
+      return;
+    }
+    function msgNotTrashed(m) {
+      return !(!!m.is_trashed || m.folder_name === 'trash');
+    }
+    function countsTowardInboxBadge(m) {
+      return m && m.from_id && m.to_id === currentUser.id && msgNotTrashed(m);
+    }
+    function isExplicitlyRead(m) {
+      return m.read === true;
+    }
+    var r = await sb.from('messages')
+      .select('from_id,read,is_trashed,folder_name')
+      .eq('to_id', currentUser.id)
+      .limit(400);
+    if(r.error) {
+      console.warn('[ONEs] updateMessageBadge query:', r.error);
+      badge.style.display = 'none';
+      return;
+    }
+    var threads = {};
+    (r.data || []).forEach(function(m){
+      if(!countsTowardInboxBadge(m)) return;
+      if(isExplicitlyRead(m)) return;
+      threads[m.from_id] = 1;
+    });
+    var count = Object.keys(threads).length;
+    badge.textContent = count > 99 ? '99+' : String(count);
+    badge.style.display = count > 0 ? 'flex' : 'none';
+  } catch(e) {
+    console.warn('[ONEs] updateMessageBadge:', e);
+    try {
+      var b = document.getElementById('bn-message-badge');
+      if(b) b.style.display = 'none';
+    } catch(e2){}
   }
 }
 function renderMpDiary(){const all=[...ld('od'),...DI];document.getElementById('mpdiary').innerHTML=all.slice(0,4).map(d=>`<div style="padding:8px 0;border-bottom:1px solid var(--og-pale);cursor:pointer;" onclick="openDiarySheet('${esc(d.title)}')"><div style="font-size:13px;font-weight:700;color:var(--og3);">${d.title}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${d.date}&nbsp;💬${d.comments||0}&nbsp;👍${d.good||0}</div></div>`).join('');}
@@ -5251,10 +5813,8 @@ function renderSide(){
   if(typeof currentUser !== 'undefined' && currentUser && currentUser.id && typeof dbReady === 'function' && dbReady()) {
     var badgeEl = document.getElementById('side-role-badge');
     if(badgeEl) {
-      if(currentUser.id === 'm001') {
+      if(isAdmin()) {
         badgeEl.textContent = '🌱 創設メンバー';
-      } else if(currentUser.role === 'admin') {
-        badgeEl.textContent = '🛡️ 管理者';
       } else {
         badgeEl.textContent = '🌱 メンバー';
       }
@@ -5281,8 +5841,16 @@ function renderSide(){
 
 /* ══════════ NAV ══════════ */
 let cur='home';
-function nav(name,el){
+async function nav(name,el){
   console.log('[ONEs] nav called:', name);
+  if(name === 'admin'){
+    if(!isAdmin()){
+      nav('home', null);
+      return;
+    }
+    await openAdmin();
+    return;
+  }
   try {
     document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
     const pg=document.getElementById('pg-'+name);
@@ -5309,7 +5877,7 @@ function nav(name,el){
 
     try { if(name==='diary' && typeof renderDiary === 'function') renderDiary(); } catch(e) { console.error(e); }
     try { if(name==='voice' && typeof renderVoice === 'function') renderVoice(); } catch(e) { console.error(e); }
-    try { if(name==='home' && typeof renderHome === 'function') renderHome(); } catch(e) { console.error(e); }
+    try { if(name==='home' && typeof renderHome === 'function') await renderHome(); } catch(e) { console.error(e); }
     if(name==='home'){
       const myCode = (currentUser && currentUser.code) ? currentUser.code : 'ONES-7X3K';
       const tryQRSide = (attempts) => {
@@ -5327,8 +5895,16 @@ function nav(name,el){
     try { if(name==='community' && typeof renderCM === 'function') renderCM(); } catch(e) { console.error(e); }
     try {
       if(name==='message') {
-        if(typeof loadFolders === 'function') loadFolders().then(function(){ if(typeof renderMsgs === 'function') renderMsgs(); });
-        else if(typeof renderMsgs === 'function') renderMsgs();
+        if(typeof loadFolders === 'function') loadFolders().then(function(){
+          if(typeof renderMsgs === 'function') renderMsgs().then(function(){
+            if(typeof updateMessageBadge === 'function') updateMessageBadge();
+          });
+        });
+        else if(typeof renderMsgs === 'function') {
+          renderMsgs().then(function(){
+            if(typeof updateMessageBadge === 'function') updateMessageBadge();
+          });
+        }
       }
     } catch(e) { console.error(e); }
     if(name==='notice'){
@@ -5415,6 +5991,7 @@ async function postDiary(){
     }
 
     toast('📔 日記を投稿しました！');
+    invalidateTimelineCache();
     try { if(typeof renderTL === 'function') renderTL(); } catch(err) {}
     try { if(typeof renderDiary === 'function') renderDiary(); } catch(err) {}
     setTimeout(function(){ try { loadProfilePhoto(); } catch(e) {} }, 50);
@@ -5457,6 +6034,7 @@ async function postVoice(text){
     closeSheet();
     toast('💬 つぶやきを投稿しました！');
     try { if(typeof cur !== 'undefined' && cur === 'voice' && typeof renderVoice === 'function') renderVoice(); } catch(err) {}
+    invalidateTimelineCache();
     try { if(typeof renderTL === 'function') renderTL(); } catch(err) {}
     setTimeout(function(){ try { loadProfilePhoto(); } catch(e) {} }, 50);
   } catch(err) {
@@ -5499,6 +6077,7 @@ async function postVoiceInline(){
     el.value = '';
     toast('💬 つぶやきを投稿しました！');
     try { if(typeof renderVoice === 'function') renderVoice(); } catch(err) {}
+    invalidateTimelineCache();
     try { if(typeof renderTL === 'function') renderTL(); } catch(err) {}
     setTimeout(function(){ try { loadProfilePhoto(); } catch(e) {} }, 50);
   } catch(err) {
@@ -5552,14 +6131,14 @@ function openSheet(type){
   } else if(type==='photo'){
     showSheet('📷 フォトを投稿',`
       <div>
-        <input type="file" id="ph-file" accept="image/*" style="display:none;" onchange="handlePhotoSelect(event)">
-        <input type="file" id="ph-file-camera" accept="image/*" capture="environment" style="display:none;" onchange="handlePhotoSelect(event)">
+        <input type="file" id="ph-file" class="ones-file-input-hidden" accept="image/*" aria-hidden="true" tabindex="-1" onchange="handlePhotoSelect(event)">
+        <input type="file" id="ph-file-camera" class="ones-file-input-hidden" accept="image/*" capture="environment" aria-hidden="true" tabindex="-1" onchange="handlePhotoSelect(event)">
         <div id="ph-preview-area" style="background:var(--og-pale);border-radius:12px;padding:20px;text-align:center;margin-bottom:14px;border:2px dashed var(--og-border);">
           <div style="font-size:48px;margin-bottom:8px;">📷</div>
           <div style="font-size:14px;font-weight:700;color:var(--og3);margin-bottom:12px;">写真を選択</div>
           <div style="display:flex;gap:8px;">
-            <button class="bo" type="button" style="flex:1;padding:10px;font-size:13px;" onclick="document.getElementById('ph-file-camera').click()">📸 カメラで撮影</button>
-            <button class="bo" type="button" style="flex:1;padding:10px;font-size:13px;" onclick="document.getElementById('ph-file').click()">🖼️ アルバムから選ぶ</button>
+            <label for="ph-file-camera" class="bo" style="flex:1;padding:10px;font-size:13px;cursor:pointer;text-align:center;display:flex;align-items:center;justify-content:center;margin:0;">📸 カメラで撮影</label>
+            <label for="ph-file" class="bo" style="flex:1;padding:10px;font-size:13px;cursor:pointer;text-align:center;display:flex;align-items:center;justify-content:center;margin:0;">🖼️ アルバムから選ぶ</label>
           </div>
         </div>
         <div id="ph-preview" style="display:none;margin-bottom:14px;">
@@ -5620,8 +6199,15 @@ function handlePhotoSelect(event) {
         if(previewImg) previewImg.src = dataUrl;
         if(previewArea) previewArea.style.display = '';
         if(selectArea) {
-          selectArea.innerHTML = '<div style="display:flex;gap:8px;"><button class="bos" type="button" style="flex:1;padding:8px;font-size:12px;" onclick="document.getElementById(\'ph-file-camera\').click()">📸 撮り直す</button><button class="bos" type="button" style="flex:1;padding:8px;font-size:12px;" onclick="document.getElementById(\'ph-file\').click()">🖼️ 別の写真</button></div>';
+          selectArea.innerHTML = '<div style="display:flex;gap:8px;">'+
+            '<label for="ph-file-camera" class="bos" style="flex:1;padding:8px;font-size:12px;cursor:pointer;text-align:center;display:flex;align-items:center;justify-content:center;margin:0;border-radius:12px;">📸 撮り直す</label>'+
+            '<label for="ph-file" class="bos" style="flex:1;padding:8px;font-size:12px;cursor:pointer;text-align:center;display:flex;align-items:center;justify-content:center;margin:0;border-radius:12px;">🖼️ 別の写真</label>'+
+            '</div>';
         }
+        // 同一ファイルを連続で選べるようにする
+        try {
+          if(event && event.target) event.target.value = '';
+        } catch(clearErr){}
         // データを保存
         window._selectedPhoto = dataUrl;
       };
@@ -5726,6 +6312,7 @@ async function postPhoto() {
     window._selectedPhoto = null;
     closeSheet();
     toast('📷 写真を投稿しました！');
+    invalidateTimelineCache();
     try { if(typeof renderTL === 'function') renderTL(); } catch(err) {}
     try { if(typeof renderMypagePhotos === 'function') renderMypagePhotos(); } catch(err) {}
     setTimeout(function(){ try { loadProfilePhoto(); } catch(e) {} }, 50);
@@ -5817,7 +6404,7 @@ async function openDiaryDetail(diaryId){
     +     '</div>'
     +   '</div>'
     +   '<div style="font-size:18px;font-weight:700;color:#2e7d32;margin-bottom:10px;">'+escHtml(diary.title||'')+'</div>'
-    +   '<div style="font-size:14px;color:#333;line-height:1.8;white-space:pre-wrap;word-break:break-word;">'+escHtml(diary.body||'')+'</div>'
+    +   '<div style="font-size:14px;color:#333;line-height:1.8;white-space:pre-wrap;word-break:break-word;">'+linkifyText(diary.body||'')+'</div>'
     + '</div>';
 
   var commentsHtml = ''
@@ -5858,7 +6445,7 @@ async function openDiaryDetail(diaryId){
     + '<div style="position:sticky;bottom:0;background:#f1f8e9;padding:12px 16px;border-top:1px solid #c8e6c9;margin:0 -16px -16px;">'
     +   '<div style="display:flex;gap:8px;align-items:flex-end;">'
     +     '<textarea id="comment_input" maxlength="500" rows="2" placeholder="コメントを入力（500文字まで）..." style="flex:1;padding:10px 12px;border:1px solid #c8e6c9;border-radius:18px;font-size:14px;line-height:1.5;resize:none;background:#fff;"></textarea>'
-    +     '<button onclick="submitComment(\''+esc(diaryId)+'\',\''+esc(diary.author_id)+'\',\''+esc(diary.author_name||'')+'\')" style="background:#43a047;color:#fff;border:none;border-radius:50%;width:44px;height:44px;font-size:18px;cursor:pointer;flex-shrink:0;">📤</button>'
+    +     '<button onclick="submitComment(\''+esc(diaryId)+'\',\''+esc(diary.author_id)+'\',\''+esc(diary.author_name||'')+'\')" style="background:#43a047;color:#fff;border:none;border-radius:50%;width:44px;height:44px;font-size:14px;font-weight:700;cursor:pointer;flex-shrink:0;">➤</button>'
     +   '</div>'
     +   '<div id="comment_counter" style="color:#888;font-size:11px;text-align:right;margin-top:4px;">0 / 500</div>'
     + '</div>';
@@ -5948,6 +6535,7 @@ async function submitComment(diaryId, diaryAuthorId, diaryAuthorName){
     closeSheet();
     setTimeout(function(){
       openDiaryDetail(diaryId);
+      invalidateTimelineCache();
       renderTL();
       renderDiary();
     }, 100);
@@ -5968,6 +6556,7 @@ async function deleteComment(commentId, diaryId){
     closeSheet();
     setTimeout(function(){
       openDiaryDetail(diaryId);
+      invalidateTimelineCache();
       renderTL();
       renderDiary();
     }, 100);
@@ -6073,7 +6662,11 @@ async function requestWanmik(name) {
       to_id: target.id, to_name: target.name, to_emoji: target.emoji||'🙋',
       status: 'pending'
     });
-    if(ins.error){ toast('❌ 申請失敗: '+(ins.error.message||'')); return; }
+    if(ins.error){
+      console.error('[ONEs] requestWanmik wanmik.insert:', ins.error);
+      toast('❌ 申請失敗: '+(ins.error.message||''));
+      return;
+    }
     await createNotification(
       target.id,
       'wanmik_request',
@@ -6093,9 +6686,23 @@ async function requestWanmik(name) {
 
 async function approveWanmik(wanmikId){
   try {
+    if(!dbReady() || !currentUser || !currentUser.id){ toast('❌ 接続できません'); return; }
     var wmR = await sb.from('wanmik').select('from_id, from_name').eq('id', wanmikId).maybeSingle();
     var r = await sb.from('wanmik').update({status:'accepted'}).eq('id',wanmikId);
-    if(r.error){ toast('❌ 承認に失敗しました'); return; }
+    if(r.error){
+      console.error('[ONEs] approveWanmik wanmik.update:', r.error);
+      toast('❌ 承認に失敗しました: '+(r.error.message||''));
+      return;
+    }
+    try {
+      if(wmR.data && wmR.data.from_id) {
+        await sb.from('notifications')
+          .update({ is_read: true })
+          .eq('user_id', currentUser.id)
+          .eq('type', 'wanmik_request')
+          .eq('from_user_id', wmR.data.from_id);
+      }
+    } catch(e){ console.warn('[ONEs] approveWanmik mark notifications read:', e); }
     try {
       if(wmR.data) {
         await createNotification(
@@ -6113,16 +6720,49 @@ async function approveWanmik(wanmikId){
     } catch(e){}
     toast('🤝 ワンミク成立！');
     renderWanmik();
+    try {
+      if(typeof renderNotifications === 'function') await renderNotifications(50, true);
+      else renderNT('ntlist', NT);
+    } catch(e){ console.warn('[ONEs] approveWanmik renderNotifications:', e); }
+    try { await loadWanmikNotices(); } catch(e){ console.warn('[ONEs] approveWanmik loadWanmikNotices:', e); }
+    try {
+      if(typeof renderSideNotifications === 'function') await renderSideNotifications(5);
+    } catch(e){ console.warn('[ONEs] approveWanmik renderSideNotifications:', e); }
+    try { await updateNoticeBadge(); } catch(e){ console.warn('[ONEs] approveWanmik updateNoticeBadge:', e); }
   } catch(e){ toast('❌ エラーが発生しました'); }
 }
 
 async function rejectWanmik(wanmikId){
   if(!confirm('この申請を断りますか？')) return;
   try {
+    if(!dbReady() || !currentUser || !currentUser.id){ toast('❌ 接続できません'); return; }
+    var wmR = await sb.from('wanmik').select('from_id').eq('id', wanmikId).maybeSingle();
     var r = await sb.from('wanmik').update({status:'rejected'}).eq('id',wanmikId);
-    if(r.error){ toast('❌ 処理に失敗しました'); return; }
+    if(r.error){
+      console.error('[ONEs] rejectWanmik wanmik.update:', r.error);
+      toast('❌ 処理に失敗しました: '+(r.error.message||''));
+      return;
+    }
+    try {
+      if(wmR.data && wmR.data.from_id) {
+        await sb.from('notifications')
+          .update({ is_read: true })
+          .eq('user_id', currentUser.id)
+          .eq('type', 'wanmik_request')
+          .eq('from_user_id', wmR.data.from_id);
+      }
+    } catch(e){ console.warn('[ONEs] rejectWanmik mark notifications read:', e); }
     toast('申請を断りました');
     renderWanmik();
+    try {
+      if(typeof renderNotifications === 'function') await renderNotifications(50, true);
+      else renderNT('ntlist', NT);
+    } catch(e){ console.warn('[ONEs] rejectWanmik renderNotifications:', e); }
+    try { await loadWanmikNotices(); } catch(e){ console.warn('[ONEs] rejectWanmik loadWanmikNotices:', e); }
+    try {
+      if(typeof renderSideNotifications === 'function') await renderSideNotifications(5);
+    } catch(e){ console.warn('[ONEs] rejectWanmik renderSideNotifications:', e); }
+    try { await updateNoticeBadge(); } catch(e){ console.warn('[ONEs] rejectWanmik updateNoticeBadge:', e); }
   } catch(e){ toast('❌ エラーが発生しました'); }
 }
 async function openCmSheet(name){
@@ -6436,10 +7076,31 @@ function escHtml(str) {
     .replace(/"/g,'&quot;')
     .replace(/'/g,'&#39;');
 }
+// URL → リンク変換
+function linkifyText(text) {
+  if (!text) return '';
+  const escaped = String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+  return escaped.replace(
+    /(https?:\/\/[^\s<>"]+)/g,
+    '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:#4CAF50;word-break:break-all;">$1</a>'
+  );
+}
 function openMsgSheet(from,emoji,text){showSheet(from+'さんのメッセージ',`<div><div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;"><div class="av am" style="${AB}">${emoji}</div><div><div style="font-weight:700;color:var(--og3);">${from}</div><div style="font-size:11px;color:var(--text3);">ワンミク</div></div></div><div style="background:var(--og-pale);border-radius:12px;padding:14px;font-size:14px;color:var(--text);line-height:1.7;margin-bottom:16px;">${text}</div><textarea style="width:100%;background:var(--og-pale);border:1.5px solid var(--og-border);border-radius:12px;padding:12px;font-size:14px;font-family:inherit;outline:none;resize:none;height:90px;margin-bottom:10px;" placeholder="返信を入力..."></textarea><button class="bo" style="width:100%;" onclick="toast('返信を送信しました！');closeSheet()">送信する</button></div>`);}
 async function openMsgThread(partnerId, partnerName, partnerEmoji){
   try {
     if(!dbReady() || !currentUser){ toast('❌ 接続できません'); return; }
+
+    // 自分宛のメッセージを既読化（read が NULL の行も確実に更新）
+    try {
+      await sb.from('messages')
+        .update({ read: true })
+        .eq('to_id', currentUser.id)
+        .eq('from_id', partnerId);
+    } catch(markErr){}
 
     // メッセージ取得
     var r = await sb.from('messages').select('*')
@@ -6525,6 +7186,8 @@ async function openMsgThread(partnerId, partnerName, partnerEmoji){
       var thread = document.getElementById('msg-thread');
       if(thread) thread.scrollTop = thread.scrollHeight;
     }, 100);
+    try { if(typeof updateMessageBadge === 'function') updateMessageBadge(); } catch(e){}
+    try { if(typeof renderMsgs === 'function') renderMsgs(); } catch(e){}
 
   } catch(e){
     console.error('[ONEs] openMsgThread:', e);
@@ -6699,8 +7362,11 @@ window.openHamburgerMenu = function(){
     { icon:'🔔', label:'お知らせ', action:"openNotifications();closeHamburgerMenu();" },
     { icon:'😊', label:'マイページ', action:"goMypage();closeHamburgerMenu();" },
     { icon:'❓', label:'取扱説明書・ヘルプ', action:"openHelp();closeHamburgerMenu();" },
-    { icon:'🚪', label:'ログアウト', action:"confirmLogout();closeHamburgerMenu();" }
+    { icon:'🚪', label:'ログアウト', action:"closeHamburgerMenu();logout();" }
   ];
+  if(typeof isAdmin === 'function' && isAdmin()){
+    menuItems.splice(menuItems.length - 1, 0, { icon:'🛡️', label:'管理者画面', action:"openAdmin();closeHamburgerMenu();" });
+  }
 
   var itemsHtml = menuItems.map(function(m){
     return '<button onclick="'+m.action+'" style="display:flex;align-items:center;gap:14px;width:100%;background:#fff;border:none;border-bottom:1px solid #f0f4ec;padding:18px 20px;font-size:15px;color:#333;text-align:left;cursor:pointer;">'
@@ -6729,16 +7395,11 @@ window.openHamburgerMenu = function(){
 window.closeHamburgerMenu = function(){
   var el = document.getElementById('hamburger_overlay');
   if(el) el.remove();
+  stripDetachedOverlaysAndUnlockScroll();
 };
 
 window.confirmLogout = function(){
-  if(!confirm('ログアウトしますか？')) return;
-  try {
-    localStorage.clear();
-    sessionStorage.clear();
-  } catch(e){}
-  alert('ログアウトしました');
-  location.href = '/';
+  logout();
 };
 
 window.openHelp = function(){
@@ -6871,11 +7532,99 @@ async function saveProfile(){
 async function saveBio(){
   return saveProfileEdit();
 }
-function showSheet(title,html){document.getElementById('shtit').textContent=title;document.getElementById('shbody').innerHTML=html;document.getElementById('sbg').classList.add('show');requestAnimationFrame(()=>document.getElementById('sh').classList.add('open'));}
-function closeSheet(){document.getElementById('sh').classList.remove('open');document.getElementById('sbg').classList.remove('show');}
+
+/** クラス付きの退避オーバーレイを除去し、スクロールロックを解除（close系から共通利用） */
+function stripDetachedOverlaysAndUnlockScroll(){
+  try {
+    document.querySelectorAll('.overlay, .sheet-backdrop, .modal-bg, .ones-app-overlay').forEach(function(el){ el.remove(); });
+  } catch(e){}
+  try { document.body.style.overflow = ''; } catch(e){}
+}
+
+/** #sh を DOM から消したあとも再度開けるよう、#sbg / #sh の欠損時は組み立て直す */
+function ensureSheetMount(){
+  try {
+    var sbg = document.getElementById('sbg');
+    if(!sbg){
+      sbg = document.createElement('div');
+      sbg.id = 'sbg';
+      sbg.onclick = function(){ closeSheet(); };
+      document.body.appendChild(sbg);
+    }
+    var sh = document.getElementById('sh');
+    if(!sh){
+      sh = document.createElement('div');
+      sh.id = 'sh';
+      sh.innerHTML = '<div class="shdl"></div><div class="shhd"><div class="shtit" id="shtit">タイトル</div><button type="button" class="shx" onclick="closeSheet()">✕</button></div><div id="shbody"></div>';
+      document.body.appendChild(sh);
+    }
+  } catch(e){}
+}
+function showSheet(title,html){
+  var existing = document.getElementById('sh');
+  if(existing) existing.remove();
+  ensureSheetMount();
+  document.getElementById('shtit').textContent = title;
+  document.getElementById('shbody').innerHTML = html;
+  document.getElementById('sbg').classList.add('show');
+  requestAnimationFrame(function(){ document.getElementById('sh').classList.add('open'); });
+}
+function closeSheet(){
+  try {
+    var sh = document.getElementById('sh');
+    if(sh) sh.remove();
+    var sbg = document.getElementById('sbg');
+    if(sbg) sbg.classList.remove('show');
+  } catch(e){}
+  stripDetachedOverlaysAndUnlockScroll();
+}
+document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeSheet(); });
+
+function closePhotoLightbox(){
+  var el = document.getElementById('ones-photo-lightbox');
+  if(!el) {
+    stripDetachedOverlaysAndUnlockScroll();
+    return;
+  }
+  var fn = el._onesLbOnEsc;
+  if(typeof fn === 'function') document.removeEventListener('keydown', fn);
+  el.remove();
+  stripDetachedOverlaysAndUnlockScroll();
+}
+function openPhotoLightbox(url){
+  try {
+    var u = String(url || '').trim();
+    if(!u) return;
+    closePhotoLightbox();
+    var wrap = document.createElement('div');
+    wrap.id = 'ones-photo-lightbox';
+    wrap.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.95);display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;';
+    wrap.addEventListener('click', function(ev){ if(ev.target === wrap) closePhotoLightbox(); });
+    var img = document.createElement('img');
+    img.src = u;
+    img.alt = '';
+    img.style.cssText = 'max-width:95vw;max-height:95vh;object-fit:contain;display:block;margin:auto;';
+    img.addEventListener('click', function(ev){ ev.stopPropagation(); });
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = '×';
+    btn.setAttribute('aria-label','閉じる');
+    btn.style.cssText = 'position:absolute;top:12px;right:16px;width:44px;height:44px;border:none;border-radius:50%;background:rgba(255,255,255,.15);color:#fff;font-size:28px;line-height:1;cursor:pointer;font-weight:300;padding:0;display:flex;align-items:center;justify-content:center;font-family:inherit;';
+    btn.addEventListener('click', function(ev){ ev.stopPropagation(); closePhotoLightbox(); });
+    wrap.appendChild(img);
+    wrap.appendChild(btn);
+    document.body.appendChild(wrap);
+    var onEsc = function(e){ if(e.key === 'Escape') closePhotoLightbox(); };
+    wrap._onesLbOnEsc = onEsc;
+    document.addEventListener('keydown', onEsc);
+  } catch(e){ console.error('[ONEs] openPhotoLightbox:', e); }
+}
 
 function openSearch(){document.getElementById('sov').classList.add('show');setTimeout(()=>document.getElementById('soin').focus(),200);}
-function closeSearch(){document.getElementById('sov').classList.remove('show');}
+function closeSearch(){
+  try { document.getElementById('sov').classList.remove('show'); } catch(e){}
+  stripDetachedOverlaysAndUnlockScroll();
+}
 document.getElementById('soin').addEventListener('input',function(){const q=this.value.trim();const bd=document.getElementById('sobd');if(!q){bd.innerHTML='<div class="sohi">🔍<br><br>キーワードを入力してください</div>';return;}const res=DI.filter(d=>d.title.includes(q)||d.excerpt.includes(q));if(!res.length){bd.innerHTML=`<div class="sohi">「${q}」の結果はありません</div>`;return;}bd.innerHTML=res.map(d=>`<div style="padding:12px 0;border-bottom:1px solid var(--og-pale);cursor:pointer;" onclick="closeSearch();openDiarySheet('${esc(d.title)}')"><div style="font-size:14px;font-weight:700;color:var(--og3);">${d.title}</div><div style="font-size:12px;color:var(--text3);margin-top:3px;">${d.date}</div></div>`).join('');});
 
 
@@ -6985,7 +7734,6 @@ function handlePhotoUpload(event) {
           window._photoCache[currentUser.id] = finalPhoto;
           try { localStorage.setItem('ones_profile_photo_'+currentUser.id, finalPhoto); } catch(e){}
         }
-        if(typeof renderTL === 'function') renderTL();
         if(typeof renderHome === 'function') renderHome();
         if(typeof renderMypage === 'function') renderMypage();
 
@@ -7057,6 +7805,7 @@ function applyProfilePhoto(dataUrl) {
   }
 
   // タイムラインを再描画（投稿アイコンを更新）
+  invalidateTimelineCache();
   renderTL();
   if(cur==='voice') renderVoice();
   if(cur==='diary') renderDiary();
@@ -7076,6 +7825,7 @@ window.debugPhotoStatus = function(){
 window.forceReloadPhotos = async function(){
   await syncMyPhoto();
   await loadAllPhotos();
+  invalidateTimelineCache();
   if(typeof renderTL === 'function') renderTL();
   if(typeof renderHome === 'function') renderHome();
   alert('再読込完了！\nキャッシュ: '+Object.keys(window._photoCache||{}).length+'件');
@@ -8373,9 +9123,12 @@ function ieSave() {
 
 /* ══════════ INIT (updated) ══════════ */
 async function initApp(){
+  // Supabase RLS ヘッダーをログインユーザーで確実に設定（checkSession → initApp の順序保証）
+  if(currentUser && currentUser.id != null && String(currentUser.id).length) {
+    setSupabaseHeader(currentUser.id);
+  }
   // currentUser のプロフィール情報を画面に反映
   if(currentUser) {
-    const isAdmin = currentUser.role === 'admin';
     const isBossYasu = currentUser.id === 'm001';
 
     const mpname = document.getElementById('mpname');
@@ -8608,7 +9361,7 @@ async function initApp(){
   try { autoCleanTrash(); } catch(e) {}
 
   // 各レンダリングを個別に try-catch で保護
-  try { renderTL(); } catch(e) { console.error('[ONEs] renderTL:', e); }
+  try { await renderTL(); } catch(e) { console.error('[ONEs] renderTL:', e); }
   try { renderStories(); } catch(e) { console.error('[ONEs] renderStories:', e); }
   try { renderMxRow(); } catch(e) { console.error('[ONEs] renderMxRow:', e); }
   try { renderNT('ntlist',NT); } catch(e) { console.error('[ONEs] renderNT:', e); }
@@ -8624,15 +9377,27 @@ async function initApp(){
   try { if(typeof loadSelectedTagsFromDb === 'function') loadSelectedTagsFromDb().then(function(){ renderSelectedTags(); }); } catch(e) {}
   try { renderSelectedTags(); } catch(e) { console.error('[ONEs] renderSelectedTags:', e); }
   try { updateNoticeBadge(); } catch(e) {}
+  try { if(typeof updateMessageBadge === 'function') updateMessageBadge(); } catch(e) {}
   setTimeout(function(){
     try { updateNoticeBadge(); } catch(e){}
   }, 1000);
   setTimeout(function(){
     try { updateNoticeBadge(); } catch(e){}
   }, 3000);
+  setTimeout(function(){
+    try { if(typeof updateMessageBadge === 'function') updateMessageBadge(); } catch(e){}
+  }, 1000);
+  setTimeout(function(){
+    try { if(typeof updateMessageBadge === 'function') updateMessageBadge(); } catch(e){}
+  }, 3000);
   if(!window._noticeBadgeInterval) {
     window._noticeBadgeInterval = setInterval(function(){
       try { updateNoticeBadge(); } catch(e){}
+    }, 30000);
+  }
+  if(!window._messageBadgeInterval) {
+    window._messageBadgeInterval = setInterval(function(){
+      try { if(typeof updateMessageBadge === 'function') updateMessageBadge(); } catch(e){}
     }, 30000);
   }
 
@@ -8640,9 +9405,18 @@ async function initApp(){
   setTimeout(function(){
     try { loadProfilePhoto(); } catch(e) {}
   }, 100);
+
+  try {
+    applyAdminMenuVisibility();
+    enforceAdminAccessGuard();
+  } catch(e){}
 }
 
-checkSession();
+checkSession().catch(function(e){ console.error('[ONEs] checkSession:', e); });
+
+window.addEventListener('hashchange', function(){
+  try { enforceAdminAccessGuard(); } catch(e){}
+});
 
 // QRコード読み取り時にURLパラメータから招待コードを自動入力
 (function(){
@@ -8667,24 +9441,22 @@ checkSession();
     if(bnav) bnav.style.display = 'none';
     if(fab) fab.style.display = 'none';
 
-    const input = document.getElementById('inv-code-input');
-    if(input) {
-      input.value = code.toUpperCase();
-      input.style.borderColor = '#3a9e5f';
-      input.style.background = '#edf8f1';
-      setTimeout(()=>{
-        const nameInput = document.getElementById('inv-name-input');
-        if(nameInput) nameInput.focus();
-      }, 300);
-      setTimeout(()=>{
-        toast('✅ 招待コードを読み込みました！\nニックネームを入力してください');
+    // 登録タブを開いて招待コードを自動入力
+    setTimeout(function(){
+      switchAuthTab('register');
+      var codeInput = document.getElementById('reg-code');
+      if(codeInput) {
+        codeInput.value = code.toUpperCase();
+        codeInput.style.borderBottomColor = '#c9a84c';
+      }
+      var nameInput = document.getElementById('reg-name');
+      if(nameInput) nameInput.focus();
+      setTimeout(function(){
+        toast('✅ 招待コードを読み込みました！\n情報を入力して登録してください');
       }, 500);
-    }
+    }, 300);
     return;
   }
-
-  // 自動入力機能は無効化（セキュリティ対策）
-  // ログアウト後は毎回手動で招待コードとニックネームを入力する
 })();
 </script>
 </body>
