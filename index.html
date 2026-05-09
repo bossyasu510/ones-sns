@@ -2228,18 +2228,17 @@ async function authLogin() {
       return;
     }
 
-    // JWT取得成功 → member レコードを検索
-    var uid = result.data.user.id;
-    var memberResult = await sb.from('members').select('*').eq('auth_uid', uid).maybeSingle();
+    // JWT取得成功 → RPC で自分のメンバー情報を取得（RLS をバイパス）
+    var profileResult = await sb.rpc('get_my_profile');
 
-    if(!memberResult.data) {
+    if(!profileResult.data) {
       errEl.textContent = 'アカウントは存在しますが、メンバー情報が見つかりません。管理者にお問い合わせください。';
       await sb.auth.signOut();
       if(btn) { btn.disabled = false; btn.textContent = 'LOGIN →'; }
       return;
     }
 
-    var m = memberResult.data;
+    var m = profileResult.data;
     currentUser = {
       id: m.id,
       name: m.name,
@@ -2844,10 +2843,10 @@ async function checkSession(){
         var uid = authResult.data.session.user.id;
         console.log('[ONEs] Supabase Auth JWT セッション検出:', uid);
 
-        // auth_uid でメンバーを検索
-        var memberResult = await sb.from('members').select('*').eq('auth_uid', uid).maybeSingle();
-        if(memberResult.data) {
-          var m = memberResult.data;
+        // RPC で自分のメンバー情報を取得（RLS をバイパス）
+        var profileResult = await sb.rpc('get_my_profile');
+        if(profileResult.data) {
+          var m = profileResult.data;
           currentUser = {
             id: m.id,
             name: m.name,
@@ -9421,7 +9420,11 @@ async function initApp(){
 
 // Supabase SDK のロード完了を待ってからセッション確認
 _supabaseReady.then(function(loaded) {
-  if(loaded) console.log('[ONEs] Supabase SDK ロード完了');
+  if(loaded) {
+    console.log('[ONEs] Supabase SDK ロード完了');
+    // デフォルトのsbを初期化（ログイン画面でも認証機能が動作するように）
+    if(!sb) setSupabaseHeader('');
+  }
   checkSession().catch(function(e){ console.error('[ONEs] checkSession:', e); });
 });
 
