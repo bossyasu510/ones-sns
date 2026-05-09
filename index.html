@@ -14,12 +14,15 @@
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <!-- Supabase SDK (本番環境のみ有効) -->
 <script>
-// Supabase SDK を安全に読み込み
-if(location.protocol !== 'file:') {
+// Supabase SDK を安全に読み込み（ロード完了を Promise で通知）
+var _supabaseReady = new Promise(function(resolve) {
+  if(location.protocol === 'file:') { resolve(false); return; }
   var s = document.createElement('script');
   s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+  s.onload = function() { resolve(true); };
+  s.onerror = function() { console.error('[ONEs] Supabase SDK 読み込み失敗'); resolve(false); };
   document.head.appendChild(s);
-}
+});
 </script>
 <script>
 const SUPABASE_URL = 'https://iywkhawhgxkoqehoyhsh.supabase.co';
@@ -2897,13 +2900,17 @@ async function checkSession(){
 
       // メンバーの auth_uid を確認 → 未移行なら移行モーダル
       var needsMigration = false;
-      try {
-        var checkMember = await sb.from('members').select('auth_uid').eq('id', currentUser.id).maybeSingle();
-        if(checkMember.data && !checkMember.data.auth_uid) {
-          needsMigration = true;
+      if(sb) {
+        try {
+          var checkMember = await sb.from('members').select('auth_uid').eq('id', currentUser.id).maybeSingle();
+          if(checkMember.data && !checkMember.data.auth_uid) {
+            needsMigration = true;
+          }
+        } catch(e) {
+          console.warn('[ONEs] 移行チェックエラー:', e);
         }
-      } catch(e) {
-        console.warn('[ONEs] 移行チェックエラー:', e);
+      } else {
+        console.warn('[ONEs] Supabase未初期化のため移行チェックをスキップ');
       }
 
       console.log('[ONEs] 旧セッション自動ログイン:', currentUser.name, '移行必要:', needsMigration);
@@ -9412,7 +9419,11 @@ async function initApp(){
   } catch(e){}
 }
 
-checkSession().catch(function(e){ console.error('[ONEs] checkSession:', e); });
+// Supabase SDK のロード完了を待ってからセッション確認
+_supabaseReady.then(function(loaded) {
+  if(loaded) console.log('[ONEs] Supabase SDK ロード完了');
+  checkSession().catch(function(e){ console.error('[ONEs] checkSession:', e); });
+});
 
 window.addEventListener('hashchange', function(){
   try { enforceAdminAccessGuard(); } catch(e){}
