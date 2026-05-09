@@ -3488,14 +3488,26 @@ async function loadMoreTL(){
   btn.textContent = '⏳ 読み込み中...';
 
   try {
-    /* キャッシュが空なら表示するものが無い */
+    /* キャッシュが空なら全件再取得（refreshTimelineAfterAuth 等でクリアされた場合の安全策） */
     if(!_tlCachedDiaries && !_tlCachedVoices && !_tlCachedPhotos){
-      if(noMoreEl){ noMoreEl.style.display = 'block'; noMoreEl.textContent = 'これ以上投稿はありません'; }
-      btn.style.display = 'none';
-      return;
+      if(dbReady()){
+        var refetch = await Promise.all([
+          dbFetchDiaries(1000, 0).catch(function(){ return []; }),
+          dbFetchVoices(1000, 0).catch(function(){ return []; }),
+          dbFetchPhotos(1000, 0).catch(function(){ return []; })
+        ]);
+        _tlCachedDiaries = refetch[0] || [];
+        _tlCachedVoices = refetch[1] || [];
+        _tlCachedPhotos = refetch[2] || [];
+      }
+      if(!_tlCachedDiaries && !_tlCachedVoices && !_tlCachedPhotos){
+        if(noMoreEl){ noMoreEl.style.display = 'block'; noMoreEl.textContent = 'これ以上投稿はありません'; }
+        btn.style.display = 'none';
+        return;
+      }
     }
 
-    /* DB再取得はしない — キャッシュ済み全件から _tlSeenKeys でスキップし次の TL_BATCH を取得 */
+    /* キャッシュ全件から _tlSeenKeys でスキップし次の TL_BATCH を取得 */
     var built = await buildTimelineCardsFromFetched(
       _tlCachedDiaries || [], _tlCachedVoices || [], _tlCachedPhotos || []);
 
